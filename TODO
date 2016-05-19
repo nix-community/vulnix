@@ -5,10 +5,11 @@ TODO
         status depending on whitelist
     -> total status of a derivation is the worst status of each of its vulnerabilities
 
+- packaging + testing
+
 
 - metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken
 
-- packaging + testing
 
 - Sensu-Integration
 
