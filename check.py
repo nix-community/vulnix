@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 
 import subprocess
-
+import xml.etree.ElementTree as ET
 
 # We know we can't be affected, but the data doesn't allow us to specifically
 # parse/match this correctly.
-WHITELIST = [
+WHITELIST = set([
     'CVE-2015-3717',     # sqlite on specific ios versions
-    'CVE-2015-2503'      # microsoft access, accidentally matching the 'access' derivation
-]
+    'CVE-2015-2503'      # microsoft access, accidentally matching the
+                         # 'access' derivation
+])
+
+
+def call(cmd):
+    output = subprocess.check_output(cmd)
+    output = output.decode('ascii')
+    return output
+
 
 class CPE(object):
 
@@ -21,13 +29,14 @@ class CPE(object):
     lang = None
 
     @staticmethod
-    def fromURI(uri):
+    def from_uri(uri):
         self = CPE()
         self.uri = uri
         protocol, identifier = uri.split(':/')
         assert protocol == 'cpe'
         component_list = identifier.split(':')
-        components = ['part', 'vendor', 'product', 'version', 'update', 'edition', 'lang']
+        components = ['part', 'vendor', 'product', 'version', 'update',
+                      'edition', 'lang']
         while component_list:
             component_name = components.pop(0)
             component_value = component_list.pop(0)
@@ -39,10 +48,13 @@ class CPE(object):
 
 
 class Derive(object):
-    
+
     store_path = None
 
-    def __init__(self, output, inputDrvs, inputSrcs, system, builder, args, envVars):
+    # This __init__ is compatible with the structure in the derivation file.
+    # The derivation files are just accidentally Python-syntax, but hey!
+    def __init__(self, output, inputDrvs, inputSrcs, system, builder,  # noqa
+                 args, envVars):
         self.output = output
         self.inputDrvs = inputDrvs
         self.inputSrcs = inputSrcs
@@ -89,13 +101,15 @@ class Derive(object):
         return True
 
     def roots(self):
-        return subprocess.check_output(['nix-store', '--query', '--roots', self.store_path]).decode('ascii').split('\n')
+        return call(
+            ['nix-store', '--query', '--roots', self.store_path]).split('\n')
 
     def referrers(self):
-        return subprocess.check_output(['nix-store', '--query', '--referrers', self.store_path]).decode('ascii').split('\n')
+        return call(['nix-store', '--query', '--referrers',
+                     self.store_path]).split('\n')
 
 derivations = []
-for d in subprocess.check_output(['nix-store', '--gc', '--print-live']).decode('ascii').split('\n'):
+for d in call(['nix-store', '--gc', '--print-live']).split('\n'):
     if not d.endswith('.drv'):
         continue
     d_src = open(d, 'r').read()
@@ -114,33 +128,34 @@ class Vulnerability(object):
 
     @property
     def url(self):
-      return 'https://web.nvd.nist.gov/view/vuln/detail?vulnId={}'.format(self.cve_id)
+        return ('https://web.nvd.nist.gov/view/vuln/detail?vulnId={}'.
+                format(self.cve_id))
 
     @staticmethod
-    def fromNode(node):
+    def from_node(node):
         self = Vulnerability()
         self.cve_id = node.get('id')
         for product in node.findall('.//vuln:product', NS):
-            cpe = CPE.fromURI(product.text)
+            cpe = CPE.from_uri(product.text)
             assert cpe.product is not None
             self.affected_products.append(cpe)
         return self
 
 
-import xml.etree.ElementTree as ET
 NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
       'vuln': 'http://scap.nist.gov/schema/vulnerability/0.4'}
 
 vulnerabilities = []
 
+
 def parse_db(filename):
-  tree = ET.parse(filename)
-  root = tree.getroot()
-  for node in root:
-      vx = Vulnerability.fromNode(node)
-      if vx.cve_id in WHITELIST:
-          continue
-      vulnerabilities.append(vx)
+    tree = ET.parse(filename)
+    root = tree.getroot()
+    for node in root:
+        vx = Vulnerability.from_node(node)
+        if vx.cve_id in WHITELIST:
+            continue
+        vulnerabilities.append(vx)
 
 parse_db('nvdcve-2.0-2016.xml')
 parse_db('nvdcve-2.0-2015.xml')
@@ -148,7 +163,7 @@ parse_db('nvdcve-2.0-2015.xml')
 for derivation in derivations:
     derivation.check()
     if derivation.is_affected:
-        print("="*72)
+        print("=" * 72)
         print(derivation.name)
         print()
         print(derivation.store_path)
@@ -162,5 +177,5 @@ for derivation in derivations:
         print("CVEs:")
         for cve in derivation.affected_by:
             print("\t" + cve.url)
-        print("="*72)
+        print("=" * 72)
         print()
