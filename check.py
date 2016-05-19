@@ -2,25 +2,36 @@
 
 import subprocess
 import xml.etree.ElementTree as ET
+import yaml
 
 
 class WhiteListRule(object):
 
-    def __init__(self, cve=None, name=None, version=None):
+    MATCHABLE = ['cve', 'name', 'version', 'vendor', 'product']
+
+    def __init__(self, cve=None, name=None, version=None, vendor=None,
+                 product=None, comment=None, status='ignore'):
         self.cve = cve
         self.name = name
         self.version = version
-        if not (self.cve or self.name):
+        self.comment = comment
+        self.vendor = vendor
+        self.product = product
+        assert status in ['ignore', 'inprogress']
+        for m in self.MATCHABLE:
+            if getattr(self, m):
+                break
+        else:
             raise ValueError(
-                "Whitelist rules must specify at least a CVE or a name.")
+                "Whitelist rules must specify at least one of the matchable "
+                "attributes: {}".format(', '.join(self.MATCHABLE)))
 
     def matches(self, other):
-        if other.cve and self.cve and self.cve != other.cve:
-            return False
-        if other.name and self.name and self.name != other.name:
-            return False
-        if other.version and self.version and self.version != other.version:
-            return False
+        for attr in self.MATCHABLE:
+            other_value = getattr(other, attr)
+            self_value = getattr(self, attr)
+            if other_value and other_value != self_value:
+                return False
         return True
 
 
@@ -28,21 +39,8 @@ class WhiteList(object):
 
     def parse(self, filename='whitelist.cfg'):
         self.data = []
-        for line in open(filename, 'r', encoding='ascii'):
-            line = line.strip()
-            if line.startswith('#'):
-                # Comment line
-                continue
-            if not line:
-                # Empty line
-                continue
-            elements = line.split(':')
-            names = ['cve', 'name', 'version']
-            entry = {}
-            while elements:
-                entry[names.pop(0)] = elements.pop(0)
-            entry = WhiteListRule(**entry)
-        self.data.append(entry)
+        for rule in yaml.load(open(filename, 'r')):
+            self.data.append(WhiteListRule(**rule))
 
     def __contains__(self, test):
         for rule in self.data:
@@ -56,7 +54,7 @@ whitelist.parse()
 
 
 def call(cmd):
-    output = subprocess.check_output(cmd)
+    output = subprocess.check_output(cmd, stderr=subprocess.PIPE)
     output = output.decode('ascii')
     return output
 
@@ -90,6 +88,14 @@ class CPE(object):
         return '<CPE %s>' % self.uri
 
 
+class Match(object):
+
+    def __init__(self, vulnerability, derivation,
+                 version=None, cpe,
+                 product=None, comment=None, status='ignore'):
+        self.cve =
+
+
 class Derive(object):
 
     store_path = None
@@ -116,29 +122,27 @@ class Derive(object):
     def check(self):
         for vuln in vulnerabilities:
             for affected_product in vuln.affected_products:
-                if self.matches(affected_product):
+                if self.matches(vuln.cve_id, affected_product):
                     self.affected_by.append(vuln)
 
-    def matches(self, cpe):
-        # Is this the right product?
-        if self.name == cpe.product:
-            # We don't have any version information on the installed package.
-            # Assume we're affected and let a human decide.
-            return True
-
+    def matches(self, cve_id, cpe):
+        # Step 1: determine product name
         prefix = cpe.product + '-'
-        if not self.name.startswith(prefix):
+        if self.name == cpe.product:
+            version = None
+        elif self.name.startswith(prefix):
+            version = self.name.replace(prefix, '', 1)
+            if version != cpe.version:
+                return False
+        else:
+            # This product doesn't match at all.
             return False
 
-        # False negatives? How do we protect against those? I.e. if the
-        # installed version says "beta" or something which is not or
-        # differently represented in the name or vice versa?
+        # This is an optimization: reduce the database size and thus search
+        # load from CVEs we do not
 
-        # Lets see whether the remainder is a valid version for this cpe
-        suffix = self.name.replace(prefix, '', 1)
-        if cpe.version and cpe.version != suffix:
-            # We have a version but it doesn't match.
-            return False
+        if Match(cve_id, self.name, version, cpe.vendor, cpe.product) in whitelist:
+            continue
 
         # We matched the product and think the version is affected.
         return True
@@ -196,14 +200,10 @@ def parse_db(filename):
     root = tree.getroot()
     for node in root:
         vx = Vulnerability.from_node(node)
-        if WhiteListRule(vx.cve_id) in whitelist:
-            continue
         vulnerabilities.append(vx)
 
 parse_db('nvdcve-2.0-2016.xml')
 parse_db('nvdcve-2.0-2015.xml')
-
-print(len(vulnerabilities), len(derivations))
 
 
 for derivation in derivations:

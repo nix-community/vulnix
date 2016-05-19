@@ -1,0 +1,53 @@
+TODO
+
+- config-based whitelist
+    -> data flow 1 derivation has multiple vulnerability matches with different
+        status depending on whitelist
+    -> total status of a derivation is the worst status of each of its vulnerabilities
+
+
+- metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken
+
+- packaging + testing
+
+- Sensu-Integration
+
+    - copy-paste-support für output um whitelist zu erzeugen?
+
+    - statusline: erst die roten, dann die gelben, sonst OK, bei mehr als 3 in der statusline: (XXX more)
+
+    - detail content:
+
+        erst die roten, dann die gelben, und innerhalb quasi-alphabetisch
+
+        CVEs verlinken
+        Link aufs Ticket
+
+    - Display:
+
+
+    Security issues for sqlite, libxml2, ... (and 10 more)
+
+
+    sqlite-2.9.3 (inprogress)
+        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-2073
+        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-8710
+
+        See https://plan.flyingcircus.io/issues/18544
+
+
+    libxml2-2.9.3
+        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
+
+
+- summarize derivations by package name (and version)
+
+- booted-system root ignorieren
+
+
+
+
+
+- optimize
+    -   index for looking up vulnerabilities based on product names
+- tools for monitoring false negatives
