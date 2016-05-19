@@ -3,13 +3,56 @@
 import subprocess
 import xml.etree.ElementTree as ET
 
-# We know we can't be affected, but the data doesn't allow us to specifically
-# parse/match this correctly.
-WHITELIST = set([
-    'CVE-2015-3717',     # sqlite on specific ios versions
-    'CVE-2015-2503'      # microsoft access, accidentally matching the
-                         # 'access' derivation
-])
+
+class WhiteListRule(object):
+
+    def __init__(self, cve=None, name=None, version=None):
+        self.cve = cve
+        self.name = name
+        self.version = version
+        if not (self.cve or self.name):
+            raise ValueError(
+                "Whitelist rules must specify at least a CVE or a name.")
+
+    def matches(self, other):
+        if other.cve and self.cve and self.cve != other.cve:
+            return False
+        if other.name and self.name and self.name != other.name:
+            return False
+        if other.version and self.version and self.version != other.version:
+            return False
+        return True
+
+
+class WhiteList(object):
+
+    def parse(self, filename='whitelist.cfg'):
+        self.data = []
+        for line in open(filename, 'r', encoding='ascii'):
+            line = line.strip()
+            if line.startswith('#'):
+                # Comment line
+                continue
+            if not line:
+                # Empty line
+                continue
+            elements = line.split(':')
+            names = ['cve', 'name', 'version']
+            entry = {}
+            while elements:
+                entry[names.pop(0)] = elements.pop(0)
+            entry = WhiteListRule(**entry)
+        self.data.append(entry)
+
+    def __contains__(self, test):
+        for rule in self.data:
+            if rule.matches(test):
+                return True
+        return False
+
+
+whitelist = WhiteList()
+whitelist.parse()
 
 
 def call(cmd):
@@ -153,12 +196,15 @@ def parse_db(filename):
     root = tree.getroot()
     for node in root:
         vx = Vulnerability.from_node(node)
-        if vx.cve_id in WHITELIST:
+        if WhiteListRule(vx.cve_id) in whitelist:
             continue
         vulnerabilities.append(vx)
 
 parse_db('nvdcve-2.0-2016.xml')
 parse_db('nvdcve-2.0-2015.xml')
+
+print(len(vulnerabilities), len(derivations))
+
 
 for derivation in derivations:
     derivation.check()
