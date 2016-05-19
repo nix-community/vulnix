@@ -5,6 +5,8 @@ TODO
         status depending on whitelist
     -> total status of a derivation is the worst status of each of its vulnerabilities
 
+    -> CVEs should be possible to be a list
+
 - packaging + testing
 
 
