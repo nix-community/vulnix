@@ -7,10 +7,6 @@ TODO
 
     -> CVEs should be possible to be a list
 
-- packaging + testing
-
-- automatic downloads / updates (correct caching!)
-
 - metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken
 
 - Sensu-Integration
@@ -48,9 +44,16 @@ TODO
 - booted-system root ignorieren
 
 
-
-
-
 - optimize
     -   index for looking up vulnerabilities based on product names
+
 - tools for monitoring false negatives
+
+- improve NVD parsing performance, probably through caching an
+  intermediate format
+
+- improve NVD dowloads: correclty cache and invalidate downloads,
+  then start using data since 2002
+
+- provide a custom NVD mirror within the dc to reduce bandwith and latency
+  to check the meta files for updates?

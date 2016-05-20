@@ -1,6 +1,7 @@
-import subprocess
-import xml.etree.ElementTree as ET
+from .nvd import NVD
 from .whitelist import WhiteList
+import subprocess
+import logging
 
 whitelist = WhiteList()
 
@@ -9,35 +10,6 @@ def call(cmd):
     output = subprocess.check_output(cmd, stderr=subprocess.PIPE)
     output = output.decode('ascii')
     return output
-
-
-class CPE(object):
-
-    part = None
-    vendor = None
-    product = None
-    version = None
-    update = None
-    edition = None
-    lang = None
-
-    @staticmethod
-    def from_uri(uri):
-        self = CPE()
-        self.uri = uri
-        protocol, identifier = uri.split(':/')
-        assert protocol == 'cpe'
-        component_list = identifier.split(':')
-        components = ['part', 'vendor', 'product', 'version', 'update',
-                      'edition', 'lang']
-        while component_list:
-            component_name = components.pop(0)
-            component_value = component_list.pop(0)
-            setattr(self, component_name, component_value)
-        return self
-
-    def __repr__(self):
-        return '<CPE %s>' % self.uri
 
 
 class Derive(object):
@@ -64,7 +36,7 @@ class Derive(object):
         return bool(self.affected_by)
 
     def check(self):
-        for vuln in vulnerabilities:
+        for vuln in nvd:
             for affected_product in vuln.affected_products:
                 if self.matches(vuln.cve_id, affected_product):
                     self.affected_by.append(vuln)
@@ -101,48 +73,13 @@ class Derive(object):
                      self.store_path]).split('\n')
 
 
-class Vulnerability(object):
-
-    cve_id = None
-    affected_products = ()
-
-    def __init__(self):
-        self.affected_products = []
-
-    @property
-    def url(self):
-        return ('https://web.nvd.nist.gov/view/vuln/detail?vulnId={}'.
-                format(self.cve_id))
-
-    @staticmethod
-    def from_node(node):
-        self = Vulnerability()
-        self.cve_id = node.get('id')
-        for product in node.findall('.//vuln:product', NS):
-            cpe = CPE.from_uri(product.text)
-            assert cpe.product is not None
-            self.affected_products.append(cpe)
-        return self
-
-
-NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
-      'vuln': 'http://scap.nist.gov/schema/vulnerability/0.4'}
-
-
 derivations = []
-vulnerabilities = []
-
-
-def parse_db(filename):
-    global vulnerabilities
-    tree = ET.parse(filename)
-    root = tree.getroot()
-    for node in root:
-        vx = Vulnerability.from_node(node)
-        vulnerabilities.append(vx)
+nvd = NVD()
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
+
     global derivations, whitelist
     whitelist.parse()
 
@@ -154,8 +91,8 @@ def main():
         d_obj.store_path = d
         derivations.append(d_obj)
 
-    parse_db('nvdcve-2.0-2016.xml')
-    parse_db('nvdcve-2.0-2015.xml')
+    nvd.update()
+    nvd.parse()
 
     for derivation in derivations:
         derivation.check()

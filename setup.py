@@ -17,6 +17,7 @@ setup(
     version='0.1.dev0',
     install_requires=[
         'pyyaml',
+        'requests',
     ],
     extras_require={
         'test': [
