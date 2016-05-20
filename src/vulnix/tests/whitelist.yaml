@@ -15,9 +15,8 @@
 
 -
     name: libxslt
-    version: 2.0
+    version: '2.0'
 
 -
     vendor: microsoft
     product: access
-

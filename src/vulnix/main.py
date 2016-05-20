@@ -1,54 +1,8 @@
 import subprocess
 import xml.etree.ElementTree as ET
-import yaml
-
-
-class WhiteListRule(object):
-
-    MATCHABLE = ['cve', 'name', 'version', 'vendor', 'product']
-
-    def __init__(self, cve=None, name=None, version=None, vendor=None,
-                 product=None, comment=None, status='ignore'):
-        self.cve = cve
-        self.name = name
-        self.version = version
-        self.comment = comment
-        self.vendor = vendor
-        self.product = product
-        assert status in ['ignore', 'inprogress']
-        for m in self.MATCHABLE:
-            if getattr(self, m):
-                break
-        else:
-            raise ValueError(
-                "Whitelist rules must specify at least one of the matchable "
-                "attributes: {}".format(', '.join(self.MATCHABLE)))
-
-    def matches(self, other):
-        for attr in self.MATCHABLE:
-            other_value = getattr(other, attr)
-            self_value = getattr(self, attr)
-            if other_value and other_value != self_value:
-                return False
-        return True
-
-
-class WhiteList(object):
-
-    def parse(self, filename='whitelist.cfg'):
-        self.data = []
-        for rule in yaml.load(open(filename, 'r')):
-            self.data.append(WhiteListRule(**rule))
-
-    def __contains__(self, test):
-        for rule in self.data:
-            if rule.matches(test):
-                return True
-        return False
-
+from .whitelist import WhiteList
 
 whitelist = WhiteList()
-whitelist.parse()
 
 
 def call(cmd):
@@ -189,7 +143,8 @@ def parse_db(filename):
 
 
 def main():
-    global derivations
+    global derivations, whitelist
+    whitelist.parse()
 
     for d in call(['nix-store', '--gc', '--print-live']).split('\n'):
         if not d.endswith('.drv'):
