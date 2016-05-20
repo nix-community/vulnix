@@ -7,11 +7,10 @@ TODO
 
     -> CVEs should be possible to be a list
 
-- metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken
+- summarize derivations by package name (and version)
+
 
 - Sensu-Integration
-
-    - copy-paste-support für output um whitelist zu erzeugen?
 
     - statusline: erst die roten, dann die gelben, sonst OK, bei mehr als 3 in der statusline: (XXX more)
 
@@ -39,15 +38,11 @@ TODO
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
 
 
-- summarize derivations by package name (and version)
-
 - booted-system root ignorieren
 
-
-- optimize
-    -   index for looking up vulnerabilities based on product names
-
-- tools for monitoring false negatives
+- unit test for performance: with all data and a "regular" nix store, we
+  want end-to-end performance of the check to be faster than 15 seconds
+  (if no big downloads are needed, only a small sync)
 
 - improve NVD parsing performance, probably through caching an
   intermediate format
@@ -57,3 +52,7 @@ TODO
 
 - provide a custom NVD mirror within the dc to reduce bandwith and latency
   to check the meta files for updates?
+
+- tools for monitoring false negatives
+
+- metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken

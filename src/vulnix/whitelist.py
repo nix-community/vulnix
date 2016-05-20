@@ -24,12 +24,20 @@ class WhiteListRule(object):
                 "Whitelist rules must specify at least one of the matchable "
                 "attributes: {}".format(', '.join(self.MATCHABLE)))
 
-    def matches(self, other):
-        for attr in self.MATCHABLE:
-            other_value = getattr(other, attr)
-            self_value = getattr(self, attr)
-            if other_value and other_value != self_value:
-                return False
+    def matches(self, vulnerability, cpe, derivation):
+        """A rule matches when a vulnerability/derivation combination
+        is whitelisted by this rule.
+        """
+        if self.cve and vulnerability.cve_id != self.cve:
+            return
+        if self.name and derivation.simple_name != self.name:
+            return
+        if self.version and cpe.version != self.version:
+            return
+        if self.vendor and cpe.vendor != self.vendor:
+            return
+        if self.product and cpe.product != self.product:
+            return
         return True
 
 
@@ -42,8 +50,9 @@ class WhiteList(object):
         for rule in yaml.load(open(filename, 'r')):
             self.rules.append(WhiteListRule(**rule))
 
-    def __contains__(self, test):
+    def __contains__(self, spec):
+        (vuln, cpe, derivation) = spec
         for rule in self.rules:
-            if rule.matches(test):
+            if rule.matches(vuln, cpe, derivation):
                 return True
         return False

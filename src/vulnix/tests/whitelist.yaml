@@ -14,7 +14,7 @@
     name: unzip
 
 -
-    name: libxslt
+    derivation: libxslt
     version: '2.0'
 
 -

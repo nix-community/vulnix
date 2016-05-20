@@ -25,7 +25,7 @@ class NVD(object):
 
     # XXX official databases start at 2002. Once we do caching of the parsing
     # of the XML files into something faster, we should include the old data.
-    earliest = 2016
+    earliest = 2015
     updates = 'Modified'
 
     def __init__(self):

@@ -10,6 +10,9 @@
 
 
 -
+    cve: CVE-2015-3197
+
+-
     cve: CVE-2015-7696
     name: unzip
 
@@ -21,3 +24,10 @@
     vendor: microsoft
     product: access
 
+
+-
+    vendor: gethook
+    product: hook
+
+-
+    name: libxml2

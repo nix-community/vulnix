@@ -19,10 +19,6 @@ setup(
         'pyyaml',
         'requests',
     ],
-    extras_require={
-        'test': [
-        ],
-    },
     entry_points="""
         [console_scripts]
             vulnix = vulnix.main:main
