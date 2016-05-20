@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import subprocess
 import xml.etree.ElementTree as ET
 import yaml
@@ -88,14 +86,6 @@ class CPE(object):
         return '<CPE %s>' % self.uri
 
 
-class Match(object):
-
-    def __init__(self, vulnerability, derivation,
-                 version=None, cpe,
-                 product=None, comment=None, status='ignore'):
-        self.cve =
-
-
 class Derive(object):
 
     store_path = None
@@ -141,8 +131,9 @@ class Derive(object):
         # This is an optimization: reduce the database size and thus search
         # load from CVEs we do not
 
-        if Match(cve_id, self.name, version, cpe.vendor, cpe.product) in whitelist:
-            continue
+        # match = Match(cve_id, self.name, version, cpe.vendor, cpe.product)
+        # if match in whitelist:
+        #    return False
 
         # We matched the product and think the version is affected.
         return True
@@ -154,15 +145,6 @@ class Derive(object):
     def referrers(self):
         return call(['nix-store', '--query', '--referrers',
                      self.store_path]).split('\n')
-
-derivations = []
-for d in call(['nix-store', '--gc', '--print-live']).split('\n'):
-    if not d.endswith('.drv'):
-        continue
-    d_src = open(d, 'r').read()
-    d_obj = eval(d_src)
-    d_obj.store_path = d
-    derivations.append(d_obj)
 
 
 class Vulnerability(object):
@@ -192,36 +174,50 @@ class Vulnerability(object):
 NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
       'vuln': 'http://scap.nist.gov/schema/vulnerability/0.4'}
 
+
+derivations = []
 vulnerabilities = []
 
 
 def parse_db(filename):
+    global vulnerabilities
     tree = ET.parse(filename)
     root = tree.getroot()
     for node in root:
         vx = Vulnerability.from_node(node)
         vulnerabilities.append(vx)
 
-parse_db('nvdcve-2.0-2016.xml')
-parse_db('nvdcve-2.0-2015.xml')
 
+def main():
+    global derivations
 
-for derivation in derivations:
-    derivation.check()
-    if derivation.is_affected:
-        print("=" * 72)
-        print(derivation.name)
-        print()
-        print(derivation.store_path)
-        print()
-        print("Referenced by:")
-        for referrer in derivation.referrers():
-            print("\t" + referrer)
-        print("Used by:")
-        for root in derivation.roots():
-            print("\t" + root)
-        print("CVEs:")
-        for cve in derivation.affected_by:
-            print("\t" + cve.url)
-        print("=" * 72)
-        print()
+    for d in call(['nix-store', '--gc', '--print-live']).split('\n'):
+        if not d.endswith('.drv'):
+            continue
+        d_src = open(d, 'r').read()
+        d_obj = eval(d_src)
+        d_obj.store_path = d
+        derivations.append(d_obj)
+
+    parse_db('nvdcve-2.0-2016.xml')
+    parse_db('nvdcve-2.0-2015.xml')
+
+    for derivation in derivations:
+        derivation.check()
+        if derivation.is_affected:
+            print("=" * 72)
+            print(derivation.name)
+            print()
+            print(derivation.store_path)
+            print()
+            print("Referenced by:")
+            for referrer in derivation.referrers():
+                print("\t" + referrer)
+            print("Used by:")
+            for root in derivation.roots():
+                print("\t" + root)
+            print("CVEs:")
+            for cve in derivation.affected_by:
+                print("\t" + cve.url)
+            print("=" * 72)
+            print()

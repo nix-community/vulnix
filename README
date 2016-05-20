@@ -1,0 +1,9 @@
+Nix(OS) vulnerability scanner
+=============================
+
+This is a utility that validates a Nix store for any packages that are
+reachable from live paths and likely to be affected by vulnerabilities listed
+in the NVD.
+
+It implements a CLI utility to inspect the current status and a monitoring
+integration for Sensu.

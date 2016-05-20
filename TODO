@@ -9,9 +9,9 @@ TODO
 
 - packaging + testing
 
+- automatic downloads / updates (correct caching!)
 
 - metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken
-
 
 - Sensu-Integration
 
