@@ -1,0 +1,9 @@
+{
+  "checks": {
+    "vulnix": {
+      "command": "sudo /home/mb/vulnix/bin/vulnix",
+      "standalone": true,
+      "interval": 60,
+    }
+  }
+}

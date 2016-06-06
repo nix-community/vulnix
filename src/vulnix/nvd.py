@@ -7,11 +7,11 @@ import requests
 import shutil
 import xml.etree.ElementTree as ET
 
-logger = logging.getLogger(__name__)
 
 NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
       'vuln': 'http://scap.nist.gov/schema/vulnerability/0.4'}
 
+logger = logging.getLogger(__name__)
 
 class NVD(object):
     """Access to the National Vulnerability Database.

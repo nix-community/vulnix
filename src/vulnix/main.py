@@ -25,13 +25,14 @@ def get_args():
         "-d", "--debug", action="store_true",
         help="shows debug information")
     ap.add_argument(
-        "-w", "--whitelist",
+        "-w", "--whitelist", default="whitelist.yaml",
         help="points toward another whitelist")
 
     return ap.parse_args()
 
 
 def output(affected_derivations):
+    status = 0
     derivations = []
     seen = {}
     # we need name-version only once
@@ -44,9 +45,9 @@ def output(affected_derivations):
     # sort by name
     derivations.sort(key=lambda k: k.simple_name)
     amount = len(derivations)
-    names = ', '.join([k.simple_name for k in derivations])
+    names = ', '.join(derivations[k].simple_name for k in range(3))
 
-    print("Security issues for {}".format(names[:3]), end="")
+    print("Security issues for {}".format(names), end="")
     if amount > 3:
         print(", ... (and {:d} more)".format(amount - 3))
 
@@ -68,14 +69,23 @@ def output(affected_derivations):
         print("=" * 72)
         print()
 
-        if derivation.status and derivation.status == "inprogress":
-            status = 1
+        #  if no status is set, we declare affected derivations as critical
+        if status == 0 or status == 1:
+            if derivation.status == "inprogress":
+                status = 1
+        else:
+            status = 2
+
+    return status
 
 
 def main():
+    logger = logging.getLogger(__name__)
     args = get_args()
-
-    logging.basicConfig(level=logging.DEBUG)
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     store = Store()
     store.update()
@@ -97,18 +107,11 @@ def main():
                     derivation.check(vuln, whitelist)
                     if derivation.is_affected:
                         affected.add(derivation)
-
-    # sensu maps following return codes
-    # 0 - ok, 1 - Warning, 2 - critical, 3 - unknown
-    status = 0
     if affected:
+        # sensu maps following return codes
+        # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
         status = output(affected)
-    else:
-        print("ok. No security issues found.")
 
-    if args.debug:
-        print(t.interval)
-        import pdb
-        pdb.set_trace()
+    logging.debug(t.interval)
 
     sys.exit(status)

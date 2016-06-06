@@ -46,6 +46,7 @@ class Derive(object):
         self.name = self.envVars['name']
 
         self.affected_by = set()
+        self.status = None
 
     @property
     def is_affected(self):
