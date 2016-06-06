@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -ex
 rm -rf bin lib include parts
 virtualenv --python=python3 .

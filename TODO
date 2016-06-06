@@ -1,44 +1,27 @@
 TODO
 
+- Sensu:
+
+    - statusline: sort by status
+
+    - detail content: sort by status
+
+-  refactor main/output()
+
+
+- improve NVD dowloads: correclty cache and invalidate downloads,
+  then start using data since 2002, always download "recent"
+
+
 - config-based whitelist
     -> data flow 1 derivation has multiple vulnerability matches with different
         status depending on whitelist
     -> total status of a derivation is the worst status of each of its vulnerabilities
 
-    -> CVEs should be possible to be a list
-
 - summarize derivations by package name (and version)
 
 
-- Sensu-Integration
-
-    - statusline: erst die roten, dann die gelben, sonst OK, bei mehr als 3 in der statusline: (XXX more)
-
-    - detail content:
-
-        erst die roten, dann die gelben, und innerhalb quasi-alphabetisch
-
-        CVEs verlinken
-        Link aufs Ticket
-
-    - Display:
-
-
-    Security issues for sqlite, libxml2, ... (and 10 more)
-
-
-    sqlite-2.9.3 (inprogress)
-        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-2073
-        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-8710
-
-        See https://plan.flyingcircus.io/issues/18544
-
-
-    libxml2-2.9.3
-        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
-
-
-- booted-system root ignorieren
+- ignore booted-system root
 
 - unit test for performance: with all data and a "regular" nix store, we
   want end-to-end performance of the check to be faster than 15 seconds
@@ -47,12 +30,10 @@ TODO
 - improve NVD parsing performance, probably through caching an
   intermediate format
 
-- improve NVD dowloads: correclty cache and invalidate downloads,
-  then start using data since 2002
 
 - provide a custom NVD mirror within the dc to reduce bandwith and latency
   to check the meta files for updates?
 
 - tools for monitoring false negatives
 
-- metadaten: gepatchte CVEs markieren ...  und als PATCHED_CVES="<cve>:<cve:..." in den Builder schicken
+- metadata: patch CVEs -> PATCHED_CVES="<cve>:<cve:..." (builder)

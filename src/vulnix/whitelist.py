@@ -47,7 +47,19 @@ class WhiteList(object):
         self.rules = []
 
     def parse(self, filename='whitelist.yaml'):
-        for rule in yaml.load(open(filename, 'r')):
+        prep_rules = []
+
+        whitelist = yaml.load(open(filename, 'r'))
+        for line in whitelist:
+            # special case: use cve key for more than one cve
+            if 'cve' in line.keys() and type(line['cve']) == list:
+                for cve_id in line['cve']:
+                    prep_rules.append(dict(**line))
+                    prep_rules[-1]['cve'] = cve_id
+            else:
+                prep_rules.append(line)
+        print(prep_rules)
+        for rule in prep_rules:
             self.rules.append(WhiteListRule(**rule))
 
     def __contains__(self, spec):

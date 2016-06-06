@@ -1,6 +1,6 @@
 -
     cve: CVE-2015-2503
-    comment:
+    comment: |
          microsoft access, accidentally matching the 'access' derivation
 
          https://plan.flyingcircus.io/issues/18544
@@ -31,3 +31,7 @@
 
 -
     name: libxml2
+
+-
+    name: expat
+    status: inprogress
