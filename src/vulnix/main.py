@@ -25,6 +25,9 @@ def get_args():
         "-d", "--debug", action="store_true",
         help="shows debug information")
     ap.add_argument(
+        "-v", "--verbosity", action="count",
+        help="increase output verbosity", default=0)
+    ap.add_argument(
         "-w", "--whitelist", default="whitelist.yaml",
         help="points toward another whitelist")
 
@@ -32,6 +35,7 @@ def get_args():
 
 
 def output(affected_derivations):
+    args = get_args()
     status = 0
     derivations = []
     seen = {}
@@ -55,14 +59,16 @@ def output(affected_derivations):
         print("=" * 72)
         print(derivation.name)
         print()
-        print(derivation.store_path)
-        print()
-        print("Referenced by:")
-        for referrer in derivation.referrers():
-            print("\t" + referrer)
-        print("Used by:")
-        for root in derivation.roots():
-            print("\t" + root)
+        if args.verbosity >= 1:
+            print(derivation.store_path)
+            if args.verbosity >= 2:
+                print()
+                print("Referenced by:")
+                for referrer in derivation.referrers():
+                    print("\t" + referrer)
+                print("Used by:")
+                for root in derivation.roots():
+                    print("\t" + root)
         print("CVEs:")
         for cve in derivation.affected_by:
             print("\t" + cve.url)
