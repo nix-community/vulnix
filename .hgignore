@@ -1,0 +1,17 @@
+syntax: glob
+
+bin
+lib
+include
+pip-selfcheck.json
+*.sublime-*
+*.pyc
+*.egg-info
+eggs
+parts
+htmlcov
+report.xml
+.coverage
+.installed.cfg
+.cache
+develop-eggs

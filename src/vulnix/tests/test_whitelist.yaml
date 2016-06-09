@@ -1,0 +1,27 @@
+-
+    cve:
+        - CVE-2015-2504
+        - CVE-2015-7696
+-
+    cve: CVE-2015-2503
+    comment: |
+         microsoft access, accidentally matching the 'access' derivation
+
+         https://plan.flyingcircus.io/issues/18544
+
+-
+    name: libxslt
+
+
+-
+    cve: CVE-2015-7696
+    name: unzip
+    status: inprogress
+
+-
+    name: libxslt
+    version: '2.0'
+
+-
+    vendor: microsoft
+    product: access

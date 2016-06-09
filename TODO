@@ -1,0 +1,41 @@
+TODO
+
+- Sensu:
+
+    - statusline: sort by status
+
+    - detail content: sort by status
+
+    - long and short output
+
+-  refactor main/output()
+
+
+- improve NVD dowloads: correclty cache and invalidate downloads,
+  then start using data since 2002, always download "recent"
+
+
+- config-based whitelist
+    -> data flow 1 derivation has multiple vulnerability matches with different
+        status depending on whitelist
+    -> total status of a derivation is the worst status of each of its vulnerabilities
+
+- summarize derivations by package name (and version)
+
+
+- ignore booted-system root
+
+- unit test for performance: with all data and a "regular" nix store, we
+  want end-to-end performance of the check to be faster than 15 seconds
+  (if no big downloads are needed, only a small sync)
+
+- improve NVD parsing performance, probably through caching an
+  intermediate format
+
+
+- provide a custom NVD mirror within the dc to reduce bandwith and latency
+  to check the meta files for updates?
+
+- tools for monitoring false negatives
+
+- metadata: patch CVEs -> PATCHED_CVES="<cve>:<cve:..." (builder)
