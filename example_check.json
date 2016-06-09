@@ -1,9 +1,9 @@
 {
   "checks": {
     "vulnix": {
-      "command": "sudo /home/mb/vulnix/bin/vulnix",
+      "command": "/var/setuid-wrappers/sudo -u root /home/mb/vulnix/result/bin/vulnix -w /home/mb/vulnix/result/share/whitelist.yaml",
       "standalone": true,
-      "interval": 60,
+      "interval": 60
     }
   }
 }

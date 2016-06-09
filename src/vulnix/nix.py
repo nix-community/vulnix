@@ -12,7 +12,7 @@ class Store(object):
     def update(self):
         self.derivations = []
         self.product_candidates = {}
-        for d in call(['nix-store', '--gc', '--print-live']).split('\n'):
+        for d in call(['/run/current-system/sw/bin/nix-store', '--gc', '--print-live']).split('\n'):
             if not d.endswith('.drv'):
                 continue
             d_src = open(d, 'r').read()
@@ -95,8 +95,8 @@ class Derive(object):
 
     def roots(self):
         return call(
-            ['nix-store', '--query', '--roots', self.store_path]).split('\n')
+            ['/run/current-system/sw/bin/nix-store', '--query', '--roots', self.store_path]).split('\n')
 
     def referrers(self):
-        return call(['nix-store', '--query', '--referrers',
+        return call(['/run/current-system/sw/bin/nix-store', '--query', '--referrers',
                      self.store_path]).split('\n')
