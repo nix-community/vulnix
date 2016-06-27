@@ -1,7 +1,6 @@
 # This should be only one line. If it must be multi-line, indent the second
 # line onwards to keep the PKG-INFO file format intact.
-"""Scans a Nix store for derivations that are affected by vulnerabilities.
-"""
+"""Scans a Nix store for derivations that are affected by vulnerabilities."""
 
 from setuptools import setup, find_packages
 import glob
