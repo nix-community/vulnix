@@ -15,6 +15,8 @@ in pythonEnv.python.mkDerivation {
     pythonEnv.pkgs."pytest-cov"
   ];
    propagatedBuildInputs = [
+    pythonEnv.pkgs."click"
+    pythonEnv.pkgs."colorama"
     pythonEnv.pkgs."PyYAML"
     pythonEnv.pkgs."requests"
   ];
