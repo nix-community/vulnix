@@ -14,6 +14,7 @@ NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
 
 logger = logging.getLogger(__name__)
 
+
 class NVD(object):
     """Access to the National Vulnerability Database.
 
@@ -74,7 +75,6 @@ class NVD(object):
         # cache results
         with open(filename + '.cached', 'wb') as fobj:
             pickle.dump(cached_vx, fobj)
-
 
     def __iter__(self):
         return iter(self.cves.values())

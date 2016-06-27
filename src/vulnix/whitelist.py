@@ -1,4 +1,7 @@
 import yaml
+import logging
+
+_log = logging.getLogger(__name__)
 
 
 class WhiteListRule(object):
@@ -50,10 +53,14 @@ class WhiteList(object):
     def __init__(self):
         self.rules = []
 
-    def parse(self, filename='whitelist.yaml'):
+    def parse(self, fobj):
+        """Extends whitelist with rules read from fobj."""
         prep_rules = []
 
-        whitelist = yaml.load(open(filename, 'r'))
+        if hasattr(fobj, 'name'):
+            _log.debug('reading whitelist from %s', fobj.name)
+
+        whitelist = yaml.load(fobj)
         for line in whitelist:
             # special case: use cve key for more than one cve
             if 'cve' in line.keys() and type(line['cve']) == list:

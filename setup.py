@@ -1,7 +1,6 @@
 # This should be only one line. If it must be multi-line, indent the second
 # line onwards to keep the PKG-INFO file format intact.
-"""Scans a Nix store for derivations that are affected by vulnerabilities.
-"""
+"""Scans a Nix store for derivations that are affected by vulnerabilities."""
 
 from setuptools import setup, find_packages
 import glob
@@ -11,21 +10,21 @@ import os.path
 def project_path(*names):
     return os.path.join(os.path.dirname(__file__), *names)
 
-with open(project_path('VERSION')) as f:
+with open(project_path('VERSION'), encoding='ascii') as f:
     version = f.read().strip()
 
-long_description = ''
+long_description = []
 
-with open(project_path('README.rst')) as f:
-    long_description += f.read() + '\n\n'
-
-with open(project_path('CHANGES.rst')) as f:
-    long_description += f.read() + '\n\n'
+for rst in ['README.rst', 'CHANGES.rst']:
+    with open(project_path(rst), encoding='ascii') as f:
+        long_description.append(f.read())
 
 setup(
     name='vulnix',
     version=version,
     install_requires=[
+        'click',
+        'colorama',
         'pyyaml',
         'requests',
     ],
@@ -45,10 +44,9 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3 :: Only
 """[:-1].split('\n'),
     description=__doc__.strip(),
-    long_description=long_description,
+    long_description='\n\n'.join(long_description),
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    data_files=[('', glob.glob(project_path('*.rst')))],
     zip_safe=False
 )

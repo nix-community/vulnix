@@ -1,10 +1,13 @@
 from .nix import Store
 from .nvd import NVD
 from .whitelist import WhiteList
-import argparse
+import click
 import logging
+import pkg_resources
 import time
-import sys
+
+DEFAULT_WHITELIST = pkg_resources.resource_filename(
+    __name__, 'default_whitelist.yaml')
 
 
 class Timer:
@@ -17,25 +20,7 @@ class Timer:
         self.interval = self.end - self.start
 
 
-def get_args():
-    ap = argparse.ArgumentParser(
-        prog="vulnix",
-        description="scans the active gc-roots for security vulnerabilites")
-    ap.add_argument(
-        "-d", "--debug", action="store_true",
-        help="shows debug information")
-    ap.add_argument(
-        "-v", "--verbosity", action="count",
-        help="increase output verbosity", default=0)
-    ap.add_argument(
-        "-w", "--whitelist", default="whitelist.yaml",
-        help="points toward another whitelist")
-
-    return ap.parse_args()
-
-
-def output(affected_derivations):
-    args = get_args()
+def output(affected_derivations, verbosity):
     status = 0
     derivations = []
     seen = {}
@@ -46,22 +31,22 @@ def output(affected_derivations):
             continue
         seen[marker] = 1
         derivations.append(item)
-    # sort by name
     derivations.sort(key=lambda k: k.simple_name)
+
     amount = len(derivations)
     names = ', '.join(derivations[k].simple_name for k in range(3))
-
-    print("Security issues for {}".format(names), end="")
+    summary = 'Found {} advisories for {}'.format(amount, names)
     if amount > 3:
-        print(", ... (and {:d} more)".format(amount - 3))
+        summary += ', ... (and {:d} more)'.format(amount - 3)
+    print(summary)
 
     for derivation in derivations:
         print("=" * 72)
         print(derivation.name)
         print()
-        if args.verbosity >= 1:
+        if verbosity >= 1:
             print(derivation.store_path)
-            if args.verbosity >= 2:
+            if verbosity >= 2:
                 print()
                 print("Referenced by:")
                 for referrer in derivation.referrers():
@@ -85,13 +70,34 @@ def output(affected_derivations):
     return status
 
 
-def main():
+@click.command('vulnix')
+@click.option('-w', '--whitelist',
+              multiple=True,
+              type=click.File(),
+              help='Add another whiltelist YAML file to declare exceptions.')
+@click.option('--default-whitelist/--no-default-whitelist',
+              default=True,
+              help='Load built-in base whitelist from {}. Additional '
+              'whitelists can be specified using the "-w" option. Default: '
+              'yes'.format(DEFAULT_WHITELIST))
+@click.option('-d', '--debug',
+              is_flag=True,
+              help='Show debug information.')
+@click.option('-v', '--verbose',
+              count=True,
+              help='Increase output verbosity.')
+def main(debug, verbose, whitelist, default_whitelist):
+    """Scans nix store paths for derivations with security vulnerabilities."""
     logger = logging.getLogger(__name__)
-    args = get_args()
-    if args.debug:
+
+    if debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.getLogger('requests').setLevel(logging.ERROR)
+        if verbose:
+            logging.basicConfig(level=logging.INFO)
+        else:
+            logging.basicConfig(level=logging.WARNING)
 
     store = Store()
     store.update()
@@ -100,8 +106,12 @@ def main():
     nvd.update()
     nvd.parse()
 
-    whitelist = WhiteList()
-    whitelist.parse(filename=args.whitelist)
+    wl = WhiteList()
+    if default_whitelist:
+        with open(DEFAULT_WHITELIST) as f:
+            wl.parse(f)
+    for fobj in whitelist:
+        wl.parse(fobj)
 
     affected = set()
 
@@ -110,16 +120,14 @@ def main():
             for prod in vuln.affected_products:
                 for derivation in store.product_candidates.get(
                         prod.product, []):
-                    derivation.check(vuln, whitelist)
+                    derivation.check(vuln, wl)
                     if derivation.is_affected:
                         affected.add(derivation)
+    logger.debug('total scan time: %f', t.interval)
+
     if affected:
         # sensu maps following return codes
         # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-        status = output(affected)
+        return output(affected, verbose)
     else:
-        status = 0
-
-    logging.debug(t.interval)
-
-    sys.exit(status)
+        return 0
