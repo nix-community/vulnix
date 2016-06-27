@@ -31,14 +31,14 @@ def output(affected_derivations, verbosity):
             continue
         seen[marker] = 1
         derivations.append(item)
-    # sort by name
     derivations.sort(key=lambda k: k.simple_name)
+
     amount = len(derivations)
     names = ', '.join(derivations[k].simple_name for k in range(3))
-
-    print("Security issues for {}".format(names), end="")
+    summary = 'Found {} advisories for {}'.format(amount, names)
     if amount > 3:
-        print(", ... (and {:d} more)".format(amount - 3))
+        summary += ', ... (and {:d} more)'.format(amount - 3)
+    print(summary)
 
     for derivation in derivations:
         print("=" * 72)
@@ -75,13 +75,18 @@ def output(affected_derivations, verbosity):
               multiple=True,
               type=click.File(),
               help='Add another whiltelist YAML file to declare exceptions.')
+@click.option('--default-whitelist/--no-default-whitelist',
+              default=True,
+              help='Load built-in base whitelist from {}. Additional '
+              'whitelists can be specified using the "-w" option. Default: '
+              'yes'.format(DEFAULT_WHITELIST))
 @click.option('-d', '--debug',
               is_flag=True,
               help='Show debug information.')
 @click.option('-v', '--verbose',
               count=True,
               help='Increase output verbosity.')
-def main(whitelist, debug, verbose):
+def main(debug, verbose, whitelist, default_whitelist):
     """Scans nix store paths for derivations with security vulnerabilities."""
     logger = logging.getLogger(__name__)
 
@@ -102,6 +107,9 @@ def main(whitelist, debug, verbose):
     nvd.parse()
 
     wl = WhiteList()
+    if default_whitelist:
+        with open(DEFAULT_WHITELIST) as f:
+            wl.parse(f)
     for fobj in whitelist:
         wl.parse(fobj)
 
@@ -115,7 +123,7 @@ def main(whitelist, debug, verbose):
                     derivation.check(vuln, wl)
                     if derivation.is_affected:
                         affected.add(derivation)
-    logger.debug('total time: %f', t.interval)
+    logger.debug('total scan time: %f', t.interval)
 
     if affected:
         # sensu maps following return codes

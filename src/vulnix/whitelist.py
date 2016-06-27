@@ -1,4 +1,7 @@
 import yaml
+import logging
+
+_log = logging.getLogger(__name__)
 
 
 class WhiteListRule(object):
@@ -53,6 +56,9 @@ class WhiteList(object):
     def parse(self, fobj):
         """Extends whitelist with rules read from fobj."""
         prep_rules = []
+
+        if hasattr(fobj, 'name'):
+            _log.debug('reading whitelist from %s', fobj.name)
 
         whitelist = yaml.load(fobj)
         for line in whitelist:
