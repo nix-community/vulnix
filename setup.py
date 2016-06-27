@@ -26,6 +26,7 @@ setup(
     name='vulnix',
     version=version,
     install_requires=[
+        'click',
         'pyyaml',
         'requests',
     ],

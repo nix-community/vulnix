@@ -1,6 +1,7 @@
 from .nix import Store
 from .nvd import NVD
 from .whitelist import WhiteList
+import click
 import argparse
 import logging
 import time
@@ -17,25 +18,7 @@ class Timer:
         self.interval = self.end - self.start
 
 
-def get_args():
-    ap = argparse.ArgumentParser(
-        prog="vulnix",
-        description="scans the active gc-roots for security vulnerabilites")
-    ap.add_argument(
-        "-d", "--debug", action="store_true",
-        help="shows debug information")
-    ap.add_argument(
-        "-v", "--verbosity", action="count",
-        help="increase output verbosity", default=0)
-    ap.add_argument(
-        "-w", "--whitelist", default="whitelist.yaml",
-        help="points toward another whitelist")
-
-    return ap.parse_args()
-
-
-def output(affected_derivations):
-    args = get_args()
+def output(affected_derivations, verbosity):
     status = 0
     derivations = []
     seen = {}
@@ -59,9 +42,9 @@ def output(affected_derivations):
         print("=" * 72)
         print(derivation.name)
         print()
-        if args.verbosity >= 1:
+        if verbosity >= 1:
             print(derivation.store_path)
-            if args.verbosity >= 2:
+            if verbosity >= 2:
                 print()
                 print("Referenced by:")
                 for referrer in derivation.referrers():
@@ -85,13 +68,27 @@ def output(affected_derivations):
     return status
 
 
-def main():
+@click.command('vulnix')
+@click.option('-w', '--whitelist',
+              help='Add another whiltelist YAML file to define exceptions.')
+@click.option('-d', '--debug',
+              is_flag=True,
+              help='Show debug information.')
+@click.option('-v', '--verbose',
+              count=True,
+              help='Increase output verbosity.')
+def main(whitelist, debug, verbose):
+    """Scans nix store paths for derivations with security vulnerabilities."""
     logger = logging.getLogger(__name__)
-    args = get_args()
-    if args.debug:
+
+    if debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.getLogger('requests').setLevel(logging.ERROR)
+        if verbose:
+            logging.basicConfig(level=logging.INFO)
+        else:
+            logging.basicConfig(level=logging.WARNING)
 
     store = Store()
     store.update()
@@ -100,8 +97,8 @@ def main():
     nvd.update()
     nvd.parse()
 
-    whitelist = WhiteList()
-    whitelist.parse(filename=args.whitelist)
+    wl = WhiteList()
+    wl.parse(filename=whitelist)
 
     affected = set()
 
@@ -110,16 +107,14 @@ def main():
             for prod in vuln.affected_products:
                 for derivation in store.product_candidates.get(
                         prod.product, []):
-                    derivation.check(vuln, whitelist)
+                    derivation.check(vuln, wl)
                     if derivation.is_affected:
                         affected.add(derivation)
+    logging.debug('total time: %f', t.interval)
+
     if affected:
         # sensu maps following return codes
         # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-        status = output(affected)
+        return output(affected, verbose)
     else:
-        status = 0
-
-    logging.debug(t.interval)
-
-    sys.exit(status)
+        return 0

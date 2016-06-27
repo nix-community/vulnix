@@ -1,5 +1,12 @@
+bin/
+develop-eggs/
+dist/
+*.egg-info/
+.installed.cfg
+lib/
+lib64
+pip-selfcheck.json
 *.py?
-*.sw?
-
+pyvenv.cfg
 /result
-/src/vulnix.egg-info/
+*.sw?
