@@ -25,6 +25,7 @@ setup(
     version=version,
     install_requires=[
         'click',
+        'colorama',
         'pyyaml',
         'requests',
     ],
