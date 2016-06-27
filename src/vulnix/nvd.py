@@ -26,7 +26,7 @@ class NVD(object):
 
     # XXX official databases start at 2002. Once we do caching of the parsing
     # of the XML files into something faster, we should include the old data.
-    earliest = 2015
+    earliest = 2002
     updates = 'Modified'
 
     def __init__(self):
@@ -53,11 +53,13 @@ class NVD(object):
 
     def parse(self):
         for source in glob.glob(self.download_path + '*.xml'):
-            # implement parsing cache
+            # looking for cached vulnerability objects
             if not os.path.exists(source + '.cached'):
                 self.parse_file(source)
-            #else:
-            #    for vx in pickle.
+            else:
+                with open(source + '.cached', 'rb') as fobj:
+                    for vx in pickle.load(fobj):
+                        self.cves[vx.cve_id] = vx
 
     def parse_file(self, filename):
         print(filename)
@@ -69,6 +71,7 @@ class NVD(object):
             vx = Vulnerability.from_node(node)
             self.cves[vx.cve_id] = vx
             cached_vx.append(vx)
+        # cache results
         with open(filename + '.cached', 'wb') as fobj:
             pickle.dump(cached_vx, fobj)
 
