@@ -1,11 +1,18 @@
 from vulnix.whitelist import WhiteList
-import os.path
+import os.path as p
+import pytest
 
 
-def test_scan_rulefile():
-    test_file = os.path.join(os.path.dirname(__file__), 'test_whitelist.yaml')
+@pytest.yield_fixture
+def test_whitelist():
+    fn = p.join(p.dirname(__file__), 'test_whitelist.yaml')
+    with open(fn) as f:
+        yield f
+
+
+def test_scan_rulefile(test_whitelist):
     w = WhiteList()
-    w.parse(test_file)
+    w.parse(test_whitelist)
     assert len(w.rules) == 7  # list of CVEs count for each cve_id
 
     r = w.rules
@@ -69,3 +76,13 @@ https://plan.flyingcircus.io/issues/18544
     assert r.comment is None
     assert r.vendor == 'microsoft'
     assert r.product == 'access'
+
+
+def test_concatenate_multiple_whitelists(test_whitelist):
+    w = WhiteList()
+    w.parse(test_whitelist)
+    with open(p.join(p.dirname(__file__), 'test_whitelist2.yaml')) as f:
+        w.parse(f)
+
+    assert len(w.rules) == 8  # combined list
+    assert w.rules[-1].cve == 'CVE-2016-0001'

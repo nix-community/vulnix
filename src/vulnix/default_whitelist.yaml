@@ -1,3 +1,5 @@
+# Default vulnix whitelist listing common exceptions. The entries given below
+# should be common sense for every Nix installation.
 -
     cve: CVE-2015-2503
     comment: |
@@ -7,7 +9,6 @@
 
 -
     name: libxslt
-
 
 -
     cve: CVE-2015-3197
@@ -28,10 +29,3 @@
 -
     vendor: gethook
     product: hook
-
--
-    name: libxml2
-
--
-    name: expat
-    status: inprogress

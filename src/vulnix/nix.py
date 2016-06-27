@@ -97,7 +97,8 @@ class Derive(object):
 
     def roots(self):
         return call(
-            [self.nix_store, '--query', '--roots', self.store_path]).split('\n')
+            [self.nix_store, '--query', '--roots',
+             self.store_path]).split('\n')
 
     def referrers(self):
         return call([self.nix_store, '--query', '--referrers',

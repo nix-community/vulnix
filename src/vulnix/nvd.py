@@ -14,6 +14,7 @@ NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
 
 logger = logging.getLogger(__name__)
 
+
 class NVD(object):
     """Access to the National Vulnerability Database.
 
@@ -53,11 +54,8 @@ class NVD(object):
 
     def parse(self):
         for source in glob.glob(self.download_path + '*.xml'):
-            # implement parsing cache
             if not os.path.exists(source + '.cached'):
                 self.parse_file(source)
-            #else:
-            #    for vx in pickle.
 
     def parse_file(self, filename):
         print(filename)
@@ -71,7 +69,6 @@ class NVD(object):
             cached_vx.append(vx)
         with open(filename + '.cached', 'wb') as fobj:
             pickle.dump(cached_vx, fobj)
-
 
     def __iter__(self):
         return iter(self.cves.values())

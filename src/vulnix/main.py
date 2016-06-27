@@ -2,10 +2,12 @@ from .nix import Store
 from .nvd import NVD
 from .whitelist import WhiteList
 import click
-import argparse
 import logging
+import pkg_resources
 import time
-import sys
+
+DEFAULT_WHITELIST = pkg_resources.resource_filename(
+    __name__, 'default_whitelist.yaml')
 
 
 class Timer:
@@ -70,7 +72,9 @@ def output(affected_derivations, verbosity):
 
 @click.command('vulnix')
 @click.option('-w', '--whitelist',
-              help='Add another whiltelist YAML file to define exceptions.')
+              multiple=True,
+              type=click.File(),
+              help='Add another whiltelist YAML file to declare exceptions.')
 @click.option('-d', '--debug',
               is_flag=True,
               help='Show debug information.')
@@ -98,7 +102,8 @@ def main(whitelist, debug, verbose):
     nvd.parse()
 
     wl = WhiteList()
-    wl.parse(filename=whitelist)
+    for fobj in whitelist:
+        wl.parse(fobj)
 
     affected = set()
 
@@ -110,7 +115,7 @@ def main(whitelist, debug, verbose):
                     derivation.check(vuln, wl)
                     if derivation.is_affected:
                         affected.add(derivation)
-    logging.debug('total time: %f', t.interval)
+    logger.debug('total time: %f', t.interval)
 
     if affected:
         # sensu maps following return codes
