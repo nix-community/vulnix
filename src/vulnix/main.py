@@ -117,6 +117,8 @@ def main():
         # sensu maps following return codes
         # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
         status = output(affected)
+    else:
+        status = 0
 
     logging.debug(t.interval)
 

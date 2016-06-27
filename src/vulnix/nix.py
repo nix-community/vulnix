@@ -12,7 +12,8 @@ class Store(object):
     def update(self):
         self.derivations = []
         self.product_candidates = {}
-        for d in call(['/run/current-system/sw/bin/nix-store', '--gc', '--print-live']).split('\n'):
+        nix_store = call(['which', 'nix-store']).strip('\n')
+        for d in call([nix_store, '--gc', '--print-live']).split('\n'):
             if not d.endswith('.drv'):
                 continue
             d_src = open(d, 'r').read()
@@ -31,6 +32,7 @@ class Store(object):
 class Derive(object):
 
     store_path = None
+    nix_store = call(['which', 'nix-store']).strip('\n')
 
     # This __init__ is compatible with the structure in the derivation file.
     # The derivation files are just accidentally Python-syntax, but hey!
@@ -95,8 +97,8 @@ class Derive(object):
 
     def roots(self):
         return call(
-            ['/run/current-system/sw/bin/nix-store', '--query', '--roots', self.store_path]).split('\n')
+            [self.nix_store, '--query', '--roots', self.store_path]).split('\n')
 
     def referrers(self):
-        return call(['/run/current-system/sw/bin/nix-store', '--query', '--referrers',
+        return call([self.nix_store, '--query', '--referrers',
                      self.store_path]).split('\n')

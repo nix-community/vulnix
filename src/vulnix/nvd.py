@@ -3,6 +3,7 @@ import glob
 import gzip
 import logging
 import os.path
+import pickle
 import requests
 import shutil
 import xml.etree.ElementTree as ET
@@ -21,7 +22,7 @@ class NVD(object):
     """
 
     source = 'http://static.nvd.nist.gov/feeds/xml/cve/nvdcve-2.0-{}.xml.gz'
-    cache = '/tmp/nvd/'
+    download_path = '/tmp/nvd/'
 
     # XXX official databases start at 2002. Once we do caching of the parsing
     # of the XML files into something faster, we should include the old data.
@@ -32,12 +33,12 @@ class NVD(object):
         self.cves = {}
 
     def update(self):
-        if not os.path.exists(self.cache):
-            os.makedirs(self.cache)
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
         current_year = datetime.datetime.today().year
         years = list(range(self.earliest, current_year + 1)) + [self.updates]
         for year in years:
-            target = self.cache + '{}.xml'.format(year)
+            target = self.download_path + '{}.xml'.format(year)
             if os.path.exists(target):
                 continue
             logger.info('Updating {}'.format(year))
@@ -51,16 +52,26 @@ class NVD(object):
                     shutil.copyfileobj(f_in, f_out)
 
     def parse(self):
-        for source in glob.glob(self.cache + '*.xml'):
-            self.parse_file(source)
+        for source in glob.glob(self.download_path + '*.xml'):
+            # implement parsing cache
+            if not os.path.exists(source + '.cached'):
+                self.parse_file(source)
+            #else:
+            #    for vx in pickle.
 
     def parse_file(self, filename):
+        print(filename)
+        cached_vx = []
         logger.debug("Parsing {}".format(filename))
         tree = ET.parse(filename)
         root = tree.getroot()
         for node in root:
             vx = Vulnerability.from_node(node)
             self.cves[vx.cve_id] = vx
+            cached_vx.append(vx)
+        with open(filename + '.cached', 'wb') as fobj:
+            pickle.dump(cached_vx, fobj)
+
 
     def __iter__(self):
         return iter(self.cves.values())
