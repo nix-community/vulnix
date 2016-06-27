@@ -11,10 +11,20 @@ import os.path
 def project_path(*names):
     return os.path.join(os.path.dirname(__file__), *names)
 
+with open(project_path('VERSION')) as f:
+    version = f.read().strip()
+
+long_description = ''
+
+with open(project_path('README.rst')) as f:
+    long_description += f.read() + '\n\n'
+
+with open(project_path('CHANGES.rst')) as f:
+    long_description += f.read() + '\n\n'
 
 setup(
     name='vulnix',
-    version='0.1.dev0',
+    version=version,
     install_requires=[
         'pyyaml',
         'requests',
@@ -35,12 +45,10 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3 :: Only
 """[:-1].split('\n'),
     description=__doc__.strip(),
-    long_description='\n\n'.join(open(project_path(name)).read() for name in (
-        'README',
-        'CHANGES.txt')),
+    long_description=long_description,
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    data_files=[('', glob.glob(project_path('*.txt')))],
+    data_files=[('', glob.glob(project_path('*.rst')))],
     zip_safe=False
 )

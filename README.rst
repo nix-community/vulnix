@@ -25,7 +25,7 @@ Example output:
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
 
 
-Usage:
+Usage::
 
-$ nix-build
-$ ./result/bin/vulnix
+    $ nix-build
+    $ ./result/bin/vulnix
