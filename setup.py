@@ -32,8 +32,8 @@ setup(
         [console_scripts]
             vulnix = vulnix.main:main
     """,
-    author='Flying Circus Internet Operations GmbH',
-    author_email='mail@flyingcircus.io',
+    author='Maksim Bronsky',
+    author_email='mb@flyingcircus.io',
     license='BSD (2-clause)',
     url='https://bitbucket.org/flyingcircus/vulnix',
     keywords='security',
