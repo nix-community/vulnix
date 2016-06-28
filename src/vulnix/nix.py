@@ -1,43 +1,74 @@
+import tempfile
+import logging
+import os
 import subprocess
+
+_log = logging.getLogger(__name__)
 
 
 def call(cmd):
-    output = subprocess.check_output(cmd, stderr=subprocess.PIPE)
-    output = output.decode('ascii')
-    return output
+    """Call `cmd` and swallow stderr iff returncode is 0."""
+    with tempfile.TemporaryFile(prefix='stderr') as capture:
+        try:
+            output = subprocess.check_output(cmd, stderr=capture)
+        except subprocess.CalledProcessError:
+            capture.seek(0)
+            os.fdopen(2, mode='wb').write(capture.read())
+            raise
+    return output.decode()
 
 
 class Store(object):
 
-    def update(self):
-        self.derivations = []
+    def __init__(self):
+        self.derivations = {}
         self.product_candidates = {}
-        nix_store = call(['which', 'nix-store']).strip('\n')
-        for d in call([nix_store, '--gc', '--print-live']).split('\n'):
-            if not d.endswith('.drv'):
-                continue
-            d_src = open(d, 'r').read()
-            d_obj = eval(d_src)
-            d_obj.store_path = d
-            self.derivations.append(d_obj)
-            for product_candidate in d_obj.product_candidates:
-                refs = self.product_candidates.setdefault(
-                    product_candidate, [])
-                refs.append(d_obj)
 
-    def __iter__(self):
-        return iter(self.derivations)
+    def add_gc_roots(self):
+        """Add derivations found for all live GC roots.
+
+        Note that this usually includes old system versions.
+        """
+        _log.debug('loading all live derivations')
+        for d in call(['nix-store', '--gc', '--print-live']).splitlines():
+            self.update(d)
+
+    def add_path(self, path):
+        """Add the closure of all derivations referenced by a store path."""
+        _log.debug('loading derivations referenced by "%s"', path)
+        deriver = call(['nix-store', '-qd', path]).strip()
+        _log.debug('deriver: %s', deriver)
+        if not deriver or deriver == 'unknown-deriver':
+            raise RuntimeError(
+                'Cannot determine deriver. Is this really a path into the '
+                'nix store?', path)
+        for candidate in call(['nix-store', '-qR', deriver]).splitlines():
+            self.update(candidate)
+
+    def update(self, drv_path):
+        if not drv_path.endswith('.drv'):
+            return
+        if drv_path in self.derivations:
+            return
+        _log.debug('loading %s', drv_path)
+        with open(drv_path) as f:
+            d_obj = eval(f.read())
+        d_obj.store_path = drv_path
+        self.derivations[drv_path] = d_obj
+        for product_candidate in d_obj.product_candidates:
+            refs = self.product_candidates.setdefault(
+                product_candidate, [])
+            refs.append(d_obj)
 
 
 class Derive(object):
 
     store_path = None
-    nix_store = call(['which', 'nix-store']).strip('\n')
 
     # This __init__ is compatible with the structure in the derivation file.
     # The derivation files are just accidentally Python-syntax, but hey!
     def __init__(self, output, inputDrvs, inputSrcs, system, builder,  # noqa
-                 args, envVars):
+                 args, envVars, derivations=None):
         self.output = output
         self.inputDrvs = inputDrvs
         self.inputSrcs = inputSrcs
@@ -97,9 +128,8 @@ class Derive(object):
 
     def roots(self):
         return call(
-            [self.nix_store, '--query', '--roots',
-             self.store_path]).split('\n')
+            ['nix-store', '--query', '--roots', self.store_path]).split('\n')
 
     def referrers(self):
-        return call([self.nix_store, '--query', '--referrers',
+        return call(['nix-store', '--query', '--referrers',
                      self.store_path]).split('\n')
