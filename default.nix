@@ -1,24 +1,22 @@
-{ system ? builtins.currentSystem
-, nixpkgs ? builtins.fetchTarball "https://github.com/NixOS/nixpkgs-channels/archive/453086a15fc0db0c2bc17d98350b0632551cb0fe.tar.gz"
+{ pkgs ? import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs-channels/archive/453086a15fc0db0c2bc17d98350b0632551cb0fe.tar.gz") {}
 }:
 
 let
-  pkgs = import nixpkgs { inherit system; };
-  pythonEnv = import ./requirements.nix { inherit system nixpkgs; };
+  python = import ./requirements.nix { inherit pkgs; };
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION);
-in pythonEnv.python.mkDerivation {
+in python.mkDerivation {
   name = "vulnix-${version}";
   src = ./.;
   buildInputs = [
-    pythonEnv.pkgs."flake8"
-    pythonEnv.pkgs."pytest"
-    pythonEnv.pkgs."pytest-cov"
+    python.pkgs."flake8"
+    python.pkgs."pytest"
+    python.pkgs."pytest-cov"
   ];
    propagatedBuildInputs = [
-    pythonEnv.pkgs."click"
-    pythonEnv.pkgs."colorama"
-    pythonEnv.pkgs."PyYAML"
-    pythonEnv.pkgs."requests"
+    python.pkgs."click"
+    python.pkgs."colorama"
+    python.pkgs."PyYAML"
+    python.pkgs."requests"
   ];
   checkPhase = ''
     runHook preCheck
