@@ -1,9 +1,8 @@
 { supportedSystems ? [ "x86_64-linux" ]
+, pkgs ? import <nixpkgs> {}
 }:
 
 let
-
-  pkgs = import <nixpkgs> {};
 
   buildFor = systems:
     builtins.listToAttrs (map (system:
