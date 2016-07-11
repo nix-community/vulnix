@@ -6,7 +6,6 @@ TODO
 
     - detail content: sort by status
 
-    - long and short output
 
 -  refactor main/output()
 
@@ -28,10 +27,6 @@ TODO
 - unit test for performance: with all data and a "regular" nix store, we
   want end-to-end performance of the check to be faster than 15 seconds
   (if no big downloads are needed, only a small sync)
-
-- improve NVD parsing performance, probably through caching an
-  intermediate format
-
 
 - provide a custom NVD mirror within the dc to reduce bandwith and latency
   to check the meta files for updates?
