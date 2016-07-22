@@ -23,7 +23,7 @@ class NVD(object):
     """
 
     source = 'http://static.nvd.nist.gov/feeds/xml/cve/nvdcve-2.0-{}.xml.gz'
-    download_path = '/tmp/nvd/'
+    download_path = os.path.expanduser('~/.cache/vulnix')
 
     # XXX official databases start at 2002. Once we do caching of the parsing
     # of the XML files into something faster, we should include the old data.
