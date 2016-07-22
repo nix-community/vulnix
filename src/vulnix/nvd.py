@@ -23,10 +23,8 @@ class NVD(object):
     """
 
     source = 'http://static.nvd.nist.gov/feeds/xml/cve/nvdcve-2.0-{}.xml.gz'
-    download_path = os.path.expanduser('~/.cache/vulnix')
+    download_path = os.path.expanduser('~/.cache/vulnix/')
 
-    # XXX official databases start at 2002. Once we do caching of the parsing
-    # of the XML files into something faster, we should include the old data.
     earliest = 2002
     updates = 'Modified'
 
@@ -63,7 +61,6 @@ class NVD(object):
                         self.cves[vx.cve_id] = vx
 
     def parse_file(self, filename):
-        print(filename)
         cached_vx = []
         logger.debug("Parsing {}".format(filename))
         tree = ET.parse(filename)
