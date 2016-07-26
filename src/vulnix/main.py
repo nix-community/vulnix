@@ -121,6 +121,9 @@ def populate_store(gc_roots, system, user, paths):
               help='Scan the current user environment.')
 @click.option('-w', '--whitelist', multiple=True, type=click.File(),
               help='Add another whiltelist YAML file to declare exceptions.')
+@click.option('-m', '--mirror',
+              help='Use another mirror for downloading the nvd files. '
+              'Default: {}'.format(NVD.mirror))
 @click.option('--default-whitelist/--no-default-whitelist', default=True,
               help='Load built-in base whitelist from "{}". Additional '
               'whitelist files can be specified using the "-w" option. '
@@ -132,7 +135,7 @@ def populate_store(gc_roots, system, user, paths):
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, user, path):
+         gc_roots, system, user, path, mirror):
     """Scans nix store paths for derivations with security vulnerabilities."""
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -157,7 +160,10 @@ def main(debug, verbose, whitelist, default_whitelist,
 
     _log.debug('loading NVD data')
     with Timer() as t:
-        nvd = NVD()
+        if mirror:
+            nvd = NVD(mirror=mirror)
+        else:
+            nvd = NVD()
         nvd.update()
         nvd.parse()
     _log.debug('NVD load time: %f', t.interval)

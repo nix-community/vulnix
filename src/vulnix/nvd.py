@@ -3,11 +3,11 @@ import glob
 import gzip
 import logging
 import os.path
+import os
 import pickle
 import requests
 import shutil
 import xml.etree.ElementTree as ET
-
 
 NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
       'vuln': 'http://scap.nist.gov/schema/vulnerability/0.4'}
@@ -22,14 +22,19 @@ class NVD(object):
 
     """
 
-    source = 'http://static.nvd.nist.gov/feeds/xml/cve/nvdcve-2.0-{}.xml.gz'
+    mirror = 'http://static.nvd.nist.gov/feeds/xml/cve/'
+    file = 'nvdcve-2.0-{}.xml.gz'
     download_path = os.path.expanduser('~/.cache/vulnix/')
 
-    earliest = 2002
+    earliest = datetime.datetime.today().year - 10  # last ten years
     updates = 'Modified'
 
-    def __init__(self):
+    def __init__(self, mirror=None):
         self.cves = {}
+        if mirror:
+            self.mirror = mirror
+
+        self.source = self.mirror + self.file
 
     def update(self):
         if not os.path.exists(self.download_path):
@@ -38,8 +43,12 @@ class NVD(object):
         years = list(range(self.earliest, current_year + 1)) + [self.updates]
         for year in years:
             target = self.download_path + '{}.xml'.format(year)
-            if os.path.exists(target):
-                continue
+            if os.path.exists(target + '.cached'):
+                # todo: improve on stupid re-downloading current ad Modified
+                if year == current_year or year == self.updates:
+                    pass
+                else:
+                    continue
             logger.info('Updating {}'.format(year))
             r = requests.get(self.source.format(year))
             r.raise_for_status()
@@ -49,6 +58,8 @@ class NVD(object):
             with gzip.open(target + '.gz', 'rb') as f_in:
                 with open(target, 'wb') as f_out:
                     shutil.copyfileobj(f_in, f_out)
+            for file in glob.glob(self.download_path + '*.gz'):
+                os.remove(file)
 
     def parse(self):
         for source in glob.glob(self.download_path + '*.xml'):
