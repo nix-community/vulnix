@@ -1,4 +1,4 @@
-"""Usage: vulnix {--system | --user | PATH [...]}
+"""Usage: vulnix {--system | PATH [...]}
 
 vulnix is a tool that scan the NixOS store for packages with known
 security issues. There are three main modes of operation:
@@ -7,11 +7,6 @@ security issues. There are three main modes of operation:
 * Is my NixOS system installation affected?
 
 Invoke:  vulnix --system
-
-
-* Is my user environment (~/.nix-profile) affected?
-
-Invoke:  vulnix --user
 
 
 * Is my project affected?
@@ -27,7 +22,6 @@ from .nvd import NVD
 from .whitelist import WhiteList
 import click
 import logging
-import os.path as p
 import pkg_resources
 import subprocess
 import sys
@@ -96,7 +90,7 @@ def output(affected_derivations, verbosity):
     return max(status)
 
 
-def populate_store(gc_roots, system, user, paths):
+def populate_store(gc_roots, system, paths):
     """Load derivations from nix store depending on cmdline invocation."""
     store = Store()
     if gc_roots:
@@ -104,8 +98,6 @@ def populate_store(gc_roots, system, user, paths):
     if system:
         store.add_path('/nix/var/nix/current-system')
         store.add_path('/nix/var/nix/booted-system')
-    if user:
-        store.add_path(p.expanduser('~/.nix-profile/pkgs'))
     if paths:
         for path in paths:
             store.add_path(path)
@@ -117,8 +109,6 @@ def populate_store(gc_roots, system, user, paths):
               help='Scan all active GC roots (including old ones)')
 @click.option('-S', '--system', is_flag=True,
               help='Scan both the booted system and the current system')
-@click.option('-U', '--user', is_flag=True,
-              help='Scan the current user environment.')
 @click.option('-w', '--whitelist', multiple=True, type=click.File(),
               help='Add another whiltelist YAML file to declare exceptions.')
 @click.option('-m', '--mirror',
@@ -135,7 +125,7 @@ def populate_store(gc_roots, system, user, paths):
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, user, path, mirror):
+         gc_roots, system, path, mirror):
     """Scans nix store paths for derivations with security vulnerabilities."""
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -146,14 +136,14 @@ def main(debug, verbose, whitelist, default_whitelist,
         else:
             logging.basicConfig(level=logging.WARNING)
 
-    if not (gc_roots or system or user or path):
+    if not (gc_roots or system or path):
         howto()
         sys.exit(3)
 
     _log.debug('loading derivations')
     with Timer() as t:
         try:
-            store = populate_store(gc_roots, system, user, path)
+            store = populate_store(gc_roots, system, path)
         except (subprocess.CalledProcessError, RuntimeError) as e:
             _log.exception(e)
     _log.debug('store load time: %f', t.interval)
