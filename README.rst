@@ -25,7 +25,7 @@ Example output:
     libxml2-2.9.3
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
 
-Usage::
+Usage:
 
 ::
 
