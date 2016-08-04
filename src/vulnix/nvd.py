@@ -7,6 +7,7 @@ import os
 import pickle
 import requests
 import shutil
+import time
 import xml.etree.ElementTree as ET
 
 NS = {'': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
@@ -26,7 +27,7 @@ class NVD(object):
     file = 'nvdcve-2.0-{}.xml.gz'
     download_path = os.path.expanduser('~/.cache/vulnix/')
 
-    earliest = datetime.datetime.today().year - 10  # last ten years
+    earliest = datetime.datetime.today().year - 5  # last five years
     updates = 'Modified'
 
     def __init__(self, mirror=None):
@@ -43,11 +44,18 @@ class NVD(object):
         years = list(range(self.earliest, current_year + 1)) + [self.updates]
         for year in years:
             target = self.download_path + '{}.xml'.format(year)
+            # don't download it again if archive exists
             if os.path.exists(target + '.cached'):
-                # todo: improve on stupid re-downloading current ad Modified
-                if year == current_year or year == self.updates:
+                # XXX except for current year and modified
+                # current update regime by NIST is about eight days
+                if year == current_year and \
+                        self._isolder(target + '.cached', 8):
+                    pass
+                elif year == self.updates and \
+                        self._isolder(target + '.cached', 8):
                     pass
                 else:
+                    logger.info('{} is up-to-date.'.format(year))
                     continue
             logger.info('Updating {}'.format(year))
             r = requests.get(self.source.format(year))
@@ -55,21 +63,39 @@ class NVD(object):
             with open(target + '.gz', 'wb') as fd:
                 for chunk in r.iter_content(1024**2):
                     fd.write(chunk)
-            with gzip.open(target + '.gz', 'rb') as f_in:
-                with open(target, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            for file in glob.glob(self.download_path + '*.gz'):
-                os.remove(file)
+
+    def _isolder(self, file, days):
+        if os.path.getmtime(file) < time.time() - days * 24 * 3600:
+            return True
+        else:
+            return False
+
+    def _clean(self):
+        for file in glob.glob(self.download_path + '*.xml'):
+            os.remove(file)
+            os.remove(file + '.gz')
+
+    def _unpack(self):
+        for archive in glob.glob(self.download_path + '*.xml.gz'):
+            with gzip.open(archive, 'rb') as f_in:
+                    with open(archive.strip('.gz'), 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
 
     def parse(self):
-        for source in glob.glob(self.download_path + '*.xml'):
+        self._unpack()
+
+        for source in glob.glob(self.download_path + '*.cached'):
             # looking for cached vulnerability objects
-            if not os.path.exists(source + '.cached'):
-                self.parse_file(source)
-            else:
-                with open(source + '.cached', 'rb') as fobj:
+            logger.info(source)
+            if os.path.exists(source):
+                logging.debug('Using cached XML trees')
+                with open(source, 'rb') as fobj:
                     for vx in pickle.load(fobj):
                         self.cves[vx.cve_id] = vx
+            else:
+                self.parse_file(source.strip('.cached') + '.xml')
+
+        self._clean()
 
     def parse_file(self, filename):
         cached_vx = []

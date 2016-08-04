@@ -96,8 +96,8 @@ def populate_store(gc_roots, system, paths):
     if gc_roots:
         store.add_gc_roots()
     if system:
-        store.add_path('/nix/var/nix/current-system')
-        store.add_path('/nix/var/nix/booted-system')
+        store.add_path('/nix/var/nix/gcroots/current-system')
+        store.add_path('/nix/var/nix/gcroots/booted-system')
     if paths:
         for path in paths:
             store.add_path(path)
