@@ -8,3 +8,5 @@
   whitelist. #4
 
 - Fully repeatale install using default.nix. Thanks to Rok Garbas. #4
+
+- Cache pre-parsed NVD files for improved scanning speed. #2
