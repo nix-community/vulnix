@@ -25,17 +25,19 @@ class NVD(object):
 
     mirror = 'http://static.nvd.nist.gov/feeds/xml/cve/'
     file = 'nvdcve-2.0-{}.xml.gz'
-    download_path = os.path.expanduser('~/.cache/vulnix/')
 
     earliest = datetime.datetime.today().year - 5  # last five years
     updates = 'Modified'
 
-    def __init__(self, mirror=None):
+    def __init__(self, mirror=None, cache_dir=None):
         self.cves = {}
         if mirror:
             self.mirror = mirror
+        if not cache_dir:
+            cache_dir = '~/.cache/vulnix'
 
         self.source = self.mirror + self.file
+        self.download_path = os.path.expanduser(cache_dir) + '/'
 
     def update(self):
         if not os.path.exists(self.download_path):

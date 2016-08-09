@@ -122,10 +122,12 @@ def populate_store(gc_roots, system, paths):
               help='Show debug information.')
 @click.option('-v', '--verbose', count=True,
               help='Increase output verbosity.')
+@click.option('-c', '--cache-dir', default='~/.cache/vulnix',
+              help='Alter the default cache directory')
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, path, mirror):
+         gc_roots, system, path, mirror, cache_dir):
     """Scans nix store paths for derivations with security vulnerabilities."""
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -151,9 +153,9 @@ def main(debug, verbose, whitelist, default_whitelist,
     _log.debug('loading NVD data')
     with Timer() as t:
         if mirror:
-            nvd = NVD(mirror=mirror)
+            nvd = NVD(mirror=mirror, cache_dir=cache_dir)
         else:
-            nvd = NVD()
+            nvd = NVD(cache_dir=cache_dir)
         nvd.update()
         nvd.parse()
     _log.debug('NVD load time: %f', t.interval)
