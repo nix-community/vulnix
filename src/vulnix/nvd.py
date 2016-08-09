@@ -84,16 +84,14 @@ class NVD(object):
     def parse(self):
         self._unpack()
 
-        for source in glob.glob(self.download_path + '*.cached'):
-            # looking for cached vulnerability objects
-            logger.info(source)
+        for source in glob.glob(self.download_path + '*.xml'):
+            # looking for non-cached vulnerability objects
             if os.path.exists(source):
-                logging.debug('Using cached XML trees')
-                with open(source, 'rb') as fobj:
-                    for vx in pickle.load(fobj):
-                        self.cves[vx.cve_id] = vx
-            else:
-                self.parse_file(source.strip('.cached') + '.xml')
+                self.parse_file(source)
+        for cached in glob.glob(self.download_path + '*.cached'):
+            with open(cached, 'rb') as fobj:
+                for vx in pickle.load(fobj):
+                    self.cves[vx.cve_id] = vx
 
         self._clean()
 
