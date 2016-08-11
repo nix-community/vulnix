@@ -2,7 +2,7 @@
 # See more at: https://github.com/garbas/pypi2nix
 #
 # COMMAND:
-#   pypi2nix -V 3.5 -e . -e flake8 -e pytest -e pytest-cache -e pytest-capturelog -e pytest-codecheckers -e pytest-timeout -e pytest-cov -e pytest-runner -e setuptools-scm
+#   pypi2nix -V 3.5 -e . -e flake8 -e pytest -e pytest-capturelog -e pytest-codecheckers -e pytest-timeout -e pytest-cov -e pytest-runner -e setuptools-scm
 #
 
 { pkgs ? import <nixpkgs> {}

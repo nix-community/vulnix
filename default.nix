@@ -10,7 +10,6 @@ in python.mkDerivation {
   buildInputs = [
     python.pkgs."flake8"
     python.pkgs."pytest"
-    python.pkgs."pytest-cache"
     python.pkgs."pytest-capturelog"
     python.pkgs."pytest-codecheckers"
     python.pkgs."pytest-cov"

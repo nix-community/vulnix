@@ -1,7 +1,7 @@
 # generated using pypi2nix tool (version: 1.4.0dev)
 #
 # COMMAND:
-#   pypi2nix -V 3.5 -e . -e flake8 -e pytest -e pytest-cache -e pytest-capturelog -e pytest-codecheckers -e pytest-timeout -e pytest-cov -e pytest-runner -e setuptools-scm
+#   pypi2nix -V 3.5 -e . -e flake8 -e pytest -e pytest-capturelog -e pytest-codecheckers -e pytest-timeout -e pytest-cov -e pytest-runner -e setuptools-scm
 #
 
 { pkgs, python, commonBuildInputs ? [], commonDoCheck ? false }:
@@ -258,28 +258,6 @@ self: {
       homepage = "";
       license = "MIT license";
       description = "pytest: simple powerful testing with Python";
-    };
-    passthru.top_level = false;
-  };
-
-
-
-  "pytest-cache" = python.mkDerivation {
-    name = "pytest-cache-1.0";
-    src = pkgs.fetchurl {
-      url = "https://pypi.python.org/packages/d1/15/082fd0428aab33d2bafa014f3beb241830427ba803a8912a5aaeaf3a5663/pytest-cache-1.0.tar.gz";
-      sha256= "be7468edd4d3d83f1e844959fd6e3fd28e77a481440a7118d430130ea31b07a9";
-    };
-    doCheck = commonDoCheck;
-    buildInputs = commonBuildInputs;
-    propagatedBuildInputs = [
-      self."execnet"
-      self."pytest"
-    ];
-    meta = with pkgs.stdenv.lib; {
-      homepage = "";
-      license = "";
-      description = "pytest plugin with mechanisms for caching across test runs";
     };
     passthru.top_level = false;
   };
