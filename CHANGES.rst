@@ -1,4 +1,4 @@
-0.1 (unreleased)
+1.1 (2016-08-11)
 ================
 
 - Scans the whole system (NixOS only), the current user environment, or a
