@@ -1,1 +1,3 @@
 include *.rst
+include *.json
+recursive-include src *.py *.yaml

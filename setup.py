@@ -47,7 +47,6 @@ Programming Language :: Python :: 3 :: Only
     long_description='\n\n'.join(long_description),
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    package_data={'': ['default_whitelist.yaml']},
     include_package_data=True,
     zip_safe=False
 )

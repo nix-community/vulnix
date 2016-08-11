@@ -13,5 +13,6 @@ pip-selfcheck.json
 pyvenv.cfg
 /report.xml
 /result
+/result-2
 *.sw?
 /tags
