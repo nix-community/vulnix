@@ -8,12 +8,9 @@ listed in the NVD.
 It implements a CLI utility to inspect the current status and a
 monitoring integration for Sensu.
 
-Example output:
-
-::
+Example output::
 
     Security issues for sqlite, libxml2, ... (and 10 more)
-
 
     sqlite-2.9.3 (inprogress)
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-2073
@@ -25,12 +22,11 @@ Example output:
     libxml2-2.9.3
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
 
-Usage:
-
-::
+Usage::
 
     $ nix-build
     $ ./result/bin/vulnix
+
 
 Whitelist
 =========
@@ -100,8 +96,9 @@ element.
 |          |                | Nix          |
 +----------+----------------+--------------+
 
+
 Example
-~~~~~~~
+-------
 
 There is an `example <src/vulnix/default_whitelist.yaml>`__ for a
 working whitelist file as part of the unit tests.

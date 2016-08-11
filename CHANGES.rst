@@ -10,3 +10,11 @@
 - Fully repeatale install using default.nix. Thanks to Rok Garbas. #4
 
 - Cache pre-parsed NVD files for improved scanning speed. #2
+
+- Support multiple whitelists (repeat -w option). #3
+
+- Cache NVD files in `~/.cache/vulnix`. #7
+
+- Document whitelist file format. #10
+
+- Fix Nix build on macOS. #11
