@@ -1,7 +1,7 @@
-1.1.1dev0 (unreleased)
+1.1.1 (unreleased)
 ======================
 
-- Nothing changed yet.
+- added VERSION to MANIFEST.in
 
 
 1.1 (2016-08-11)

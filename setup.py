@@ -3,20 +3,19 @@
 """Scans a Nix store for derivations that are affected by vulnerabilities."""
 
 from setuptools import setup, find_packages
-import glob
 import os.path
 
 
 def project_path(*names):
     return os.path.join(os.path.dirname(__file__), *names)
 
-with open(project_path('VERSION'), encoding='ascii') as f:
+with open(project_path('VERSION')) as f:
     version = f.read().strip()
 
 long_description = []
 
 for rst in ['README.rst', 'CHANGES.rst']:
-    with open(project_path(rst), encoding='ascii') as f:
+    with open(project_path(rst)) as f:
         long_description.append(f.read())
 
 setup(
