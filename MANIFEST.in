@@ -1,3 +1,4 @@
+include *.nix
 include *.rst
 include *.json
 include VERSION

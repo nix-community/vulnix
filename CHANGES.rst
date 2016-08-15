@@ -1,7 +1,7 @@
-1.1.2 (unreleased)
+1.1.2 (2016-08-15)
 ==================
 
-- Nothing changed yet.
+- added nix expressions (Nix/NixOS) to MANIFEST.in
 
 
 1.1.1 (2016-08-12)
