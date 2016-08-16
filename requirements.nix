@@ -12,7 +12,7 @@ let
 
   inherit (pkgs.stdenv.lib) fix' extends inNixShell;
 
-  pythonPackages = pkgs.python35Packages;
+  pythonPackages = pkgs.python34Packages;
   commonBuildInputs = [];
   commonDoCheck = false;
 
