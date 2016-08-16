@@ -1,7 +1,7 @@
-1.1.3 (unreleased)
+1.1.3 (2016-08-16)
 ==================
 
-- Nothing changed yet.
+- pinned the Python version to 3.4 (Nix only)
 
 
 1.1.2 (2016-08-15)
