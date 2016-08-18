@@ -34,7 +34,7 @@ setup(
     author='Maksim Bronsky',
     author_email='mb@flyingcircus.io',
     license='BSD (2-clause)',
-    url='https://bitbucket.org/flyingcircus/vulnix',
+    url='https://github.com/flyingcircusio/vulnix',
     keywords='security',
     classifiers="""\
 License :: OSI Approved :: BSD License

@@ -4,8 +4,11 @@
 let
   python = import ./requirements.nix { inherit pkgs; };
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION);
-in python.mkDerivation {
+in
+python.mkDerivation {
+  inherit version;
   name = "vulnix-${version}";
+
   src = ./.;
   buildInputs = [
     python.pkgs."flake8"
@@ -16,14 +19,21 @@ in python.mkDerivation {
     python.pkgs."pytest-timeout"
   ];
    propagatedBuildInputs = [
+    pkgs.nix
     python.pkgs."click"
     python.pkgs."colorama"
     python.pkgs."PyYAML"
     python.pkgs."requests"
   ];
   checkPhase = ''
-    runHook preCheck
+    export PYTHONPATH=src:$PYTHONPATH
     py.test
-    runHook postCheck
   '';
+  dontStrip = true;
+
+  meta = {
+    description = "NixOS vulnerability scanner";
+    homepage = https://github.com/flyingcircusio/vulnix;
+    license = pkgs.lib.licenses.bsd2;
+  };
 }
