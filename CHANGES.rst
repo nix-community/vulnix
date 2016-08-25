@@ -1,4 +1,4 @@
-1.1.4 (unreleased)
+1.1.4 (2016-08-25)
 ==================
 
 - Add `src` to PYTHONPATH so that tests run also on older NixOS versions
