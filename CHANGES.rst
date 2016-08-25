@@ -1,7 +1,10 @@
 1.1.4 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add `src` to PYTHONPATH so that tests run also on older NixOS versions
+  (tested on 15.09).
+- Correct URL, add metadata.
+- Add nix to propagatedBuildInputs, as vulnix calls `nix-store` at runtime.
 
 
 1.1.3 (2016-08-16)
@@ -26,10 +29,10 @@
 ================
 
 - Scans the whole system (NixOS only), the current user environment, or a
-  project-specific path (e.g., ./result). #1
+project-specific path (e.g., ./result). #1
 
 - Allow to specify site-specific whitelists in addition to the builtin default
-  whitelist. #4
+whitelist. #4
 
 - Fully repeatale install using default.nix. Thanks to Rok Garbas. #4
 
