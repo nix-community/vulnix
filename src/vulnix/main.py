@@ -25,6 +25,7 @@ import logging
 import pkg_resources
 import sys
 import time
+import urllib.request
 
 DEFAULT_WHITELIST = pkg_resources.resource_filename(
     __name__, 'default_whitelist.yaml')
@@ -110,13 +111,35 @@ def populate_store(gc_roots, system, paths):
     return store
 
 
+class Ressource:
+
+    def __init__(self, url):
+        self.url = url
+        if self.url.startswith('http'):
+            # http ressource
+            try:
+                self.fp = urllib.request.urlopen(url)
+            except:
+                _log.debug("Couldn't open: {}".format(self.url))
+        else:
+            # local file ressource
+            self.fp = open(url)
+
+
+def open_ressource(ctx, param, value):
+    """returns fp for files or remote ressources"""
+    if value:
+        for v in value:
+            yield Ressource(v)
+
+
 @click.command('vulnix')
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones)')
 @click.option('-S', '--system', is_flag=True,
               help='Scan both the booted system and the current system')
-@click.option('-w', '--whitelist', multiple=True, type=click.File(),
-              help='Add another whiltelist YAML file to declare exceptions.')
+@click.option('-w', '--whitelist', multiple=True, callback=open_ressource,
+              help='Add another whitelist ressource to declare exceptions.')
 @click.option('-m', '--mirror',
               help='Use another mirror for downloading the nvd files. '
               'Default: {}'.format(NVD.mirror))
@@ -164,8 +187,12 @@ def main(debug, verbose, whitelist, default_whitelist,
         if default_whitelist:
             with open(DEFAULT_WHITELIST) as f:
                 wl.parse(f)
-        for fobj in whitelist:
-            wl.parse(fobj)
+        if whitelist:
+            for res in whitelist:
+                    try:
+                        wl.parse(res.fp)
+                    except:
+                        _log.debug("Couldn't parse: {}".format(res.url))
 
     affected = set()
     with Timer('Scan vulnerabilities'):
