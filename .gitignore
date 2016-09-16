@@ -16,3 +16,5 @@ pyvenv.cfg
 /result-2
 *.sw?
 /tags
+eggs
+include
