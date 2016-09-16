@@ -34,13 +34,20 @@ _log = logging.getLogger(__name__)
 
 
 class Timer:
+
+    def __init__(self, debugmsg):
+        self.debugmsg = debugmsg
+
     def __enter__(self):
+        _log.debug('Starting: ' + self.debugmsg)
         self.start = time.clock()
         return self
 
     def __exit__(self, *args):
         self.end = time.clock()
         self.interval = self.end - self.start
+        _log.debug('Finished: {} took {:.2f} seconds'.format(
+                   self.debugmsg, self.interval))
 
 
 def howto():
@@ -142,42 +149,32 @@ def main(debug, verbose, whitelist, default_whitelist,
         howto()
         sys.exit(3)
 
-    _log.debug('loading derivations')
-    with Timer() as t:
-        try:
-            store = populate_store(gc_roots, system, path)
-        except (subprocess.CalledProcessError, RuntimeError) as e:
-            _log.exception(e)
-    _log.debug('store load time: %f', t.interval)
+    with Timer('Load derivations'):
+        store = populate_store(gc_roots, system, path)
 
-    _log.debug('loading NVD data')
-    with Timer() as t:
+    with Timer('Load NVD data'):
         if mirror:
             nvd = NVD(mirror=mirror, cache_dir=cache_dir)
         else:
             nvd = NVD(cache_dir=cache_dir)
         nvd.update()
         nvd.parse()
-    _log.debug('NVD load time: %f', t.interval)
 
-    wl = WhiteList()
-    if default_whitelist:
-        with open(DEFAULT_WHITELIST) as f:
-            wl.parse(f)
-    for fobj in whitelist:
-        wl.parse(fobj)
+    with Timer('Load whitelist'):
+        wl = WhiteList()
+        if default_whitelist:
+            with open(DEFAULT_WHITELIST) as f:
+                wl.parse(f)
+        for fobj in whitelist:
+            wl.parse(fobj)
 
-    _log.debug('scanning')
     affected = set()
-    with Timer() as t:
-        for vuln in nvd:
-            for prod in vuln.affected_products:
-                for derivation in store.product_candidates.get(
-                        prod.product, []):
-                    derivation.check(vuln, wl)
-                    if derivation.is_affected:
-                        affected.add(derivation)
-    _log.debug('scan time: %f', t.interval)
+    with Timer('Scan vulnerabilities'):
+        for derivation in store.derivations.values():
+            with Timer('Scan {}'.format(derivation.name)):
+                derivation.check(nvd, wl)
+                if derivation.is_affected:
+                    affected.add(derivation)
 
     if affected:
         # sensu maps following return codes

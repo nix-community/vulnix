@@ -1,7 +1,7 @@
-import tempfile
 import logging
-import os
 import subprocess
+import sys
+import tempfile
 
 _log = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ def call(cmd):
             output = subprocess.check_output(cmd, stderr=capture)
         except subprocess.CalledProcessError:
             capture.seek(0)
-            os.fdopen(2, mode='wb').write(capture.read())
+            sys.stderr.write(capture.read().decode('ascii', errors='replace'))
             raise
     return output.decode()
 
@@ -99,16 +99,16 @@ class Derive(object):
             yield '-'.join(variation)
             variation.pop()
 
-    def check(self, vuln, whitelist):
-        if vuln in self.affected_by:
-            return
-        for affected_product in vuln.affected_products:
-            if not self.matches(vuln.cve_id, affected_product):
-                continue
-            if (vuln, affected_product, self) in whitelist:
-                continue
-            self.affected_by.add(vuln)
-            break
+    def check(self, nvd, whitelist):
+        for candidate in self.product_candidates:
+            for vuln in nvd.by_product_name.get(candidate, ()):
+                for affected_product in vuln.affected_products:
+                    if not self.matches(vuln.cve_id, affected_product):
+                        continue
+                    if (vuln, affected_product, self) in whitelist:
+                        continue
+                    self.affected_by.add(vuln)
+                    break
 
     def matches(self, cve_id, cpe):
         # Step 1: determine product name

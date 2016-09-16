@@ -39,6 +39,8 @@ class NVD(object):
         self.source = self.mirror + self.file
         self.download_path = os.path.expanduser(cache_dir) + '/'
 
+        self.by_product_name = {}
+
     def update(self):
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -94,6 +96,9 @@ class NVD(object):
             with open(cached, 'rb') as fobj:
                 for vx in pickle.load(fobj):
                     self.cves[vx.cve_id] = vx
+                    for p in vx.affected_products:
+                        p_vx = self.by_product_name.setdefault(p.product, set())
+                        p_vx.add(vx)
 
         self._clean()
 
