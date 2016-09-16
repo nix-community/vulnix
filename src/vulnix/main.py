@@ -23,7 +23,6 @@ from .whitelist import WhiteList
 import click
 import logging
 import pkg_resources
-import subprocess
 import sys
 import time
 

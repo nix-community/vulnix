@@ -97,7 +97,8 @@ class NVD(object):
                 for vx in pickle.load(fobj):
                     self.cves[vx.cve_id] = vx
                     for p in vx.affected_products:
-                        p_vx = self.by_product_name.setdefault(p.product, set())
+                        p_vx = self.by_product_name.setdefault(
+                            p.product, set())
                         p_vx.add(vx)
 
         self._clean()
