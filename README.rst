@@ -8,7 +8,9 @@ listed in the NVD.
 It implements a CLI utility to inspect the current status and a
 monitoring integration for Sensu.
 
-Example output::
+Example output:
+
+::
 
     Security issues for sqlite, libxml2, ... (and 10 more)
 
@@ -22,11 +24,12 @@ Example output::
     libxml2-2.9.3
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
 
-Usage::
+Usage:
+
+::
 
     $ nix-build
     $ ./result/bin/vulnix
-
 
 Whitelist
 =========
@@ -45,57 +48,50 @@ Syntax
 Every rule starts with the ``-`` and a new-line, declaring a list
 element.
 
-+----------+----------------+--------------+
-| Element  | Example value  | Description  |
-+==========+================+==============+
-| cve      | cve:           | Ignores all  |
-|          | CVE-2015-2503  | matches      |
-|          |                | which are    |
-|          |                | referred by  |
-|          |                | the CVE      |
-+----------+----------------+--------------+
-| comment  | comment:       | comments the |
-|          | microsoft      | rule         |
-|          | access,        |              |
-|          | accidently     |              |
-|          | matching the   |              |
-|          | 'access'       |              |
-|          | derivation     |              |
-+----------+----------------+--------------+
-| name     | name: libxslt  | refers to    |
-|          |                | the name     |
-|          |                | attribute of |
-|          |                | a package    |
-|          |                | derivation   |
-+----------+----------------+--------------+
-| version  | version: 2.0   | refers to    |
-|          |                | the name     |
-|          |                | attribute of |
-|          |                | a package    |
-|          |                | derivation   |
-+----------+----------------+--------------+
-| vendor   | microsoft      | refers to    |
-|          |                | the [NIST]   |
-|          |                | (https://nvd |
-|          |                | .nist.gov/cp |
-|          |                | e.cfm)       |
-|          |                | term of the  |
-|          |                | person or    |
-|          |                | organization |
-|          |                | which        |
-|          |                | created the  |
-|          |                | software     |
-+----------+----------------+--------------+
-| product  | access         | Like vendor  |
-|          |                | it's a term  |
-|          |                | coined by    |
-|          |                | NIST and is  |
-|          |                | an analogy   |
-|          |                | to what name |
-|          |                | means for    |
-|          |                | Nix          |
-+----------+----------------+--------------+
-
++--------------+--------------------+--------------------+
+| Element      | Example value      | Description        |
++==============+====================+====================+
+| cve          | cve: CVE-2015-2503 | Ignores all        |
+|              |                    | matches which are  |
+|              |                    | referred by the    |
+|              |                    | CVE                |
++--------------+--------------------+--------------------+
+| comment      | comment: microsoft | comments the rule  |
+|              | access, accidently |                    |
+|              | matching the       |                    |
+|              | 'access'           |                    |
+|              | derivation         |                    |
++--------------+--------------------+--------------------+
+| name         | name: libxslt      | refers to the name |
+|              |                    | attribute of a     |
+|              |                    | package derivation |
++--------------+--------------------+--------------------+
+| status       | status: inprogress | Marks the found    |
+|              |                    | vulnerabilty as    |
+|              |                    | being worked on.   |
+|              |                    | "\*" will be added |
+|              |                    | to the derivation  |
++--------------+--------------------+--------------------+
+| version      | version: 2.0       | refers to the name |
+|              |                    | attribute of a     |
+|              |                    | package derivation |
++--------------+--------------------+--------------------+
+| vendor       | microsoft          | refers to the      |
+|              |                    | [NIST]             |
+|              |                    | (https://nvd       |
+|              |                    | .nist.gov/cp       |
+|              |                    | e.cfm) term of the |
+|              |                    | person or          |
+|              |                    | organization which |
+|              |                    | created the        |
+|              |                    | software           |
++--------------+--------------------+--------------------+
+| product      | access             | Like vendor it's a |
+|              |                    | term coined by     |
+|              |                    | NIST and is an     |
+|              |                    | analogy to what    |
+|              |                    | name means for Nix |
++--------------+--------------------+--------------------+
 
 Example
 -------
