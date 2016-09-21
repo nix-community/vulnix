@@ -77,7 +77,8 @@ def output(affected_derivations, verbosity):
     click.secho(summary, fg='red')
 
     for derivation in derivations:
-        click.echo('\n{}\n{}\n'.format('=' * 72, derivation.name))
+        progress = '*' if derivation.status == 'inprogress' else ''
+        click.echo('\n{}\n{}{}\n'.format('=' * 72, derivation.name, progress))
         if verbosity >= 1:
             click.echo(derivation.store_path)
             if verbosity >= 2:
@@ -189,10 +190,7 @@ def main(debug, verbose, whitelist, default_whitelist,
                 wl.parse(f)
         if whitelist:
             for res in whitelist:
-                    try:
-                        wl.parse(res.fp)
-                    except:
-                        _log.debug("Couldn't parse: {}".format(res.url))
+                wl.parse(res.fp)
 
     affected = set()
     with Timer('Scan vulnerabilities'):
