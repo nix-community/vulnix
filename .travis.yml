@@ -3,21 +3,15 @@ language: nix
 script:
 - source /home/travis/.profile
 - if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then
-    nix-shell update.nix --pure;
+    nix-shell update.nix -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/nixos-unstable.tar.gz;
   fi
-- nix-shell update.nix --pure;
+- nix-shell update.nix -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/nixos-unstable.tar.gz;
 
 before_install:
 - openssl aes-256-cbc -K $encrypted_faf82d06eca9_key -iv $encrypted_faf82d06eca9_iv -in deploy-rsa.enc -out deploy-rsa -d
 - eval "$(ssh-agent -s)"
 - chmod 600 $TRAVIS_BUILD_DIR/deploy-rsa
 - ssh-add $TRAVIS_BUILD_DIR/deploy-rsa
-- source /home/travis/.profile
-- wget -c https://github.com/garbas/pypi2nix/archive/v1.5.0.tar.gz
-- tar xf v1.5.0.tar.gz
-- cd pypi2nix-1.5.0
-- nix-env -f release.nix -iA build."x86_64-linux"
-- cd ..
 
 after_success:
 - if [[ -n `git diff --exit-code` ]]; then
