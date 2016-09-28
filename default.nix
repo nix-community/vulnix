@@ -11,19 +11,19 @@ python.mkDerivation {
 
   src = ./.;
   buildInputs = [
-    python.pkgs."flake8"
-    python.pkgs."pytest"
-    python.pkgs."pytest-capturelog"
-    python.pkgs."pytest-codecheckers"
-    python.pkgs."pytest-cov"
-    python.pkgs."pytest-timeout"
+    python.packages."flake8"
+    python.packages."pytest"
+    python.packages."pytest-capturelog"
+    python.packages."pytest-codecheckers"
+    python.packages."pytest-cov"
+    python.packages."pytest-timeout"
   ];
    propagatedBuildInputs = [
     pkgs.nix
-    python.pkgs."click"
-    python.pkgs."colorama"
-    python.pkgs."PyYAML"
-    python.pkgs."requests"
+    python.packages."click"
+    python.packages."colorama"
+    python.packages."PyYAML"
+    python.packages."requests"
   ];
   checkPhase = ''
     export PYTHONPATH=src:$PYTHONPATH

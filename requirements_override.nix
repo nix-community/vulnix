@@ -10,9 +10,9 @@ self: super: {
     buildInputs = old.buildInputs ++ [ self."pytest-runner" ];
   });
 
-  "execnet" = python.overrideDerivation super."execnet" (old: {
-    buildInputs = old.buildInputs ++ [ self."setuptools-scm" ];
-  });
+    # "execnet" = python.overrideDerivation super."execnet" (old: {
+    #   buildInputs = old.buildInputs ++ [ self."setuptools-scm" ];
+    # });
 
   "pytest-runner" = python.overrideDerivation super."pytest-runner" (old: {
     buildInputs = old.buildInputs ++ [ self."setuptools-scm" ];
