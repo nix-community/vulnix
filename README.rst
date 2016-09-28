@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.org/flyingcircusio/vulnix.svg?branch=master
+    :target: https://travis-ci.org/flyingcircusio/vulnix
+    
 Nix(OS) vulnerability scanner
 =============================
 
