@@ -1,0 +1,27 @@
+language: nix
+
+script:
+- if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then
+    nix-shell update.nix --pure;
+  fi
+
+before_install:
+- openssl aes-256-cbc -K $encrypted_faf82d06eca9_key -iv $encrypted_faf82d06eca9_iv -in deploy-rsa.enc -out deploy-rsa -d
+- eval "$(ssh-agent -s)"
+- chmod 600 $TRAVIS_BUILD_DIR/deploy-rsa
+- ssh-add $TRAVIS_BUILD_DIR/deploy-rsa
+
+after_success:
+- if [[ -n `git diff --exit-code` ]]; then
+    git config user.name 'travis';
+    git config user.email 'travis@flyingcircus.io';
+    git status;
+    git --no-pager diff;
+    git stash;
+    git checkout -b result-$TRAVIS_BRANCH origin/$TRAVIS_BRANCH;
+    git pull;
+    git stash apply;
+    git add requirements*;
+    git commit -m "Travis update [skip ci]";
+    git push git@github.com:flyingcircusio/vulnix.git HEAD:$TRAVIS_BRANCH;
+  fi
