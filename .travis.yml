@@ -11,6 +11,7 @@ before_install:
 - eval "$(ssh-agent -s)"
 - chmod 600 $TRAVIS_BUILD_DIR/deploy-rsa
 - ssh-add $TRAVIS_BUILD_DIR/deploy-rsa
+- source /home/travis/.profile
 
 after_success:
 - if [[ -n `git diff --exit-code` ]]; then
