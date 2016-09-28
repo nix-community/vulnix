@@ -17,6 +17,7 @@ before_install:
 - tar xf v1.5.0.tar.gz
 - cd pypi2nix-1.5.0
 - nix-env -f release.nix -iA build."x86_64-linux"
+- cd ..
 
 after_success:
 - if [[ -n `git diff --exit-code` ]]; then
