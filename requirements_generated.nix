@@ -315,10 +315,10 @@ self: {
 
 
   "setuptools-scm" = python.mkDerivation {
-    name = "setuptools-scm-1.11.1";
+    name = "setuptools-scm-1.13.0";
     src = pkgs.fetchurl {
-      url = "https://pypi.python.org/packages/84/aa/c693b5d41da513fed3f0ee27f1bf02a303caa75bbdfa5c8cc233a1d778c4/setuptools_scm-1.11.1.tar.gz";
-      sha256 = "8c45f738a23410c5276b0ed9294af607f491e4260589f1eb90df8312e23819bf";
+      url = "https://pypi.python.org/packages/81/fb/16f8dd7d260edabe9d4c51a79200ac2de8ff04cfc9c609eb854dc332c8e4/setuptools_scm-1.13.0.tar.gz";
+      sha256 = "68fa540e443a74dad7481953d0be7ee5fdbd78f84f131e550929748824708059";
     };
     doCheck = commonDoCheck;
     buildInputs = commonBuildInputs;
