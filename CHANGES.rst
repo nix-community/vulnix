@@ -1,10 +1,16 @@
 Changes
 =======
 
-1.1.5 (unreleased)
+1.1.5 (2016-10-13)
 ------------------
 
-- Nothing changed yet.
+- Keep a reverse index: product name -> vulnerabilities to speed up scan process.
+- Mark 'in progress' vulnerabilities with an asterisk
+- The '-w' switch accepts URLs, too
+- vulnix no longer scans /var/nix/var/gcroots/booted-system
+- only cached files are saved (archives are to be deleted)
+- added travis build: runs periodically against nixpkgs/master and updates
+  requirements*.nix files in case of success
 
 
 1.1.4 (2016-08-25)
