@@ -1,8 +1,8 @@
-.. image:: https://travis-ci.org/flyingcircusio/vulnix.svg?branch=master
-    :target: https://travis-ci.org/flyingcircusio/vulnix
-    
 Nix(OS) vulnerability scanner
 =============================
+
+.. image:: https://travis-ci.org/flyingcircusio/vulnix.svg?branch=master
+    :target: https://travis-ci.org/flyingcircusio/vulnix
 
 This is a utility that validates a Nix store for any packages that are
 reachable from live paths and likely to be affected by vulnerabilities

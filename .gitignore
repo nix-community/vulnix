@@ -1,3 +1,4 @@
+
 bin/
 /.cache/
 /.coverage
@@ -19,12 +20,8 @@ pyvenv.cfg
 eggs
 include
 deploy-rsa
-requirements.nix
-requirements_generated.nix
-requirements_frozen.txt
 *.sublime-project
 *.sublime-workspace
 .floo
 .flooignore
 /Library/Caches
-
