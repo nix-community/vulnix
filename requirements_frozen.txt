@@ -14,4 +14,4 @@ pytest-runner==2.9
 pytest-timeout==1.0.0
 PyYAML==3.11
 requests==2.10.0
-setuptools-scm==1.13.0
+setuptools-scm==1.15.0
