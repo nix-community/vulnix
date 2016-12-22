@@ -1,7 +1,9 @@
-{ supportedSystems ? [ "x86_64-linux" ] }:
+{ supportedSystems ? [ "x86_64-linux" ],
+   }:
 
 let
-  pkgs = import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixos/16.09/nixos-16.09.1324.1dd0fb6/nixexprs.tar.xz") {};
+  # I would love to pin the version here, but Hydra wants to pass it in
+  pkgs = pkgs import <nixpkgs> {};
 
   buildFor = systems:
     builtins.listToAttrs (map (system:
