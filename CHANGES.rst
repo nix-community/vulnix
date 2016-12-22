@@ -1,11 +1,20 @@
 Changes
 =======
 
-1.1.6 (unreleased)
+1.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Improve CPU and memory usage: refactored the way we fetch, parse, store and
+  process data. We now leverage ZODB as the storage for parsed data that is 
+  efficient to look up.
 
+  On our test systems this caused memory usage to drop from > 1GiB to ~70MiB
+  and a pure evaluation of existing data to around 7-10 seconds.
+
+  This change requires a re-retrieval of all historic sources.
+
+- Improve unit test coverage with at least a smoke test for our new fetching
+  procedure.
 
 1.1.5 (2016-10-13)
 ------------------

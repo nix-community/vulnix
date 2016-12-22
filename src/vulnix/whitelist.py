@@ -36,7 +36,7 @@ class WhiteListRule(object):
             return
         if self.name and derivation.simple_name != self.name:
             return
-        if self.version and cpe.version != self.version:
+        if self.version and self.version not in cpe.versions:
             return
         if self.vendor and cpe.vendor != self.vendor:
             return

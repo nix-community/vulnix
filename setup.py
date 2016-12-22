@@ -22,6 +22,8 @@ setup(
     name='vulnix',
     version=version,
     install_requires=[
+        'ZODB',
+        'lxml',
         'click',
         'colorama',
         'pyyaml',

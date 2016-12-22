@@ -101,7 +101,7 @@ class Derive(object):
 
     def check(self, nvd, whitelist):
         for candidate in self.product_candidates:
-            for vuln in nvd.by_product_name.get(candidate, ()):
+            for vuln in nvd.by_product_name(candidate):
                 for affected_product in vuln.affected_products:
                     if not self.matches(vuln.cve_id, affected_product):
                         continue
@@ -117,7 +117,7 @@ class Derive(object):
             version = None
         elif self.name.startswith(prefix):
             version = self.name.replace(prefix, '', 1)
-            if version != cpe.version:
+            if version not in cpe.versions:
                 return False
         else:
             # This product doesn't match at all.

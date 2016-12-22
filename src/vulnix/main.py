@@ -17,11 +17,15 @@ Invoke after nix-build:  vulnix ./result
 See vulnix --help for a full list of options.
 """
 
+
 from .nix import Store
-from .nvd import NVD
+from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
 from .whitelist import WhiteList
 import click
+import glob
 import logging
+import os
+import os.path
 import pkg_resources
 import sys
 import time
@@ -142,8 +146,9 @@ def open_ressource(ctx, param, value):
 @click.option('-w', '--whitelist', multiple=True, callback=open_ressource,
               help='Add another whitelist ressource to declare exceptions.')
 @click.option('-m', '--mirror',
-              help='Use another mirror for downloading the nvd files. '
-              'Default: {}'.format(NVD.mirror))
+              help='Mirror to fetch NVD archives from. Default: {}'.format(
+                  DEFAULT_MIRROR),
+              default=DEFAULT_MIRROR)
 @click.option('--default-whitelist/--no-default-whitelist', default=True,
               help='Load built-in base whitelist from "{}". Additional '
               'whitelist files can be specified using the "-w" option. '
@@ -152,8 +157,9 @@ def open_ressource(ctx, param, value):
               help='Show debug information.')
 @click.option('-v', '--verbose', count=True,
               help='Increase output verbosity.')
-@click.option('-c', '--cache-dir', default='~/.cache/vulnix',
-              help='Alter the default cache directory')
+@click.option('-c', '--cache-dir', default=DEFAULT_CACHE_DIR,
+              help='Cache directory to store parsed archive data. '
+              'Default: {}'.format(DEFAULT_CACHE_DIR))
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
@@ -172,39 +178,49 @@ def main(debug, verbose, whitelist, default_whitelist,
         howto()
         sys.exit(3)
 
-    with Timer('Load derivations'):
-        store = populate_store(gc_roots, system, path)
+    cache_dir = os.path.expanduser(cache_dir)
 
-    with Timer('Load NVD data'):
-        if mirror:
-            nvd = NVD(mirror=mirror, cache_dir=cache_dir)
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+
+    # Clean up old-style data
+    for file in glob.glob(cache_dir+'/*.xml*'):
+        os.unlink(file)
+
+    nvd = NVD(mirror=mirror, cache_dir=cache_dir)
+    with nvd:
+        with Timer('Load NVD data'):
+            nvd.update()
+
+        with Timer('Load whitelist'):
+            wl = WhiteList()
+            if default_whitelist:
+                with open(DEFAULT_WHITELIST) as f:
+                    wl.parse(f)
+            if whitelist:
+                for res in whitelist:
+                    wl.parse(res.fp)
+
+        with Timer('Load derivations'):
+            store = populate_store(gc_roots, system, path)
+
+        affected = set()
+        with Timer('Scan vulnerabilities'):
+            for derivation in store.derivations.values():
+                with Timer('Scan {}'.format(derivation.name)):
+                    derivation.check(nvd, wl)
+                    if derivation.is_affected:
+                        affected.add(derivation)
+
+        returncode = 0
+        if affected:
+            # sensu maps following return codes
+            # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
+            returncode = output(affected, verbose)
         else:
-            nvd = NVD(cache_dir=cache_dir)
-        nvd.update()
-        nvd.parse()
+            click.secho('vulnix: no vulnerabilities detected', fg='green')
+            _log.debug('returncode %d', returncode)
 
-    with Timer('Load whitelist'):
-        wl = WhiteList()
-        if default_whitelist:
-            with open(DEFAULT_WHITELIST) as f:
-                wl.parse(f)
-        if whitelist:
-            for res in whitelist:
-                wl.parse(res.fp)
-
-    affected = set()
-    with Timer('Scan vulnerabilities'):
-        for derivation in store.derivations.values():
-            with Timer('Scan {}'.format(derivation.name)):
-                derivation.check(nvd, wl)
-                if derivation.is_affected:
-                    affected.add(derivation)
-
-    if affected:
-        # sensu maps following return codes
-        # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-        returncode = output(affected, verbose)
-        _log.debug('returncode %d', returncode)
-        sys.exit(returncode)
-    else:
-        click.secho('vulnix: no vulnerabilities detected', fg='green')
+    # This needs to happen outside the NVD context: otherwise ZODB will abort
+    # the transaction and we will keep updating over and over.
+    sys.exit(returncode)
