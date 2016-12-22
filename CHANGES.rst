@@ -1,8 +1,8 @@
 Changes
 =======
 
-1.2 (unreleased)
-------------------
+1.2 (2016-12-22)
+----------------
 
 - Improve CPU and memory usage: refactored the way we fetch, parse, store and
   process data. We now leverage ZODB as the storage for parsed data that is 
