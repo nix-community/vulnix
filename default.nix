@@ -1,4 +1,4 @@
-{ pkgs ? import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs-channels/archive/453086a15fc0db0c2bc17d98350b0632551cb0fe.tar.gz") {}
+{ pkgs ? import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixos/16.09/nixos-16.09.1324.1dd0fb6/nixexprs.tar.xz") {}
 }:
 
 let
@@ -24,6 +24,8 @@ python.mkDerivation {
     python.packages."colorama"
     python.packages."PyYAML"
     python.packages."requests"
+    python.packages."lxml"
+    python.packages."ZODB"
   ];
   checkPhase = ''
     export PYTHONPATH=src:$PYTHONPATH

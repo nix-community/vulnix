@@ -1,12 +1,35 @@
 # generated using pypi2nix tool (version: 1.5.0)
 #
 # COMMAND:
-#   pypi2nix -V 3.5 -b buildout.cfg -e pytest-runner -e setuptools-scm -v
+#   pypi2nix -V 3.4 -b buildout.cfg -E libxml2 libxslt -e pytest-runner -e setuptools-scm -v
 #
 
 { pkgs, python, commonBuildInputs ? [], commonDoCheck ? false }:
 
 self: {
+
+  "BTrees" = python.mkDerivation {
+    name = "BTrees-4.3.1";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/24/76/cd6f225f2180c22af5cdb6656f51aec5fca45e45bdc4fa75c0a32f161a61/BTrees-4.3.1.tar.gz";
+      sha256 = "2565b7d35260dfc6b1e2934470fd0a2f9326c58c535a2b4cb396289d1c195a95";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [
+      self."coverage"
+      self."persistent"
+      self."transaction"
+      self."zope.interface"
+    ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Scalable persistent object containers";
+    };
+  };
+
+
 
   "PyYAML" = python.mkDerivation {
     name = "PyYAML-3.11";
@@ -21,6 +44,51 @@ self: {
       homepage = "";
       license = licenses.mit;
       description = "YAML parser and emitter for Python";
+    };
+  };
+
+
+
+  "ZConfig" = python.mkDerivation {
+    name = "ZConfig-3.1.0";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/52/b3/a96d62711a26d8cfbe546519975dc9ed54d2eb50b3238d2e6de045764796/ZConfig-3.1.0.tar.gz";
+      sha256 = "c21fa3a073a56925a8098036d46717392994a92cffea1b3cda3176b70c0a842e";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [ ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Structured Configuration Library";
+    };
+  };
+
+
+
+  "ZODB" = python.mkDerivation {
+    name = "ZODB-5.1.1";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/08/67/62d42c704edd64bcecddc29442a70535ebc7af46e232a5efa9fc572953f0/ZODB-5.1.1.tar.gz";
+      sha256 = "b0bbe6dfe60e2bdcf842a87abcc53b5cd15ad88ae2824c0c526cbb01ca0b90e5";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [
+      self."BTrees"
+      self."ZConfig"
+      self."persistent"
+      self."six"
+      self."transaction"
+      self."zc.lockfile"
+      self."zodbpickle"
+      self."zope.interface"
+    ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Zope Object Database: object database and persistence";
     };
   };
 
@@ -102,6 +170,24 @@ self: {
 
 
 
+  "lxml" = python.mkDerivation {
+    name = "lxml-3.7.0";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/14/51/61462e59ab58575fe0d679ab2d31ec73cd49b26182c6ece3d9379faccfd7/lxml-3.7.0.tar.gz";
+      sha256 = "9c62eb2a1862e1ae285d7e7e3b7dc8772d387b19258086afcec143c6b7b8a5c9";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [ ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.bsdOriginal;
+      description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API.";
+    };
+  };
+
+
+
   "mccabe" = python.mkDerivation {
     name = "mccabe-0.4.0";
     src = pkgs.fetchurl {
@@ -133,6 +219,27 @@ self: {
       homepage = "";
       license = licenses.mit;
       description = "Python style guide checker";
+    };
+  };
+
+
+
+  "persistent" = python.mkDerivation {
+    name = "persistent-4.2.2";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/3d/71/3302512282b606ec4d054e09be24c065915518903b29380b6573bff79c24/persistent-4.2.2.tar.gz";
+      sha256 = "52ececc6dbba5ef572d3435189318b4dff07675bafa9620e32f785e147c6563c";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [
+      self."coverage"
+      self."zope.interface"
+    ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Translucent persistent objects";
     };
   };
 
@@ -327,6 +434,103 @@ self: {
       homepage = "";
       license = licenses.mit;
       description = "the blessed package to manage your versions by scm tags";
+    };
+  };
+
+
+
+  "six" = python.mkDerivation {
+    name = "six-1.10.0";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/b3/b2/238e2590826bfdd113244a40d9d3eb26918bd798fc187e2360a8367068db/six-1.10.0.tar.gz";
+      sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [ ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.mit;
+      description = "Python 2 and 3 compatibility utilities";
+    };
+  };
+
+
+
+  "transaction" = python.mkDerivation {
+    name = "transaction-2.0.3";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/8c/af/3ffafe85bcc93ecb09459f3f2bd8fbe142e9ab34048f9e2774543b470cbd/transaction-2.0.3.tar.gz";
+      sha256 = "67bfb81309ba9717edbb2ca2e5717c325b78beec0bf19f44e5b4b9410f82df7f";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [
+      self."coverage"
+      self."zope.interface"
+    ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Transaction management for Python";
+    };
+  };
+
+
+
+  "zc.lockfile" = python.mkDerivation {
+    name = "zc.lockfile-1.2.1";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/bd/84/0299bbabbc9d3f84f718ba1039cc068030d3ad723c08f82a64337edf901e/zc.lockfile-1.2.1.tar.gz";
+      sha256 = "11db91ada7f22fe8aae268d4bfdeae012c4fe655f66bbb315b00822ec00d043e";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [ ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Basic inter-process locks";
+    };
+  };
+
+
+
+  "zodbpickle" = python.mkDerivation {
+    name = "zodbpickle-0.6.0";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/7a/fc/f6f437a5222b330735eaf8f1e67a6845bd1b600e9a9455e552d3c13c4902/zodbpickle-0.6.0.tar.gz";
+      sha256 = "ea3248be966159e7791e3db0e35ea992b9235d52e7d39835438686741d196665";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [
+      self."coverage"
+    ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Fork of Python 3 pickle module.";
+    };
+  };
+
+
+
+  "zope.interface" = python.mkDerivation {
+    name = "zope.interface-4.3.3";
+    src = pkgs.fetchurl {
+      url = "https://pypi.python.org/packages/44/af/cea1e18bc0d3be0e0824762d3236f0e61088eeed75287e7b854d65ec9916/zope.interface-4.3.3.tar.gz";
+      sha256 = "8780ef68ca8c3fe1abb30c058a59015129d6e04a6b02c2e56b9c7de6078dfa88";
+    };
+    doCheck = commonDoCheck;
+    buildInputs = commonBuildInputs;
+    propagatedBuildInputs = [
+      self."coverage"
+    ];
+    meta = with pkgs.stdenv.lib; {
+      homepage = "";
+      license = licenses.zpt21;
+      description = "Interfaces for Python";
     };
   };
 

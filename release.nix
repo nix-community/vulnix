@@ -1,7 +1,7 @@
 { supportedSystems ? [ "x86_64-linux" ] }:
 
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixos/16.09/nixos-16.09.1324.1dd0fb6/nixexprs.tar.xz") {};
 
   buildFor = systems:
     builtins.listToAttrs (map (system:

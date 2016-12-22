@@ -2,7 +2,7 @@
 # See more at: https://github.com/garbas/pypi2nix
 #
 # COMMAND:
-#   pypi2nix -V 3.5 -b buildout.cfg -e pytest-runner -e setuptools-scm -v
+#   pypi2nix -V 3.4 -b buildout.cfg -E libxml2 libxslt -e pytest-runner -e setuptools-scm -v
 #
 
 { pkgs ? import <nixpkgs> {}
@@ -16,18 +16,18 @@ let
   pythonPackages = import "${toString pkgs.path}/pkgs/top-level/python-packages.nix" {
     inherit pkgs;
     inherit (pkgs) stdenv;
-    python = pkgs.python35;
+    python = pkgs.python34;
     self = pythonPackages;
   };
 
-  commonBuildInputs = [];
+  commonBuildInputs = with pkgs; [ libxml2 libxslt ];
   commonDoCheck = false;
 
   withPackages = pkgs':
     let
       pkgs = builtins.removeAttrs pkgs' ["__unfix__"];
       interpreter = pythonPackages.buildPythonPackage {
-        name = "python35-interpreter";
+        name = "python34-interpreter";
         buildInputs = [ makeWrapper ] ++ (builtins.attrValues pkgs);
         buildCommand = ''
           mkdir -p $out/bin

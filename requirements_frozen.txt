@@ -1,9 +1,12 @@
+BTrees==4.3.1
 click==6.6
 colorama==0.3.7
 coverage==4.0.3
 flake8==2.5.4
+lxml==3.7.0
 mccabe==0.4.0
 pep8==1.7.0
+persistent==4.2.2
 py==1.4.31
 pyflakes==1.0.0
 pytest==2.9.1
@@ -15,3 +18,10 @@ pytest-timeout==1.0.0
 PyYAML==3.11
 requests==2.10.0
 setuptools-scm==1.15.0
+six==1.10.0
+transaction==2.0.3
+zc.lockfile==1.2.1
+ZConfig==3.1.0
+ZODB==5.1.1
+zodbpickle==0.6.0
+zope.interface==4.3.3

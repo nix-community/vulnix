@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}
+{ pkgs ? import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixos/16.09/nixos-16.09.1324.1dd0fb6/nixexprs.tar.xz") {}
 }:
 
 pkgs.stdenv.mkDerivation {
@@ -12,12 +12,12 @@ pkgs.stdenv.mkDerivation {
   '';
   shellHook = ''
     export HOME=$PWD
-    ${pkgs.pypi2nix}/bin/pypi2nix -V 3.5 \
+    ${pkgs.pypi2nix}/bin/pypi2nix -V 3.4 \
             -b buildout.cfg \
+            -E "libxml2 libxslt" \
             -e pytest-runner \
             -e setuptools-scm \
             -v
     echo "Packages updated!"
-    exit
   '';
 }
