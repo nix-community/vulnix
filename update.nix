@@ -19,5 +19,6 @@ pkgs.stdenv.mkDerivation {
             -e setuptools-scm \
             -v
     echo "Packages updated!"
+    exit
   '';
 }
