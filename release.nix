@@ -1,9 +1,9 @@
 { supportedSystems ? [ "x86_64-linux" ],
-   }:
+}:
 
 let
   # I would love to pin the version here, but Hydra wants to pass it in
-  pkgs = pkgs import <nixpkgs> {};
+  pkgs = import <nixpkgs> {};
 
   buildFor = systems:
     builtins.listToAttrs (map (system:
