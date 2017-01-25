@@ -4,14 +4,14 @@ Changes
 1.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Skip `/nix/var/nix/gcroots/booted-system` during system check.
 
 
 1.2 (2016-12-22)
 ----------------
 
 - Improve CPU and memory usage: refactored the way we fetch, parse, store and
-  process data. We now leverage ZODB as the storage for parsed data that is 
+  process data. We now leverage ZODB as the storage for parsed data that is
   efficient to look up.
 
   On our test systems this caused memory usage to drop from > 1GiB to ~70MiB
