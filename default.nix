@@ -4,12 +4,16 @@
 let
   python = import ./requirements.nix { inherit pkgs; };
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION);
+
 in
 python.mkDerivation {
   inherit version;
   name = "vulnix-${version}";
 
-  src = ./.;
+  src = builtins.filterSource
+    (p: t: baseNameOf p != "result" && baseNameOf p != "__pycache__")
+    ./.;
+
   buildInputs = [
     python.packages."flake8"
     python.packages."pytest"
@@ -18,7 +22,8 @@ python.mkDerivation {
     python.packages."pytest-cov"
     python.packages."pytest-timeout"
   ];
-   propagatedBuildInputs = [
+
+  propagatedBuildInputs = [
     pkgs.nix
     python.packages."click"
     python.packages."colorama"
@@ -27,6 +32,7 @@ python.mkDerivation {
     python.packages."lxml"
     python.packages."ZODB"
   ];
+
   checkPhase = ''
     export PYTHONPATH=src:$PYTHONPATH
     py.test
