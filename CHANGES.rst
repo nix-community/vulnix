@@ -1,8 +1,8 @@
 Changes
 =======
 
-1.3 (unreleased)
-----------------
+1.2.1 (2017-01-27)
+------------------
 
 - Skip `/nix/var/nix/gcroots/booted-system` during system check.
 - Make output a bit easier to read by removing visual clutter.
