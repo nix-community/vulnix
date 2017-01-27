@@ -1,9 +1,6 @@
 Nix(OS) vulnerability scanner
 =============================
 
-.. image:: https://travis-ci.org/flyingcircusio/vulnix.svg?branch=master
-    :target: https://travis-ci.org/flyingcircusio/vulnix
-
 This is a utility that validates a Nix store for any packages that are
 reachable from live paths and likely to be affected by vulnerabilities
 listed in the NVD.
@@ -33,6 +30,7 @@ Usage:
 
     $ nix-build
     $ ./result/bin/vulnix
+
 
 Whitelist
 =========
@@ -99,5 +97,7 @@ element.
 Example
 -------
 
-There is an `example <src/vulnix/default_whitelist.yaml>`__ for a
+There is an `example`_ for a
 working whitelist file as part of the unit tests.
+
+.. _example: https://raw.githubusercontent.com/flyingcircusio/vulnix/master/src/vulnix/default_whitelist.yaml
