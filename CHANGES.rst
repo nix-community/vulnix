@@ -5,6 +5,7 @@ Changes
 ----------------
 
 - Skip `/nix/var/nix/gcroots/booted-system` during system check.
+- Make output a bit easier to read by removing visual clutter.
 
 
 1.2 (2016-12-22)

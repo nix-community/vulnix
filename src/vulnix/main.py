@@ -96,7 +96,6 @@ def output(affected_derivations, verbosity):
         click.echo("CVEs:")
         for cve in derivation.affected_by:
             click.echo("\t" + cve.url)
-        click.echo('=' * 72)
         status.append(1 if derivation.status == 'inprogress' else 2)
 
     return max(status)
