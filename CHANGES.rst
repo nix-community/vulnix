@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.2.2 (unreleased)
+1.2.2 (2017-01-28)
 ------------------
 
 - Packaging improvements: pin versions in setup.py, include NVDCVE test data in
