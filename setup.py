@@ -22,13 +22,23 @@ setup(
     name='vulnix',
     version=version,
     install_requires=[
-        'ZODB',
-        'lxml',
-        'click',
-        'colorama',
-        'pyyaml',
-        'requests',
+        'click==6.6',
+        'colorama==0.3.7',
+        'lxml==3.7.0',
+        'pyyaml==3.11',
+        'requests==2.10.0',
+        'ZODB==5.1.1',
     ],
+    extras_require={
+        'test': [
+            'flake8==2.5.4',
+            'pytest==2.9.1',
+            'pytest-capturelog==0.7',
+            'pytest-codecheckers==0.2',
+            'pytest-cov==2.2.1',
+            'pytest-timeout==1.0.0',
+        ],
+    },
     entry_points="""
         [console_scripts]
             vulnix = vulnix.main:main

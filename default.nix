@@ -27,9 +27,9 @@ python.mkDerivation {
     pkgs.nix
     python.packages."click"
     python.packages."colorama"
+    python.packages."lxml"
     python.packages."PyYAML"
     python.packages."requests"
-    python.packages."lxml"
     python.packages."ZODB"
   ];
 

@@ -4,7 +4,7 @@ Changes
 1.2.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Packaging improvements: pin versions in setup.py, include NVD test data.
 
 
 1.2.1 (2017-01-27)

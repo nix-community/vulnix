@@ -101,3 +101,16 @@ There is an `example`_ for a
 working whitelist file as part of the unit tests.
 
 .. _example: https://raw.githubusercontent.com/flyingcircusio/vulnix/master/src/vulnix/default_whitelist.yaml
+
+
+Hacking
+=======
+
+To create a development environment, use a Python 3 venv::
+
+    pyvenv .
+    bin/pip install -e .\[test]
+
+Run tests::
+
+    bin/py.test
