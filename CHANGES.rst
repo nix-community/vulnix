@@ -4,7 +4,9 @@ Changes
 1.2.2 (unreleased)
 ------------------
 
-- Packaging improvements: pin versions in setup.py, include NVD test data.
+- Packaging improvements: pin versions in setup.py, include NVDCVE test data in
+  sdist.
+- Reduce NVDCVE fixture size. This cuts tests run time by more than 50%.
 
 
 1.2.1 (2017-01-27)

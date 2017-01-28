@@ -24,7 +24,7 @@ def test_update_and_parse(tmpdir, http_server):
     with nvd:
         nvd.update()
         modified = nvd._root['archives']['Modified']
-        assert len(modified.products) == 488
+        assert len(modified.products) == 6
 
         mariadb = modified.products['mariadb']
         mariadb = list(sorted(mariadb, key=lambda x: x.cve_id))
