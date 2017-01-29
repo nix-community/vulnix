@@ -137,10 +137,10 @@ def open_ressource(ctx, param, value):
 
 
 @click.command('vulnix')
+@click.option('-S', '--system', is_flag=True,
+              help='Scan the current system')
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones)')
-@click.option('-S', '--system', is_flag=True,
-              help='Scan both the booted system and the current system')
 @click.option('-w', '--whitelist', multiple=True, callback=open_ressource,
               help='Add another whitelist ressource to declare exceptions.')
 @click.option('-m', '--mirror',
@@ -158,10 +158,12 @@ def open_ressource(ctx, param, value):
 @click.option('-c', '--cache-dir', default=DEFAULT_CACHE_DIR,
               help='Cache directory to store parsed archive data. '
               'Default: {}'.format(DEFAULT_CACHE_DIR))
+@click.option('-V', '--version', is_flag=True,
+              help='Print vulnix version and exit')
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, path, mirror, cache_dir):
+         gc_roots, system, path, mirror, cache_dir, version):
     """Scans nix store paths for derivations with security vulnerabilities."""
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -171,6 +173,10 @@ def main(debug, verbose, whitelist, default_whitelist,
             logging.basicConfig(level=logging.INFO)
         else:
             logging.basicConfig(level=logging.WARNING)
+
+    if version:
+        print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
+        sys.exit(0)
 
     if not (gc_roots or system or path):
         howto()
