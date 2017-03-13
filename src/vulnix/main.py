@@ -158,12 +158,14 @@ def open_ressource(ctx, param, value):
 @click.option('-c', '--cache-dir', default=DEFAULT_CACHE_DIR,
               help='Cache directory to store parsed archive data. '
               'Default: {}'.format(DEFAULT_CACHE_DIR))
+@click.option('-U', '--update-cache', is_flag=True,
+              help='Update the parsed archives and exit')
 @click.option('-V', '--version', is_flag=True,
               help='Print vulnix version and exit')
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, path, mirror, cache_dir, version):
+         gc_roots, system, path, mirror, cache_dir, update_cache, version):
     """Scans nix store paths for derivations with security vulnerabilities."""
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -178,7 +180,7 @@ def main(debug, verbose, whitelist, default_whitelist,
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
 
-    if not (gc_roots or system or path):
+    if not (update_cache or gc_roots or system or path):
         howto()
         sys.exit(3)
 
@@ -195,6 +197,8 @@ def main(debug, verbose, whitelist, default_whitelist,
     with nvd:
         with Timer('Load NVD data'):
             nvd.update()
+            if update_cache:
+                sys.exit(0)
 
         with Timer('Load whitelist'):
             wl = WhiteList()

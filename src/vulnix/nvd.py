@@ -43,7 +43,7 @@ class NVD(object):
         self.relevant_archives.append('Modified')
 
     def __enter__(self):
-        storage = ZODB.FileStorage.FileStorage(self.cache_dir+'/' + 'Data.fs')
+        storage = ZODB.FileStorage.FileStorage(self.cache_dir + '/' + 'Data.fs')
         self._db = ZODB.DB(storage)
         self._connection = self._db.open()
         self._root = self._connection.root()
@@ -94,6 +94,7 @@ class NVD(object):
             self.has_updates |= archive.update(self.mirror)
             logging.debug('{} has {} products'.format(
                 archive.name, len(archive.products or [])))
+        transaction.commit()
 
 
 class Meta(Persistent):
