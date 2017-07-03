@@ -25,3 +25,7 @@
 -
     vendor: microsoft
     product: access
+
+-
+    cve: CVE-2017-9113
+    status: notfixed

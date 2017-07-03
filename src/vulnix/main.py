@@ -60,7 +60,7 @@ def howto():
     click.echo(tail, nl=False)
 
 
-def output(affected_derivations, verbosity):
+def output(affected_derivations, verbosity, notfixed):
     status = []
     derivations = []
     seen = {}
@@ -81,7 +81,15 @@ def output(affected_derivations, verbosity):
     click.secho(summary, fg='red')
 
     for derivation in derivations:
-        progress = '*' if derivation.status == 'inprogress' else ''
+        if derivation.status == 'inprogress':
+            progress = '*'
+        elif derivation.status == 'notfixed':
+            # Don't show 'notfixed' derivations if not wanted.
+            if not notfixed:
+                continue
+            progress = '!'
+        else:
+            progress = ''
         click.echo('\n{}\n{}{}\n'.format('=' * 72, derivation.name, progress))
         if verbosity >= 1:
             click.echo(derivation.store_path)
@@ -162,10 +170,13 @@ def open_ressource(ctx, param, value):
               help='Update the parsed archives and exit')
 @click.option('-V', '--version', is_flag=True,
               help='Print vulnix version and exit')
+@click.option('--notfixed', is_flag=True, default=False,
+              help='Show packages which are not fixed by upstream')
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, path, mirror, cache_dir, update_cache, version):
+         gc_roots, system, path, mirror, cache_dir, update_cache, version,
+         notfixed):
     """Scans nix store paths for derivations with security vulnerabilities."""
     if debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -190,7 +201,7 @@ def main(debug, verbose, whitelist, default_whitelist,
         os.makedirs(cache_dir)
 
     # Clean up old-style data
-    for file in glob.glob(cache_dir+'/*.xml*'):
+    for file in glob.glob(cache_dir + '/*.xml*'):
         os.unlink(file)
 
     nvd = NVD(mirror=mirror, cache_dir=cache_dir)
@@ -224,7 +235,7 @@ def main(debug, verbose, whitelist, default_whitelist,
         if affected:
             # sensu maps following return codes
             # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-            returncode = output(affected, verbose)
+            returncode = output(affected, verbose, notfixed)
         else:
             click.secho('vulnix: no vulnerabilities detected', fg='green')
             _log.debug('returncode %d', returncode)

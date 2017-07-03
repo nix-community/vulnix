@@ -18,7 +18,7 @@ class WhiteListRule(object):
         self.comment = comment
         self.vendor = vendor
         self.product = product
-        assert status in ['ignore', 'inprogress']
+        assert status in ['ignore', 'inprogress', 'notfixed']
         self.status = status
         for m in self.MATCHABLE:
             if getattr(self, m):
@@ -42,8 +42,8 @@ class WhiteListRule(object):
             return
         if self.product and cpe.product != self.product:
             return
-        if self.status == 'inprogress':
-            derivation.status = 'inprogress'
+        if self.status in ('inprogress', 'notfixed'):
+            derivation.status = self.status
             return
         return True
 
