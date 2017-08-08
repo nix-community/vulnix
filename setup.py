@@ -14,7 +14,7 @@ with open(project_path('VERSION')) as f:
 
 long_description = []
 
-for rst in ['README.rst', 'CHANGES.rst']:
+for rst in ['README.rst', 'HACKING.rst', 'CHANGES.rst']:
     with open(project_path(rst)) as f:
         long_description.append(f.read())
 
@@ -22,29 +22,29 @@ setup(
     name='vulnix',
     version=version,
     install_requires=[
-        'click==6.6',
-        'colorama==0.3.7',
-        'lxml==3.7.0',
-        'pyyaml==3.11',
-        'requests==2.10.0',
-        'ZODB==5.1.1',
+        'click==6.7',
+        'colorama==0.3.9',
+        'lxml==3.8.0',
+        'pyyaml==3.12',
+        'requests==2.18.3',
+        'ZODB==5.2.4',
     ],
     extras_require={
         'test': [
-            'flake8==2.5.4',
-            'pytest==2.9.1',
-            'pytest-capturelog==0.7',
-            'pytest-codecheckers==0.2',
-            'pytest-cov==2.2.1',
-            'pytest-timeout==1.0.0',
+            'flake8>=2.5',
+            'pytest>=3.2',
+            'pytest-catchlog>=1.2',
+            'pytest-codecheckers>=0.2',
+            'pytest-cov>=2.5',
+            'pytest-timeout>=1.2',
         ],
     },
     entry_points="""
         [console_scripts]
             vulnix = vulnix.main:main
     """,
-    author='Maksim Bronsky',
-    author_email='mb@flyingcircus.io',
+    author='Flying Circus Internet Operations GmbH',
+    author_email='mail@flyingcircus.io',
     license='BSD (2-clause)',
     url='https://github.com/flyingcircusio/vulnix',
     keywords='security',

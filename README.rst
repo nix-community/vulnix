@@ -24,12 +24,17 @@ Example output:
     libxml2-2.9.3
         https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
 
-Usage:
 
-::
+System requirements
+-------------------
 
-    $ nix-build
-    $ ./result/bin/vulnix
+- Depends on common Nix tools like `nix-store`. These are expected to be in
+  $PATH.
+- Depends on being able to interact with the Nix store database
+  (/nix/var/nix/db). This means that it must either run as the same user that
+  owns the Nix store database or `nix-daemon` must be active.
+- It refuses to work without some locale environment settings. Try `export
+  LANG=C.UTF-8` if you see encoding errors.
 
 
 Whitelist
@@ -101,16 +106,3 @@ There is an `example`_ for a
 working whitelist file as part of the unit tests.
 
 .. _example: https://raw.githubusercontent.com/flyingcircusio/vulnix/master/src/vulnix/default_whitelist.yaml
-
-
-Hacking
-=======
-
-To create a development environment, use a Python 3 venv::
-
-    pyvenv .
-    bin/pip install -e .\[test]
-
-Run tests::
-
-    bin/py.test

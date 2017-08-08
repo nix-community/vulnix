@@ -4,7 +4,8 @@ Changes
 1.2.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Updated PyPI dependencies.
+- Document system requirements (#12).
 
 
 1.2.2 (2017-01-28)
