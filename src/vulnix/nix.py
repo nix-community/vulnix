@@ -2,6 +2,7 @@ import logging
 import subprocess
 import sys
 import tempfile
+import os.path as p
 
 _log = logging.getLogger(__name__)
 
@@ -35,6 +36,9 @@ class Store(object):
 
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
+        if not p.exists(path):
+            raise RuntimeError('path `{}` does not exist - cannot load '
+                               'derivations referenced from it'.format(path))
         _log.debug('loading derivations referenced by "%s"', path)
         deriver = call(['nix-store', '-qd', path]).strip()
         _log.debug('deriver: %s', deriver)

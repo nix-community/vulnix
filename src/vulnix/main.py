@@ -109,20 +109,17 @@ def output(affected_derivations, verbosity, notfixed):
     return max(status)
 
 
-def populate_store(gc_roots, system, paths):
+def populate_store(gc_roots, paths):
     """Load derivations from nix store depending on cmdline invocation."""
     store = Store()
     if gc_roots:
         store.add_gc_roots()
-    if system:
-        store.add_path('/nix/var/nix/gcroots/current-system')
-    if paths:
-        for path in paths:
-            store.add_path(path)
+    for path in paths:
+        store.add_path(path)
     return store
 
 
-class Ressource:
+class Resource:
 
     def __init__(self, url):
         self.url = url
@@ -137,11 +134,38 @@ class Ressource:
             self.fp = open(url)
 
 
-def open_ressource(ctx, param, value):
+def open_resource(ctx, param, value):
     """returns fp for files or remote ressources"""
     if value:
         for v in value:
-            yield Ressource(v)
+            yield Resource(v)
+
+
+def run(nvd, update_cache, whitelist, gc_roots, paths, verbose, notfixed):
+    with Timer('Load NVD data'):
+        nvd.update()
+        if update_cache:
+            sys.exit(0)
+
+    with Timer('Load derivations'):
+        store = populate_store(gc_roots, paths)
+
+    affected = set()
+    with Timer('Scan vulnerabilities'):
+        for derivation in store.derivations.values():
+            with Timer('Scan {}'.format(derivation.name)):
+                derivation.check(nvd, whitelist)
+                if derivation.is_affected:
+                    affected.add(derivation)
+
+    returncode = 0
+    if affected:
+        # sensu maps following return codes
+        # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
+        returncode = output(affected, verbose, notfixed)
+    else:
+        click.secho('vulnix: no vulnerabilities detected', fg='green')
+        _log.debug('returncode %d', returncode)
 
 
 @click.command('vulnix')
@@ -149,7 +173,7 @@ def open_ressource(ctx, param, value):
               help='Scan the current system')
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones)')
-@click.option('-w', '--whitelist', multiple=True, callback=open_ressource,
+@click.option('-w', '--whitelist', multiple=True, callback=open_resource,
               help='Add another whitelist ressource to declare exceptions.')
 @click.option('-m', '--mirror',
               help='Mirror to fetch NVD archives from. Default: {}'.format(
@@ -196,6 +220,7 @@ def main(debug, verbose, whitelist, default_whitelist,
         sys.exit(3)
 
     cache_dir = os.path.expanduser(cache_dir)
+    _log.info('Using cache in %s', cache_dir)
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
@@ -204,41 +229,27 @@ def main(debug, verbose, whitelist, default_whitelist,
     for file in glob.glob(cache_dir + '/*.xml*'):
         os.unlink(file)
 
+    paths = list(path)
+    if system:
+        paths.append('/nix/var/nix/gcroots/current-system')
+
+    with Timer('Load whitelist'):
+        wl = WhiteList()
+        if default_whitelist:
+            with open(DEFAULT_WHITELIST) as f:
+                wl.parse(f)
+        if whitelist:
+            for res in whitelist:
+                wl.parse(res.fp)
+
     nvd = NVD(mirror=mirror, cache_dir=cache_dir)
     with nvd:
-        with Timer('Load NVD data'):
-            nvd.update()
-            if update_cache:
-                sys.exit(0)
-
-        with Timer('Load whitelist'):
-            wl = WhiteList()
-            if default_whitelist:
-                with open(DEFAULT_WHITELIST) as f:
-                    wl.parse(f)
-            if whitelist:
-                for res in whitelist:
-                    wl.parse(res.fp)
-
-        with Timer('Load derivations'):
-            store = populate_store(gc_roots, system, path)
-
-        affected = set()
-        with Timer('Scan vulnerabilities'):
-            for derivation in store.derivations.values():
-                with Timer('Scan {}'.format(derivation.name)):
-                    derivation.check(nvd, wl)
-                    if derivation.is_affected:
-                        affected.add(derivation)
-
-        returncode = 0
-        if affected:
-            # sensu maps following return codes
-            # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-            returncode = output(affected, verbose, notfixed)
-        else:
-            click.secho('vulnix: no vulnerabilities detected', fg='green')
-            _log.debug('returncode %d', returncode)
+        try:
+            returncode = run(nvd, update_cache, wl, gc_roots, paths, verbose,
+                             notfixed)
+        except RuntimeError as e:
+            _log.critical(e)
+            sys.exit(2)
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort
     # the transaction and we will keep updating over and over.
