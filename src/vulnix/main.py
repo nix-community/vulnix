@@ -74,10 +74,13 @@ def output(affected_derivations, verbosity, notfixed):
     derivations.sort(key=lambda k: k.simple_name)
 
     amount = len(derivations)
-    names = ', '.join(derivations[k].simple_name for k in range(3))
-    summary = 'Found {} advisories for {}'.format(amount, names)
-    if amount > 3:
-        summary += ', ... (and {:d} more)'.format(amount - 3)
+    if amount == 0:
+        summary = 'Found no advisories'
+    else:
+        names = ', '.join(d.simple_name for d in derivations[:3])
+        summary = 'Found {} advisories for {}'.format(amount, names)
+        if amount > 3:
+            summary += ', ... (and {:d} more)'.format(amount - 3)
     click.secho(summary, fg='red')
 
     for derivation in derivations:
