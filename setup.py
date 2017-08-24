@@ -45,7 +45,7 @@ setup(
     """,
     author='Flying Circus Internet Operations GmbH',
     author_email='mail@flyingcircus.io',
-    license='BSD (2-clause)',
+    license='BSD-3-Clause',
     url='https://github.com/flyingcircusio/vulnix',
     keywords='security',
     classifiers="""\

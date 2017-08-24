@@ -1,7 +1,11 @@
-{ pkgs ? import (builtins.fetchTarball "https://d3g5gsiof5omrk.cloudfront.net/nixos/16.09/nixos-16.09.1324.1dd0fb6/nixexprs.tar.xz") {}
-}:
+{ pkgs ? import <nixpkgs> { } }:
+
+with pkgs.lib;
 
 let
+  # generate requirements.nix with
+  # bin/pip freeze | egrep -v 'vulnix|pkg-resources' > requirements.txt
+  # pypi2nix -V 3.5 -E libxml2 -E libxslt -r requirements.txt
   python = import ./requirements.nix { inherit pkgs; };
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION);
 
@@ -17,7 +21,7 @@ python.mkDerivation {
   buildInputs = [
     python.packages."flake8"
     python.packages."pytest"
-    python.packages."pytest-capturelog"
+    python.packages."pytest-catchlog"
     python.packages."pytest-codecheckers"
     python.packages."pytest-cov"
     python.packages."pytest-timeout"
@@ -42,6 +46,6 @@ python.mkDerivation {
   meta = {
     description = "NixOS vulnerability scanner";
     homepage = https://github.com/flyingcircusio/vulnix;
-    license = pkgs.lib.licenses.bsd2;
+    license = pkgs.lib.licenses.bsd3;
   };
 }
