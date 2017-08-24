@@ -4,6 +4,7 @@ Changes
 1.2.3 (unreleased)
 ------------------
 
+- `.drv` files may be specified directly on the command line.
 - Updated PyPI dependencies.
 - Document system requirements (#12).
 
