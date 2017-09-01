@@ -2,7 +2,7 @@
 # See more at: https://github.com/garbas/pypi2nix
 #
 # COMMAND:
-#   pypi2nix -V 3.5 -E libxml2 -E libxslt -r requirements.txt -v
+#   pypi2nix -V 3.5 -E libxml2 -E libxslt -r requirements.txt
 #
 
 { pkgs ? import <nixpkgs> {}
@@ -227,25 +227,6 @@ let
 
 
 
-    "flake8" = python.mkDerivation {
-      name = "flake8-2.5.4";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/60/4a/7b0ac4920af5673380b7079ba2f7580a8645790c7718881082c0d918b8b4/flake8-2.5.4.tar.gz"; sha256 = "cc1e58179f6cf10524c7bfdd378f5536d0a61497688517791639a5ecc867492f"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [
-      self."mccabe"
-      self."pep8"
-      self."pyflakes"
-    ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "https://gitlab.com/pycqa/flake8";
-        license = licenses.mit;
-        description = "the modular source code checker: pep8, pyflakes and co";
-      };
-    };
-
-
-
     "idna" = python.mkDerivation {
       name = "idna-2.5";
       src = pkgs.fetchurl { url = "https://pypi.python.org/packages/d8/82/28a51052215014efc07feac7330ed758702fc0581347098a81699b5281cb/idna-2.5.tar.gz"; sha256 = "3cb5ce08046c4e3a560fc02f138d0ac63e00f8ce5901a56b32ec8b7994082aab"; };
@@ -271,36 +252,6 @@ let
         homepage = "http://lxml.de/";
         license = licenses.bsdOriginal;
         description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API.";
-      };
-    };
-
-
-
-    "mccabe" = python.mkDerivation {
-      name = "mccabe-0.4.0";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/f6/e7/54461a958bb8b16f8db5f849d5d08b7d74153e064ac385fb68ff09f0bd27/mccabe-0.4.0.tar.gz"; sha256 = "9a2b12ebd876e77c72e41ebf401cc2e7c5b566649d50105ca49822688642207b"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [ ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "https://github.com/pycqa/mccabe";
-        license = licenses.mit;
-        description = "McCabe checker, plugin for flake8";
-      };
-    };
-
-
-
-    "pep8" = python.mkDerivation {
-      name = "pep8-1.7.0";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/3e/b5/1f717b85fbf5d43d81e3c603a7a2f64c9f1dabc69a1e7745bd394cc06404/pep8-1.7.0.tar.gz"; sha256 = "a113d5f5ad7a7abacef9df5ec3f2af23a20a28005921577b15dd584d099d5900"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [ ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "http://pep8.readthedocs.org/";
-        license = licenses.mit;
-        description = "Python style guide checker";
       };
     };
 
@@ -339,24 +290,9 @@ let
 
 
 
-    "pyflakes" = python.mkDerivation {
-      name = "pyflakes-1.0.0";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/45/24/6bc038f3422bab08c24173c1990a56e9eb0c4582a9b202858a33f8aefeb8/pyflakes-1.0.0.tar.gz"; sha256 = "f39e33a4c03beead8774f005bd3ecf0c3f2f264fa0201de965fce0aff1d34263"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [ ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "https://github.com/pyflakes/pyflakes";
-        license = licenses.mit;
-        description = "passive checker of Python programs";
-      };
-    };
-
-
-
     "pytest" = python.mkDerivation {
-      name = "pytest-3.2.0";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/41/ef/0ca241c759f607cde0f2d828492d92e18078a2e6b90b409206f53d9446b9/pytest-3.2.0.tar.gz"; sha256 = "0225cf10b9e173f84729d5f4648211458a222c6e53a77a85e104bc5f31c244ee"; };
+      name = "pytest-3.2.1";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/6d/9f/1fbd50be4deaa4007ef4ed8f84f888c6613c629e1f46e979ffb9d82a7324/pytest-3.2.1.tar.gz"; sha256 = "4c2159d2be2b4e13fa293e7a72bdf2f06848a017150d5c6d35112ce51cfd74ce"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
@@ -390,25 +326,6 @@ let
 
 
 
-    "pytest-codecheckers" = python.mkDerivation {
-      name = "pytest-codecheckers-0.2";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/53/09/263669db13955496e77017f389693c1e1dd77d98fd4afd51b133162e858f/pytest-codecheckers-0.2.tar.gz"; sha256 = "853de10f204865140da2bc173f791c9e13794fc43656e02fffcce23c9999e748"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [
-      self."pep8"
-      self."py"
-      self."pyflakes"
-    ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "";
-        license = "";
-        description = "pytest plugin to add source code sanity checks (pep8 and friends)";
-      };
-    };
-
-
-
     "pytest-cov" = python.mkDerivation {
       name = "pytest-cov-2.5.1";
       src = pkgs.fetchurl { url = "https://pypi.python.org/packages/24/b4/7290d65b2f3633db51393bdf8ae66309b37620bc3ec116c5e357e3e37238/pytest-cov-2.5.1.tar.gz"; sha256 = "03aa752cf11db41d281ea1d807d954c4eda35cfa1b21d6971966cc041bbf6e2d"; };
@@ -422,6 +339,21 @@ let
         homepage = "https://github.com/pytest-dev/pytest-cov";
         license = licenses.bsdOriginal;
         description = "Pytest plugin for measuring coverage.";
+      };
+    };
+
+
+
+    "pytest-runner" = python.mkDerivation {
+      name = "pytest-runner-2.11.1";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/9e/4d/08889e5e27a9f5d6096b9ad257f4dea1faabb03c5ded8f665ead448f5d8a/pytest-runner-2.11.1.tar.gz"; sha256 = "983a31eab45e375240e250161a556163bc8d250edaba97960909338c273a89b3"; };
+      doCheck = commonDoCheck;
+      buildInputs = commonBuildInputs;
+      propagatedBuildInputs = [ ];
+      meta = with pkgs.stdenv.lib; {
+        homepage = "https://github.com/pytest-dev/pytest-runner";
+        license = licenses.mit;
+        description = "Invoke py.test as distutils command with dependency resolution";
       };
     };
 
@@ -459,6 +391,21 @@ let
         homepage = "http://python-requests.org";
         license = licenses.asl20;
         description = "Python HTTP for Humans.";
+      };
+    };
+
+
+
+    "setuptools-scm" = python.mkDerivation {
+      name = "setuptools-scm-1.15.6";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/03/6d/aafdd01edd227ee879b691455bf19895091872af7e48192bea1758c82032/setuptools_scm-1.15.6.tar.gz"; sha256 = "49ab4685589986a42da85706b3311a2f74f1af567d39fee6cb1e088d7a75fb5f"; };
+      doCheck = commonDoCheck;
+      buildInputs = commonBuildInputs;
+      propagatedBuildInputs = [ ];
+      meta = with pkgs.stdenv.lib; {
+        homepage = "https://github.com/pypa/setuptools_scm/";
+        license = licenses.mit;
+        description = "the blessed package to manage your versions by scm tags";
       };
     };
 

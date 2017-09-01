@@ -3,12 +3,17 @@
 with pkgs.lib;
 
 self: super: {
-  # BTrees = python.overrideDerivation super.BTrees (old: {
-  #   propagatedBuildInputs = [
-  #     self."coverage"
-  #     self."persistent"
-  #     self."transaction"
-  #     self."zope.interface"
-  #   ];
-  # });
+
+  pytest = python.overrideDerivation super.pytest (old: {
+    propagatedBuildInputs = old.propagatedBuildInputs ++ [
+      super.setuptools-scm
+    ];
+  });
+
+  pytest-runner = python.overrideDerivation super.pytest-runner (old: {
+    propagatedBuildInputs = old.propagatedBuildInputs ++ [
+      super.setuptools-scm
+    ];
+  });
+
 }

@@ -31,12 +31,12 @@ setup(
     ],
     extras_require={
         'test': [
-            'flake8>=2.5',
             'pytest>=3.2',
             'pytest-catchlog>=1.2',
-            'pytest-codecheckers>=0.2',
             'pytest-cov>=2.5',
+            'pytest-runner>=2.11,<3dev',
             'pytest-timeout>=1.2',
+            'setuptools_scm>=1.15',
         ],
     },
     entry_points="""
