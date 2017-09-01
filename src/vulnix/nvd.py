@@ -89,7 +89,7 @@ class NVD(object):
             elif archive.name == str(datetime.datetime.today().year):
                 # The current year is only updated every 8 days (folding in the
                 # data from Modified), check once every day.
-                archive.age_limit = 1 * 24 * 60 * 60
+                archive.age_limit = 24 * 60 * 60
             else:
                 archive.age_limit = None
             self.has_updates |= archive.update(self.mirror)
@@ -105,6 +105,37 @@ class Meta(Persistent):
     """
 
     unpacked = 0
+
+
+class Download:
+    """Wrapper for downloading compressed XML data.
+
+    Uncompressed XML is written to a temporary file and deleted once the
+    context is exited.
+    """
+
+    def __init__(self, url):
+        self.url = url
+        self.tf = None
+
+    def __enter__(self):
+        logger.debug("Downloading {}".format(self.url))
+        r = requests.get(self.url, stream=True)
+        r.raise_for_status()
+
+        # Phase 2: uncompress
+        self.tf = tempfile.NamedTemporaryFile(
+            'wb', prefix='vulnix.nvd.', suffix='.xml', delete=False)
+        logger.debug("Uncompressing {}".format(self.tf.name))
+        with gzip.open(r.raw, 'rb') as f_in:
+            shutil.copyfileobj(f_in, self.tf)
+        self.tf.close()
+        return self.tf.name
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        os.unlink(self.tf.name)
+        self.tf = None
+        return False  # re-raise
 
 
 class Archive(Persistent):
@@ -144,38 +175,10 @@ class Archive(Persistent):
         # Delete the parsed data.
         self.products = OOBTree.OOBTree()
         logger.info('Updating {}'.format(self.name))
-        try:
-            filename = self.download(mirror)
-            self.parse(filename)
-        except Exception:
-            self.clean()
-            raise
+        with Download(mirror + self.upstream_filename) as xml:
+            self.parse(xml)
         self.last_update = time.time()
         return True
-
-    def download(self, mirror):
-        self._cleanup = []
-
-        # Phase 1: download
-        _, compressed = tempfile.mkstemp()
-        self._cleanup.append(compressed)
-
-        url = mirror + self.upstream_filename
-        logger.debug("Downloading {}".format(url))
-        r = requests.get(url, stream=True)
-        r.raise_for_status()
-        with open(compressed, 'wb') as fd:
-            for chunk in r.iter_content(128*1024):
-                fd.write(chunk)
-
-        # Phase 2: uncompress
-        _, uncompressed = tempfile.mkstemp()
-        self._cleanup.append(uncompressed)
-        logger.debug("Uncompressing {}".format(compressed))
-        with gzip.open(compressed, 'rb') as f_in:
-            with open(uncompressed, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
-        return uncompressed
 
     def parse(self, filename):
         logger.debug("Parsing {}".format(filename))
@@ -197,11 +200,6 @@ class Archive(Persistent):
             node.clear()
             while node.getprevious() is not None:
                 del node.getparent()[0]
-
-    def clean(self):
-        for file in self._cleanup:
-            if os.path.exists(file):
-                os.unlink(file)
 
 
 class Vulnerability(Persistent):

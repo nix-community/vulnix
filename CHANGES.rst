@@ -7,6 +7,7 @@ Changes
 - `.drv` files may be specified directly on the command line.
 - Updated PyPI dependencies.
 - Document system requirements (#12).
+- Don't leave large files in /tmp around.
 
 
 1.2.2 (2017-01-28)
