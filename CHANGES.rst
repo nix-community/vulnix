@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.2.3 (unreleased)
+1.3.0 (2017-09-18)
 ------------------
 
 - `.drv` files may be specified directly on the command line.
