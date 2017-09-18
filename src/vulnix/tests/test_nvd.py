@@ -1,4 +1,5 @@
 from vulnix.nvd import NVD
+from vulnix.utils import cve_url
 import http.server
 import os
 import pytest
@@ -31,7 +32,7 @@ def test_update_and_parse(tmpdir, http_server):
         cve = mariadb[0]
         assert cve.cve_id == 'CVE-2016-6664'
         assert (
-            cve.url ==
+            cve_url(cve.cve_id) ==
             'https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-6664')
         cpe = list(sorted(cve.affected_products, key=lambda x: x.vendor))[1]
         assert cpe.versions == {'5.7.14', '5.5.51', '5.6.32'}

@@ -210,11 +210,6 @@ class Vulnerability(Persistent):
     def __init__(self):
         self.affected_products = []
 
-    @property
-    def url(self):
-        return ('https://web.nvd.nist.gov/view/vuln/detail?vulnId={}'.
-                format(self.cve_id))
-
     @staticmethod
     def from_node(node):
         self = Vulnerability()

@@ -21,6 +21,7 @@ See vulnix --help for a full list of options.
 from .nix import Store
 from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
 from .whitelist import WhiteList
+from .utils import cve_url
 import click
 import glob
 import logging
@@ -102,8 +103,8 @@ def output(affected_derivations, verbosity, notfixed):
                 for root in derivation.roots():
                     click.echo("\t" + root)
         click.echo("CVEs:")
-        for cve in derivation.affected_by:
-            click.echo("\t" + cve.url)
+        for cve_id in derivation.affected_by:
+            click.echo("\t" + cve_url(cve_id))
         status.append(1 if derivation.status == 'inprogress' else 2)
 
     return max(status)

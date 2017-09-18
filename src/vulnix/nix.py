@@ -114,7 +114,8 @@ class Derive(object):
                         continue
                     if (vuln, affected_product, self) in whitelist:
                         continue
-                    self.affected_by.add(vuln)
+
+                    self.affected_by.add(vuln.cve_id)
                     break
 
     def matches(self, cve_id, cpe):
