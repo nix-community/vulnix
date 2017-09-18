@@ -8,6 +8,8 @@ Changes
 - Updated PyPI dependencies.
 - Document system requirements (#12).
 - Don't leave large files in /tmp around.
+- Remove duplicate CVEs in output (#25).
+- Fix bug with reporting less than 3 vulnerabilities (#28).
 
 
 1.2.2 (2017-01-28)
