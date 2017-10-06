@@ -1,10 +1,11 @@
 Changes
 =======
 
+
 1.3.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Minor: fix packaging issues.
 
 
 1.3.1 (2017-10-06)
