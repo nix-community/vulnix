@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.3.2 (unreleased)
+1.3.2 (2017-10-06)
 ------------------
 
 - Minor: fix packaging issues.
