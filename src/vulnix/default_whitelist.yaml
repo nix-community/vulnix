@@ -10,3 +10,6 @@
 -
     vendor: microsoft
     product: access
+-
+    vendor: gethook
+    product: hook

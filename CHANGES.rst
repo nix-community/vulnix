@@ -4,7 +4,7 @@ Changes
 1.3.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Security: Fix arbitrary code execution bug during derivation evaluation.
 
 
 1.3.0 (2017-09-18)

@@ -1,13 +1,12 @@
-from vulnix.whitelist import WhiteList
-import os.path as p
+from pkg_resources import resource_stream
 import pytest
+
+from vulnix.whitelist import WhiteList, WhiteListRule
 
 
 @pytest.yield_fixture
 def test_whitelist():
-    fn = p.join(p.dirname(__file__), 'test_whitelist.yaml')
-    with open(fn) as f:
-        yield f
+    return resource_stream('vulnix', 'tests/fixtures/test_whitelist.yaml')
 
 
 def test_scan_rulefile(test_whitelist):
@@ -39,7 +38,6 @@ def test_scan_rulefile(test_whitelist):
     assert r.cve == 'CVE-2015-2503'
     assert r.name is None
     assert r.version is None
-    print(r.comment)
     assert r.comment == """microsoft access, accidentally matching the 'access' derivation
 
 https://plan.flyingcircus.io/issues/18544
@@ -97,8 +95,13 @@ https://plan.flyingcircus.io/issues/18544
 def test_concatenate_multiple_whitelists(test_whitelist):
     w = WhiteList()
     w.parse(test_whitelist)
-    with open(p.join(p.dirname(__file__), 'test_whitelist2.yaml')) as f:
+    with resource_stream('vulnix', 'tests/fixtures/test_whitelist2.yaml') as f:
         w.parse(f)
 
     assert len(w.rules) == 9  # combined list
     assert w.rules[-1].cve == 'CVE-2016-0001'
+
+
+def test_no_matchable_attribute():
+    with pytest.raises(RuntimeError):
+        WhiteListRule()

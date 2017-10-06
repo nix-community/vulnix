@@ -34,6 +34,7 @@ import urllib.request
 
 DEFAULT_WHITELIST = pkg_resources.resource_filename(
     __name__, 'default_whitelist.yaml')
+CURRENT_SYSTEM = '/nix/var/nix/gcroots/current-system'
 
 _log = logging.getLogger(__name__)
 
@@ -157,10 +158,9 @@ def run(nvd, update_cache, whitelist, gc_roots, paths, verbose, notfixed):
     affected = set()
     with Timer('Scan vulnerabilities'):
         for derivation in store.derivations.values():
-            with Timer('Scan {}'.format(derivation.name)):
-                derivation.check(nvd, whitelist)
-                if derivation.is_affected:
-                    affected.add(derivation)
+            derivation.check(nvd, whitelist)
+            if derivation.is_affected:
+                affected.add(derivation)
 
     returncode = 0
     if affected:
@@ -235,25 +235,26 @@ def main(debug, verbose, whitelist, default_whitelist,
 
     paths = list(path)
     if system:
-        paths.append('/nix/var/nix/gcroots/current-system')
+        paths.append(CURRENT_SYSTEM)
 
-    with Timer('Load whitelist'):
-        wl = WhiteList()
-        if default_whitelist:
-            with open(DEFAULT_WHITELIST) as f:
-                wl.parse(f)
-        if whitelist:
-            for res in whitelist:
-                wl.parse(res.fp)
+    try:
+        with Timer('Load whitelist'):
+            wl = WhiteList()
+            if default_whitelist:
+                with open(DEFAULT_WHITELIST) as f:
+                    wl.parse(f)
+            if whitelist:
+                for arg in whitelist:
+                    wl.parse(arg.fp)
 
-    nvd = NVD(mirror=mirror, cache_dir=cache_dir)
-    with nvd:
-        try:
+        nvd = NVD(mirror=mirror, cache_dir=cache_dir)
+        with nvd:
             returncode = run(nvd, update_cache, wl, gc_roots, paths, verbose,
                              notfixed)
-        except RuntimeError as e:
-            _log.critical(e)
-            sys.exit(2)
+
+    except RuntimeError as e:
+        _log.critical(e)
+        sys.exit(2)
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort
     # the transaction and we will keep updating over and over.

@@ -13,35 +13,36 @@ class WhiteListRule(object):
         self.cve = cve
         self.name = name
         self.version = version
-        if self.version is not None:
-            assert isinstance(version, str)
+        if self.version is not None and not isinstance(version, str):
+            raise RuntimeError(
+                "version must be a string (try quotes): {}-{}".format(
+                    product, version))
         self.comment = comment
         self.vendor = vendor
         self.product = product
         assert status in ['ignore', 'inprogress', 'notfixed']
         self.status = status
-        for m in self.MATCHABLE:
-            if getattr(self, m):
-                break
-        else:
-            raise ValueError(
+        if not any((getattr(self, m) for m in self.MATCHABLE)):
+            raise RuntimeError(
                 "Whitelist rules must specify at least one of the matchable "
-                "attributes: {}".format(', '.join(self.MATCHABLE)))
+                "attributes {}: {}/{}".format(
+                    ', '.join(self.MATCHABLE), comment, status))
 
     def matches(self, vulnerability, cpe, derivation):
         """A rule matches when a vulnerability/derivation combination
         is whitelisted by this rule.
         """
         if self.cve and vulnerability.cve_id != self.cve:
-            return
+            return False
         if self.name and derivation.simple_name != self.name:
-            return
+            return False
         if self.version and self.version not in cpe.versions:
-            return
+            return False
         if self.vendor and cpe.vendor != self.vendor:
-            return
+            return False
         if self.product and cpe.product != self.product:
-            return
+            return False
+# XXX WTF?!?
         if self.status in ('inprogress', 'notfixed'):
             derivation.status = self.status
             return
