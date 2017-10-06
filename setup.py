@@ -49,10 +49,17 @@ setup(
     url='https://github.com/flyingcircusio/vulnix',
     keywords='security',
     classifiers="""\
+Development Status :: 5 - Production/Stable
+Environment :: Console
+Intended Audience :: System Administrators
 License :: OSI Approved :: BSD License
+Operating System :: POSIX
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3 :: Only
+Programming Language :: Python :: 3 :: 3.4
+Programming Language :: Python :: 3 :: 3.5
+Programming Language :: Python :: 3 :: 3.6
+Topic :: System :: Systems Administration
 """[:-1].split('\n'),
     description=__doc__.strip(),
     long_description='\n\n'.join(long_description),

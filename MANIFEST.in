@@ -1,3 +1,4 @@
+exclude doc
 include example_sensu_check.json
 include LICENSE
 include *.nix
@@ -5,4 +6,4 @@ include *.rst
 include *.txt
 include VERSION
 recursive-exclude doc 2017-03-11-Vulnix.pdf
-recursive-include src *.py *.yaml *.xml *.xml.gz
+recursive-include src *.py *.yaml *.xml *.xml.gz *.drv
