@@ -162,14 +162,13 @@ def run(nvd, update_cache, whitelist, gc_roots, paths, verbose, notfixed):
             if derivation.is_affected:
                 affected.add(derivation)
 
-    returncode = 0
     if affected:
         # sensu maps following return codes
         # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-        returncode = output(affected, verbose, notfixed)
+        return output(affected, verbose, notfixed)
     else:
         click.secho('vulnix: no vulnerabilities detected', fg='green')
-        _log.debug('returncode %d', returncode)
+        return 0
 
 
 @click.command('vulnix')
