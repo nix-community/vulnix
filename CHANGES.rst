@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.3.3 (unreleased)
+1.3.3 (2017-10-16)
 ------------------
 
 - Fix return code bug (#28741).
