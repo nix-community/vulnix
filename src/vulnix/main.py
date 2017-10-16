@@ -21,7 +21,7 @@ See vulnix --help for a full list of options.
 from .nix import Store
 from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
 from .whitelist import WhiteList
-from .utils import cve_url
+from .utils import cve_url, Timer
 import click
 import glob
 import logging
@@ -29,7 +29,6 @@ import os
 import os.path
 import pkg_resources
 import sys
-import time
 import urllib.request
 
 DEFAULT_WHITELIST = pkg_resources.resource_filename(
@@ -37,23 +36,6 @@ DEFAULT_WHITELIST = pkg_resources.resource_filename(
 CURRENT_SYSTEM = '/nix/var/nix/gcroots/current-system'
 
 _log = logging.getLogger(__name__)
-
-
-class Timer:
-
-    def __init__(self, debugmsg):
-        self.debugmsg = debugmsg
-
-    def __enter__(self):
-        _log.debug('Starting: ' + self.debugmsg)
-        self.start = time.clock()
-        return self
-
-    def __exit__(self, *args):
-        self.end = time.clock()
-        self.interval = self.end - self.start
-        _log.debug('Finished: {} took {:.2f} seconds'.format(
-                   self.debugmsg, self.interval))
 
 
 def howto():
@@ -162,13 +144,14 @@ def run(nvd, update_cache, whitelist, gc_roots, paths, verbose, notfixed):
             if derivation.is_affected:
                 affected.add(derivation)
 
-    if affected:
-        # sensu maps following return codes
-        # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-        return output(affected, verbose, notfixed)
-    else:
-        click.secho('vulnix: no vulnerabilities detected', fg='green')
-        return 0
+    with Timer('Compile output'):
+        if affected:
+            # sensu maps following return codes
+            # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
+            return output(affected, verbose, notfixed)
+        else:
+            click.secho('vulnix: no vulnerabilities detected', fg='green')
+            return 0
 
 
 @click.command('vulnix')

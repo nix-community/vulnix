@@ -1,6 +1,10 @@
+import logging
 import subprocess
 import sys
 import tempfile
+import time
+
+_log = logging.getLogger(__name__)
 
 
 def cve_url(cve_id):
@@ -28,3 +32,20 @@ def call(cmd):
             sys.stderr.write(capture.read().decode('ascii', errors='replace'))
             raise
     return output.decode()
+
+
+class Timer:
+
+    def __init__(self, section):
+        self.section = section
+
+    def __enter__(self):
+        _log.debug('>>> %s', self.section)
+        self.start = time.clock()
+        return self
+
+    def __exit__(self, *exc):
+        self.end = time.clock()
+        self.interval = self.end - self.start
+        _log.debug('<<< %s %.2fs', self.section, self.interval)
+        return False  # re-raise

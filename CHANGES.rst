@@ -6,6 +6,9 @@ Changes
 ------------------
 
 - Fix return code bug (#28741).
+- Fix partial whitelisting of products where several vulnerable versions are
+  present on the system at the same time (#24).
+- Improve error reporting for incorrectly formed whitelist rules.
 
 
 1.3.2 (2017-10-06)

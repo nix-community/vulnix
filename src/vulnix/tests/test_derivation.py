@@ -3,20 +3,13 @@ import os
 import pytest
 import tempfile
 
-from vulnix.derivation import Derive, pkgname, load
+from vulnix.derivation import Derive, split_name, load
 
 
 def test_load_drv_explicit_version():
     d = eval(resource_string('vulnix', 'tests/fixtures/cyrus-sasl-2.5.10.drv'))
     assert d.simple_name == 'cyrus-sasl'
     assert d.version == '2.5.10'
-
-
-def test_split_version():
-    assert pkgname('network-2.6.3.2-r1.cabal') == 'network'
-    assert (pkgname('python2.7-pytest-runner-2.6.2.drv') ==
-            'python2.7-pytest-runner')
-    assert pkgname('CVE-2017-5526.patch.drv', '5526.patch') == 'CVE-2017'
 
 
 def test_product_candidates():
@@ -35,3 +28,24 @@ Derive(envVars={{'name': str((lambda: open('{}', 'w').write('shellcode'))())}})
             with pytest.raises(NameError):
                 load(f.name)
             assert os.path.getsize(b.name) == 0
+
+
+def test_split_name():
+    assert split_name('network-2.6.3.2-r1.cabal') == (
+        'network', '2.6.3.2-r1.cabal')
+    assert split_name('python2.7-pytest-runner-2.6.2.drv') == (
+            'python2.7-pytest-runner', '2.6.2')
+    assert split_name('CVE-2017-5526.patch.drv', '5526.patch') == (
+        'CVE-2017', '5526.patch')
+
+
+def test_split_nameversion():
+    d = Derive(envVars={'name': 'bundler-1.10.5'})
+    assert d.simple_name == 'bundler'
+    assert d.version == '1.10.5'
+
+
+def test_split_name_noversion():
+    d = Derive(envVars={'name': 'hook'})
+    assert d.simple_name == 'hook'
+    assert d.version is None

@@ -5,18 +5,21 @@ from vulnix.utils import call
 R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
 
 
-def pkgname(fullname, version=None):
-    """Guesses package name from a derivation name (strips version)."""
+def split_name(fullname, version=None):
+    """Returns the pure package name and version of a derivation.
+
+    If the version is not already known, a bit of guesswork is involved.
+    The heuristic is the same as in builtins.parseDrvName.
+    """
     if fullname.endswith('.drv'):
         fullname = fullname[0:fullname.rindex('.drv')]
     if version:
-        return fullname.replace('-' + version, '')
-    # see builtins.parseDrvName
+        return fullname.replace('-' + version, ''), version
     m = R_VERSION.match(fullname)
     if m:
-        return m.group(1)
+        return m.group(1), m.group(2)
     # no idea
-    return fullname
+    return fullname, None
 
 
 def load(path):
@@ -37,8 +40,11 @@ class Derive(object):
                  envVars={}, derivations=None):
         self.envVars = dict(envVars)
         self.name = self.envVars['name']
-        self.version = self.envVars.get('version')
-        self.simple_name = pkgname(self.name, self.version)
+        if 'version' in self.envVars:
+            self.simple_name, self.version = \
+                split_name(self.name, self.envVars['version'])
+        else:
+            self.simple_name, self.version = split_name(self.name)
 
         self.affected_by = set()
         self.status = None

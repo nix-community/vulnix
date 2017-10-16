@@ -44,7 +44,7 @@ class NVD(object):
 
     def __enter__(self):
         storage = ZODB.FileStorage.FileStorage(
-            self.cache_dir + '/' + 'Data.fs')
+            os.path.join(self.cache_dir, 'Data.fs'))
         self._db = ZODB.DB(storage)
         self._connection = self._db.open()
         self._root = self._connection.root()
@@ -82,16 +82,6 @@ class NVD(object):
                 del self._root['archives'][a]
 
         for archive in self._root['archives'].values():
-            # Ensure proper frequency.
-            if archive.name == 'Modified':
-                # Is only updated every two hours. Check hourly.
-                archive.age_limit = 60 * 60
-            elif archive.name == str(datetime.datetime.today().year):
-                # The current year is only updated every 8 days (folding in the
-                # data from Modified), check once every day.
-                archive.age_limit = 24 * 60 * 60
-            else:
-                archive.age_limit = None
             self.has_updates |= archive.update(self.mirror)
             logging.debug('{} has {} products'.format(
                 archive.name, len(archive.products or [])))
@@ -107,6 +97,21 @@ class Meta(Persistent):
     unpacked = 0
 
 
+def decompress(fileobj, dir=None):
+    """Decompresses gzipped XML data into a temporary file.
+
+    Returns temporary file. The called takes responsibility to remove
+    that file after use.
+    """
+    tf = tempfile.NamedTemporaryFile(
+        'wb', prefix='vulnix.nvd.', suffix='.xml', delete=False, dir=dir)
+    logger.debug("Uncompressing {}".format(tf.name))
+    with gzip.open(fileobj, 'rb') as f_in:
+        shutil.copyfileobj(f_in, tf)
+    tf.close()
+    return tf.name
+
+
 class Download:
     """Wrapper for downloading compressed XML data.
 
@@ -116,41 +121,39 @@ class Download:
 
     def __init__(self, url):
         self.url = url
-        self.tf = None
+        self.xml = None
 
     def __enter__(self):
         logger.debug("Downloading {}".format(self.url))
         r = requests.get(self.url, stream=True)
         r.raise_for_status()
-
-        # Phase 2: uncompress
-        self.tf = tempfile.NamedTemporaryFile(
-            'wb', prefix='vulnix.nvd.', suffix='.xml', delete=False)
-        logger.debug("Uncompressing {}".format(self.tf.name))
-        with gzip.open(r.raw, 'rb') as f_in:
-            shutil.copyfileobj(f_in, self.tf)
-        self.tf.close()
-        return self.tf.name
+        self.xml = decompress(r.raw)
+        return self.xml
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        os.unlink(self.tf.name)
-        self.tf = None
+        os.unlink(self.xml)
+        self.xml = None
         return False  # re-raise
 
 
 class Archive(Persistent):
 
-    # Either set to a duration to update every `age_limit` seconds or to None
-    # to never update after the initial fetch.
-    age_limit = None
-    name = None
-    products = None
     last_update = 0
-
-    _cleanup = ()
 
     def __init__(self, name):
         self.name = name
+        self.products = OOBTree.OOBTree()
+        # Either set to a duration to update every `age_limit` seconds or to
+        # None to never update after the initial fetch.
+        if name == 'Modified':
+            # Is updated every two hours. Check hourly.
+            self.age_limit = 60 * 60
+        elif name == str(datetime.datetime.today().year):
+            # The current year is only updated every 8 days (folding in the
+            # data from Modified), check once every day.
+            self.age_limit = 24 * 60 * 60
+        else:
+            self.age_limit = None
 
     @property
     def upstream_filename(self):
@@ -172,8 +175,7 @@ class Archive(Persistent):
         if self.is_current:
             logger.info('{} is up-to-date.'.format(self.name))
             return False
-        # Delete the parsed data.
-        self.products = OOBTree.OOBTree()
+        self.products.clear()
         logger.info('Updating {}'.format(self.name))
         with Download(mirror + self.upstream_filename) as xml:
             self.parse(xml)
