@@ -34,7 +34,7 @@ def test_split_name():
     assert split_name('network-2.6.3.2-r1.cabal') == (
         'network', '2.6.3.2-r1.cabal')
     assert split_name('python2.7-pytest-runner-2.6.2.drv') == (
-            'python2.7-pytest-runner', '2.6.2')
+        'python2.7-pytest-runner', '2.6.2')
     assert split_name('CVE-2017-5526.patch.drv', '5526.patch') == (
         'CVE-2017', '5526.patch')
 

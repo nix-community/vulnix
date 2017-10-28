@@ -2,6 +2,7 @@ import re
 
 from vulnix.utils import call
 
+# see parseDrvName
 R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
 
 

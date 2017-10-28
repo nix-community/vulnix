@@ -8,7 +8,7 @@ import datetime
 import gzip
 import logging
 import os
-import os.path
+import os.path as p
 import requests
 import shutil
 import tempfile
@@ -35,7 +35,7 @@ class NVD(object):
 
     def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
         self.mirror = mirror.rstrip('/') + '/'
-        self.cache_dir = cache_dir
+        self.cache_dir = p.expanduser(cache_dir)
 
         current_year = datetime.datetime.today().year
         self.relevant_archives = [
@@ -43,8 +43,11 @@ class NVD(object):
         self.relevant_archives.append('Modified')
 
     def __enter__(self):
+        logger.info('Using cache in %s', self.cache_dir)
+        if not p.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
         storage = ZODB.FileStorage.FileStorage(
-            os.path.join(self.cache_dir, 'Data.fs'))
+            p.join(self.cache_dir, 'Data.fs'))
         self._db = ZODB.DB(storage)
         self._connection = self._db.open()
         self._root = self._connection.root()
@@ -83,8 +86,6 @@ class NVD(object):
 
         for archive in self._root['archives'].values():
             self.has_updates |= archive.update(self.mirror)
-            logging.debug('{} has {} products'.format(
-                archive.name, len(archive.products or [])))
         transaction.commit()
 
 
@@ -146,12 +147,12 @@ class Archive(Persistent):
         # Either set to a duration to update every `age_limit` seconds or to
         # None to never update after the initial fetch.
         if name == 'Modified':
-            # Is updated every two hours. Check hourly.
+            # Is updated every two hours.
             self.age_limit = 60 * 60
-        elif name == str(datetime.datetime.today().year):
+        elif name == str(datetime.date.today().year):
             # The current year is only updated every 8 days (folding in the
-            # data from Modified), check once every day.
-            self.age_limit = 24 * 60 * 60
+            # data from Modified).
+            self.age_limit = 4 * 24 * 60 * 60
         else:
             self.age_limit = None
 
@@ -173,10 +174,10 @@ class Archive(Persistent):
 
     def update(self, mirror):
         if self.is_current:
-            logger.info('{} is up-to-date.'.format(self.name))
+            logger.debug('"{}" is up-to-date'.format(self.name))
             return False
         self.products.clear()
-        logger.info('Updating {}'.format(self.name))
+        logger.info('Updating "{}"'.format(self.name))
         with Download(mirror + self.upstream_filename) as xml:
             self.parse(xml)
         self.last_update = time.time()

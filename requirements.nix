@@ -91,7 +91,7 @@ let
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "http://packages.python.org/BTrees";
-        license = licenses.zpt21;
+        # XXX license = licenses.zpt21;
         description = "Scalable persistent object containers";
       };
     };
@@ -121,7 +121,7 @@ let
       propagatedBuildInputs = [ ];
       meta = with pkgs.stdenv.lib; {
         homepage = "https://github.com/zopefoundation/ZConfig/";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "Structured Configuration Library";
       };
     };
@@ -145,7 +145,7 @@ let
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "http://www.zodb.org/";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "ZODB, a Python object-oriented database";
       };
     };
@@ -268,7 +268,7 @@ let
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "http://www.zope.org/Products/ZODB";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "Translucent persistent objects";
       };
     };
@@ -437,7 +437,7 @@ let
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "https://github.com/zopefoundation/transaction";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "Transaction management for Python";
       };
     };
@@ -470,7 +470,7 @@ let
       propagatedBuildInputs = [ ];
       meta = with pkgs.stdenv.lib; {
         homepage = "http://www.python.org/pypi/zc.lockfile";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "Basic inter-process locks";
       };
     };
@@ -487,7 +487,7 @@ let
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "http://pypi.python.org/pypi/zodbpickle";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "Fork of Python 3 pickle module.";
       };
     };
@@ -504,7 +504,7 @@ let
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "https://github.com/zopefoundation/zope.interface";
-        license = licenses.zpt21;
+        #license = licenses.zpt21;
         description = "Interfaces for Python";
       };
     };

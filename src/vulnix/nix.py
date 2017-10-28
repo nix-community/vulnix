@@ -9,7 +9,8 @@ _log = logging.getLogger(__name__)
 
 class Store(object):
 
-    def __init__(self):
+    def __init__(self, requisites=True):
+        self.requisites = requisites
         self.derivations = {}
         self.product_candidates = {}
 
@@ -37,8 +38,11 @@ class Store(object):
                 raise RuntimeError(
                     'Cannot determine deriver. Is this really a path into the '
                     'nix store?', path)
-        for candidate in call(['nix-store', '-qR', deriver]).splitlines():
-            self.update(candidate)
+        if self.requisites:
+            for candidate in call(['nix-store', '-qR', deriver]).splitlines():
+                self.update(candidate)
+        else:
+            self.update(deriver)
 
     def update(self, drv_path):
         if not drv_path.endswith('.drv'):
@@ -47,6 +51,8 @@ class Store(object):
             return
         _log.debug('loading %s', drv_path)
         drv_obj = derivation.load(drv_path)
+        if not drv_obj.version:
+            return
         self.derivations[drv_path] = drv_obj
         for product_candidate in drv_obj.product_candidates:
             refs = self.product_candidates.setdefault(

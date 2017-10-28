@@ -26,7 +26,7 @@ import click
 import glob
 import logging
 import os
-import os.path
+import os.path as p
 import pkg_resources
 import sys
 import urllib.request
@@ -43,6 +43,21 @@ def howto():
     click.secho(head, fg='yellow')
     click.echo(tail, nl=False)
 
+
+def init_logging(verbose, debug):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.getLogger('requests').setLevel(logging.ERROR)
+        if verbose:
+            logging.basicConfig(level=logging.INFO)
+        else:
+            logging.basicConfig(level=logging.WARNING)
+
+
+def output_json(affected_derivations):
+    # get rid of duplicate entries
+    derivations = list({d.name: d for d in affected_derivations}.values())
 
 def output(affected_derivations, verbosity, notfixed):
     status = []
@@ -96,9 +111,9 @@ def output(affected_derivations, verbosity, notfixed):
     return max(status)
 
 
-def populate_store(gc_roots, paths):
+def populate_store(gc_roots, paths, requisites=True):
     """Load derivations from nix store depending on cmdline invocation."""
-    store = Store()
+    store = Store(requisites)
     if gc_roots:
         store.add_gc_roots()
     for path in paths:
@@ -128,30 +143,24 @@ def open_resource(ctx, param, value):
             yield Resource(v)
 
 
-def run(nvd, update_cache, whitelist, gc_roots, paths, verbose, notfixed):
-    with Timer('Load NVD data'):
-        nvd.update()
-        if update_cache:
-            sys.exit(0)
+def load_whitelists(default_whitelist, whitelist):
+    wl = WhiteList()
+    if default_whitelist:
+        with open(DEFAULT_WHITELIST) as f:
+            wl.parse(f)
+    if whitelist:
+        for arg in whitelist:
+            wl.parse(arg.fp)
+    return wl
 
-    with Timer('Load derivations'):
-        store = populate_store(gc_roots, paths)
 
+def run(nvd, store, whitelist):
     affected = set()
-    with Timer('Scan vulnerabilities'):
-        for derivation in store.derivations.values():
-            derivation.check(nvd, whitelist)
-            if derivation.is_affected:
-                affected.add(derivation)
-
-    with Timer('Compile output'):
-        if affected:
-            # sensu maps following return codes
-            # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-            return output(affected, verbose, notfixed)
-        else:
-            click.secho('vulnix: no vulnerabilities detected', fg='green')
-            return 0
+    for derivation in store.derivations.values():
+        derivation.check(nvd, whitelist)
+        if derivation.is_affected:
+            affected.add(derivation)
+    return affected
 
 
 @click.command('vulnix')
@@ -176,44 +185,27 @@ def run(nvd, update_cache, whitelist, gc_roots, paths, verbose, notfixed):
 @click.option('-c', '--cache-dir', default=DEFAULT_CACHE_DIR,
               help='Cache directory to store parsed archive data. '
               'Default: {}'.format(DEFAULT_CACHE_DIR))
-@click.option('-U', '--update-cache', is_flag=True,
-              help='Update the parsed archives and exit')
 @click.option('-V', '--version', is_flag=True,
               help='Print vulnix version and exit')
-@click.option('--notfixed', is_flag=True, default=False,
+@click.option('-F', '--notfixed', is_flag=True, default=False,
               help='Show packages which are not fixed by upstream')
+@click.option('-R', '--no-requisites', is_flag=True, default=False,
+              help='Only examine passed derivations, do not determine '
+                   'transitive closure')
 @click.argument('path', nargs=-1,
                 type=click.Path(exists=True))
 def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, path, mirror, cache_dir, update_cache, version,
-         notfixed):
-    """Scans nix store paths for derivations with security vulnerabilities."""
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.getLogger('requests').setLevel(logging.ERROR)
-        if verbose:
-            logging.basicConfig(level=logging.INFO)
-        else:
-            logging.basicConfig(level=logging.WARNING)
-
+         gc_roots, system, path, mirror, cache_dir, version, notfixed,
+         no_requisites):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
 
-    if not (update_cache or gc_roots or system or path):
+    if not (gc_roots or system or path):
         howto()
         sys.exit(3)
 
-    cache_dir = os.path.expanduser(cache_dir)
-    _log.info('Using cache in %s', cache_dir)
-
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
-
-    # Clean up old-style data
-    for file in glob.glob(cache_dir + '/*.xml*'):
-        os.unlink(file)
+    init_logging(verbose, debug)
 
     paths = list(path)
     if system:
@@ -221,23 +213,27 @@ def main(debug, verbose, whitelist, default_whitelist,
 
     try:
         with Timer('Load whitelist'):
-            wl = WhiteList()
-            if default_whitelist:
-                with open(DEFAULT_WHITELIST) as f:
-                    wl.parse(f)
-            if whitelist:
-                for arg in whitelist:
-                    wl.parse(arg.fp)
+            wl = load_whitelists(default_whitelist, whitelist)
 
-        nvd = NVD(mirror=mirror, cache_dir=cache_dir)
+        with Timer('Load derivations'):
+            store = populate_store(gc_roots, paths, not no_requisites)
+
+        nvd = NVD(mirror, cache_dir)
         with nvd:
-            returncode = run(nvd, update_cache, wl, gc_roots, paths, verbose,
-                             notfixed)
+            with Timer('Load NVD data'):
+                nvd.update()
+            with Timer('Scan vulnerabilities'):
+                affected = run(nvd, store, wl)
 
-    except RuntimeError as e:
-        _log.critical(e)
-        sys.exit(2)
+        if affected:
+            # sensu maps following return codes
+            # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
+            sys.exit(output(affected, verbose, notfixed))
+        else:
+            click.secho('vulnix: no vulnerabilities detected', fg='green')
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort
     # the transaction and we will keep updating over and over.
-    sys.exit(returncode)
+    except RuntimeError as e:
+        _log.critical(e)
+        sys.exit(2)

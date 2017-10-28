@@ -5,7 +5,8 @@ Changes
 1.3.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add '--no-requisites' flag which stops vulnix from determining the transitive
+  closure of derivations passed on the command line.
 
 
 1.3.3 (2017-10-16)
