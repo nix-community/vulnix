@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.3.4 (unreleased)
+1.3.4 (2017-10-29)
 ------------------
 
 - Add '--no-requisites' flag which stops vulnix from determining the transitive
