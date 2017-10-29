@@ -38,7 +38,7 @@ class WhiteListRule(object):
         """
         if self.cve and vulnerability.cve_id != self.cve:
             return False
-        if self.name and derivation.simple_name != self.name:
+        if self.name and derivation.pname != self.name:
             return False
         if self.version and derivation.version != self.version:
             return False

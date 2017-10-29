@@ -23,7 +23,9 @@ from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
 from .whitelist import WhiteList
 from .utils import cve_url, Timer
 import click
+import copy
 import glob
+import json
 import logging
 import os
 import os.path as p
@@ -56,8 +58,22 @@ def init_logging(verbose, debug):
 
 
 def output_json(affected_derivations):
+    out = []
+    status = [0]
     # get rid of duplicate entries
-    derivations = list({d.name: d for d in affected_derivations}.values())
+    for d in {deriv.name: deriv for deriv in affected_derivations}.values():
+        out.append({
+            'name': d.name,
+            'pname': d.pname,
+            'version': d.version,
+            'whitelist': d.status,
+            'derivation': d.store_path,
+            'affected_by': list(d.affected_by),
+        })
+        status.append(1 if d.status == 'inprogress' else 2)
+    print(json.dumps(out, indent=1))
+    return max(status)
+
 
 def output(affected_derivations, verbosity, notfixed):
     status = []
@@ -70,13 +86,13 @@ def output(affected_derivations, verbosity, notfixed):
             continue
         seen[marker] = 1
         derivations.append(item)
-    derivations.sort(key=lambda k: k.simple_name)
+    derivations.sort(key=lambda k: k.pname)
 
     amount = len(derivations)
     if amount == 0:
         summary = 'Found no advisories'
     else:
-        names = ', '.join(d.simple_name for d in derivations[:3])
+        names = ', '.join(d.pname for d in derivations[:3])
         summary = 'Found {} advisories for {}'.format(amount, names)
         if amount > 3:
             summary += ', ... (and {:d} more)'.format(amount - 3)
@@ -164,39 +180,42 @@ def run(nvd, store, whitelist):
 
 
 @click.command('vulnix')
+# what to scan
 @click.option('-S', '--system', is_flag=True,
               help='Scan the current system')
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones)')
+@click.argument('path', nargs=-1, type=click.Path(exists=True))
+# modify operation
 @click.option('-w', '--whitelist', multiple=True, callback=open_resource,
               help='Add another whitelist ressource to declare exceptions.')
-@click.option('-m', '--mirror',
-              help='Mirror to fetch NVD archives from. Default: {}'.format(
-                  DEFAULT_MIRROR),
-              default=DEFAULT_MIRROR)
 @click.option('--default-whitelist/--no-default-whitelist', default=True,
               help='Load built-in base whitelist from "{}". Additional '
               'whitelist files can be specified using the "-w" option. '
               'Default: yes'.format(DEFAULT_WHITELIST))
+@click.option('-c', '--cache-dir', type=click.Path(file_okay=False),
+              default=DEFAULT_CACHE_DIR,
+              help='Cache directory to store parsed archive data. '
+              'Default: {}'.format(DEFAULT_CACHE_DIR))
+@click.option('-r/-R', '--requisites/--no-requisites', default=True,
+              help='Determine transitive closure vs. just examine passed '
+              'derivations (default: yes)')
+@click.option('-m', '--mirror',
+              help='Mirror to fetch NVD archives from. Default: {}'.format(
+                  DEFAULT_MIRROR),
+              default=DEFAULT_MIRROR)
+# output control
 @click.option('-d', '--debug', is_flag=True,
               help='Show debug information.')
 @click.option('-v', '--verbose', count=True,
               help='Increase output verbosity.')
-@click.option('-c', '--cache-dir', default=DEFAULT_CACHE_DIR,
-              help='Cache directory to store parsed archive data. '
-              'Default: {}'.format(DEFAULT_CACHE_DIR))
 @click.option('-V', '--version', is_flag=True,
               help='Print vulnix version and exit')
-@click.option('-F', '--notfixed', is_flag=True, default=False,
+@click.option('-F', '--notfixed', is_flag=True,
               help='Show packages which are not fixed by upstream')
-@click.option('-R', '--no-requisites', is_flag=True, default=False,
-              help='Only examine passed derivations, do not determine '
-                   'transitive closure')
-@click.argument('path', nargs=-1,
-                type=click.Path(exists=True))
-def main(debug, verbose, whitelist, default_whitelist,
-         gc_roots, system, path, mirror, cache_dir, version, notfixed,
-         no_requisites):
+@click.option('-j', '--json/--no-json', help='JSON vs. human readable output')
+def main(debug, verbose, whitelist, default_whitelist, gc_roots, system, path,
+         mirror, cache_dir, version, notfixed, requisites, json):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
@@ -216,7 +235,7 @@ def main(debug, verbose, whitelist, default_whitelist,
             wl = load_whitelists(default_whitelist, whitelist)
 
         with Timer('Load derivations'):
-            store = populate_store(gc_roots, paths, not no_requisites)
+            store = populate_store(gc_roots, paths, requisites)
 
         nvd = NVD(mirror, cache_dir)
         with nvd:
@@ -225,6 +244,8 @@ def main(debug, verbose, whitelist, default_whitelist,
             with Timer('Scan vulnerabilities'):
                 affected = run(nvd, store, wl)
 
+        if json:
+            sys.exit(output_json(affected))
         if affected:
             # sensu maps following return codes
             # 0 - ok, 1 - warning, 2 - critical, 3 - unknown

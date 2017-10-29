@@ -42,10 +42,13 @@ class Derive(object):
         self.envVars = dict(envVars)
         self.name = self.envVars['name']
         if 'version' in self.envVars:
-            self.simple_name, self.version = \
-                split_name(self.name, self.envVars['version'])
+            self.version = self.envVars['version']
+            if 'pname' in self.envVars:
+                self.pname = self.envVars['pname']
+            else:
+                self.pname = split_name(self.name, self.envVars['version'])[0]
         else:
-            self.simple_name, self.version = split_name(self.name)
+            self.pname, self.version = split_name(self.name)
 
         self.affected_by = set()
         self.status = None
@@ -56,7 +59,7 @@ class Derive(object):
 
     @property
     def product_candidates(self):
-        variation = self.simple_name.split('-')
+        variation = self.pname.split('-')
         while variation:
             yield '-'.join(variation)
             variation.pop()

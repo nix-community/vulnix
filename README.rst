@@ -8,21 +8,31 @@ listed in the NVD.
 It implements a CLI utility to inspect the current status and a
 monitoring integration for Sensu.
 
-Example output:
+Example output::
 
-::
+  Found 5 advisories for libxslt, pcre, perl, ... (and 2 more)
 
-    Security issues for sqlite, libxml2, ... (and 10 more)
+  ========================================================================
+  libxslt-1.1.29
 
-    sqlite-2.9.3 (inprogress)
-        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-2073
-        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-8710
+  CVEs:
+          https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2017-5029
 
-        See https://plan.flyingcircus.io/issues/18544
+  ========================================================================
+  pcre-8.40
+
+  CVEs:
+          https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2017-7245
+          https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2017-7244
+          [...]
 
 
-    libxml2-2.9.3
-        https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
+Theory of operation
+-------------------
+
+`vulnix` pulls all published CVEs from NIST and caches them locally. It
+matches name and version of all derivations referenced from the command line
+against known CVE entries. A *whitelist* is used to filter out unwanted results.
 
 
 System requirements
@@ -35,6 +45,25 @@ System requirements
   owns the Nix store database or `nix-daemon` must be active.
 - It refuses to work without some locale environment settings. Try `export
   LANG=C.UTF-8` if you see encoding errors.
+
+Usage Example
+=============
+
+- What vulnerabilities are listed for my current system::
+
+    vulnix --system
+
+- Check `nix-build` output together with its transitive closure::
+
+    vulnix result/
+
+- Check all passed derivations, but don't determine requisites::
+
+    vulnix -R /nix/store/*.drv
+
+- JSON output for machine post-processing::
+
+    vulnix --json result/
 
 
 Whitelist
@@ -51,58 +80,4 @@ printed except for the declared exception.
 Syntax
 ------
 
-Every rule starts with the ``-`` and a new-line, declaring a list
-element.
-
-+--------------+--------------------+--------------------+
-| Element      | Example value      | Description        |
-+==============+====================+====================+
-| cve          | cve: CVE-2015-2503 | Ignores all        |
-|              |                    | matches which are  |
-|              |                    | referred by the    |
-|              |                    | CVE                |
-+--------------+--------------------+--------------------+
-| comment      | comment: microsoft | comments the rule  |
-|              | access, accidently |                    |
-|              | matching the       |                    |
-|              | 'access'           |                    |
-|              | derivation         |                    |
-+--------------+--------------------+--------------------+
-| name         | name: libxslt      | refers to the name |
-|              |                    | attribute of a     |
-|              |                    | package derivation |
-+--------------+--------------------+--------------------+
-| status       | status: inprogress | Marks the found    |
-|              |                    | vulnerabilty as    |
-|              |                    | being worked on.   |
-|              |                    | "\*" will be added |
-|              |                    | to the derivation  |
-+--------------+--------------------+--------------------+
-| version      | version: 2.0       | refers to the name |
-|              |                    | attribute of a     |
-|              |                    | package derivation |
-+--------------+--------------------+--------------------+
-| vendor       | microsoft          | refers to the      |
-|              |                    | [NIST]             |
-|              |                    | (https://nvd       |
-|              |                    | .nist.gov/cp       |
-|              |                    | e.cfm) term of the |
-|              |                    | person or          |
-|              |                    | organization which |
-|              |                    | created the        |
-|              |                    | software           |
-+--------------+--------------------+--------------------+
-| product      | access             | Like vendor it's a |
-|              |                    | term coined by     |
-|              |                    | NIST and is an     |
-|              |                    | analogy to what    |
-|              |                    | name means for Nix |
-+--------------+--------------------+--------------------+
-
-Example
--------
-
-There is an `example`_ for a
-working whitelist file as part of the unit tests.
-
-.. _example: https://raw.githubusercontent.com/flyingcircusio/vulnix/master/src/vulnix/default_whitelist.yaml
+[TBD: the whitelist feature is being revamped at the moment]

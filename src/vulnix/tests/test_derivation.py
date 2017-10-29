@@ -8,7 +8,7 @@ from vulnix.derivation import Derive, split_name, load
 
 def test_load_drv_explicit_version():
     d = eval(resource_string('vulnix', 'tests/fixtures/cyrus-sasl-2.5.10.drv'))
-    assert d.simple_name == 'cyrus-sasl'
+    assert d.pname == 'cyrus-sasl'
     assert d.version == '2.5.10'
 
 
@@ -41,11 +41,11 @@ def test_split_name():
 
 def test_split_nameversion():
     d = Derive(envVars={'name': 'bundler-1.10.5'})
-    assert d.simple_name == 'bundler'
+    assert d.pname == 'bundler'
     assert d.version == '1.10.5'
 
 
 def test_split_name_noversion():
     d = Derive(envVars={'name': 'hook'})
-    assert d.simple_name == 'hook'
+    assert d.pname == 'hook'
     assert d.version is None

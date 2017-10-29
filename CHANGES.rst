@@ -7,6 +7,8 @@ Changes
 
 - Add '--no-requisites' flag which stops vulnix from determining the transitive
   closure of derivations passed on the command line.
+- Provide structured JSON output with `--json`.
+- Remove whitelist from README as it is quite buggy right now.
 
 
 1.3.3 (2017-10-16)
