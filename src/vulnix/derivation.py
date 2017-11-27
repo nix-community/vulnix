@@ -65,13 +65,15 @@ class Derive(object):
             variation.pop()
 
     def check(self, nvd):
+        patched_cves = self.patched()
         for candidate in self.product_candidates:
             for vuln in nvd.by_product_name(candidate):
                 for affected_product in vuln.affected_products:
                     if not self.matches(vuln.cve_id, affected_product):
                         continue
-                    self.affected_by.add(vuln.cve_id)
-                    break
+                    if vuln.cve_id not in patched_cves:
+                        self.affected_by.add(vuln.cve_id)
+                        break
 
     def matches(self, cve_id, cpe):
         # Step 1: determine product name
@@ -99,7 +101,7 @@ class Derive(object):
 
     R_CVE = re.compile(r'CVE-\d{4}-\d+')
 
-    def cves(self):
+    def patched(self):
         """Guess which CVEs are patched from patch names."""
         return set(
             m.group(0) for m in self.R_CVE.finditer(

@@ -1,8 +1,7 @@
-from vulnix.nvd import NVD, Archive, decompress
+from vulnix.nvd import NVD
 from vulnix.utils import cve_url
 import http.server
 import os
-import pkg_resources
 import pytest
 import threading
 
@@ -25,7 +24,7 @@ def test_update_and_parse(tmpdir, http_server):
     with nvd:
         nvd.update()
         modified = nvd._root['archives']['Modified']
-        assert len(modified.products) == 6
+        assert len(modified.products) == 7
 
         mariadb = modified.products['mariadb']
         mariadb = list(sorted(mariadb, key=lambda x: x.cve_id))
@@ -38,15 +37,3 @@ def test_update_and_parse(tmpdir, http_server):
         assert cpe.versions == {'5.7.14', '5.5.51', '5.6.32'}
         assert cpe.product == 'mysql'
         assert cpe.vendor == 'oracle'
-
-
-@pytest.fixture
-def nvd_modified(tmpdir):
-    nvd = NVD(cache_dir=str(tmpdir))
-    with nvd:
-        a = Archive('Modified')
-        nvd._root['archives']['Modified'] = a
-        with open(pkg_resources.resource_filename(
-                'vulnix', 'tests/nvdcve-2.0-Modified.xml.gz'), 'rb') as f:
-            a.parse(decompress(f, str(tmpdir)))
-        return nvd

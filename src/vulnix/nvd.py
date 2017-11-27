@@ -28,7 +28,6 @@ class NVD(object):
     """Access to the National Vulnerability Database.
 
     https://nvd.nist.gov/
-
     """
 
     has_updates = False
@@ -36,6 +35,9 @@ class NVD(object):
     def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
         self.mirror = mirror.rstrip('/') + '/'
         self.cache_dir = p.expanduser(cache_dir)
+        self._root = {}
+        self._root['meta'] = Meta()
+        self._root['archives'] = {}
 
         current_year = datetime.date.today().year
         self.relevant_archives = [
@@ -43,6 +45,11 @@ class NVD(object):
         self.relevant_archives.append('Modified')
 
     def __enter__(self):
+        if self._root['archives'].keys():
+            raise RuntimeError(
+                'Either use an in-memory NVD database or the ZODB backed '
+                'variant - not both!',
+                'Keys present', self._root.keys())
         logger.info('Using cache in %s', self.cache_dir)
         if not p.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
@@ -73,11 +80,15 @@ class NVD(object):
         for archive in self._root['archives'].values():
             yield from archive.by_product_name(name)
 
+    def add(self, archive):
+        """Inserts an Archive object."""
+        if archive.name not in self._root['archives']:
+            self._root['archives'][archive.name] = archive
+
     def update(self):
         # Add missing archives
         for a in self.relevant_archives:
-            if a not in self._root['archives']:
-                self._root['archives'][a] = Archive(a)
+            self.add(Archive(a))
 
         # Remove superfluous archives
         for a in self._root['archives']:
@@ -148,13 +159,14 @@ class Archive(Persistent):
         # None to never update after the initial fetch.
         if name == 'Modified':
             # Is updated every two hours.
-            self.age_limit = 60 * 60
+            self.age_limit = 3600
         elif name == str(datetime.date.today().year):
-            # The current year is only updated every 8 days (folding in the
-            # data from Modified).
-            self.age_limit = 4 * 24 * 60 * 60
+            # The current year is only updated every 8 days
+            # (folding in the data from Modified).
+            self.age_limit = 4 * 86400
         else:
-            self.age_limit = None
+            # Check for errata (quite infrequent).
+            self.age_limit = 30 * 86400
 
     @property
     def upstream_filename(self):
@@ -191,8 +203,7 @@ class Archive(Persistent):
             vx = Vulnerability.from_node(node)
             # We don't use a ZODB set here as we a) won't ever change this
             # again in the future (we just rebuild the tree) and also I want to
-            # keep records more coherent to avoid making millions of
-            # micro-records.
+            # avoid making millions of micro-records.
             for cpe in vx.affected_products:
                 self.products.setdefault(cpe.product, set())
                 self.products[cpe.product].add(vx)

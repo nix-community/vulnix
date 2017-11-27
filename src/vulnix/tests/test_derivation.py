@@ -1,17 +1,17 @@
-from pkg_resources import resource_filename
+from vulnix.derivation import Derive, split_name, load
 import os
+import pkg_resources
 import pytest
 import tempfile
 
-from vulnix.derivation import Derive, split_name, load
 
-
-def tf(fixture):
-    return resource_filename('vulnix', 'tests/fixtures/{}'.format(fixture))
+def fix(fixture):
+    return pkg_resources.resource_filename(
+        'vulnix', 'tests/fixtures/{}'.format(fixture))
 
 
 def test_load_drv_explicit_version():
-    d = load(tf('cyrus-sasl-2.5.10.drv'))
+    d = load(fix('cyrus-sasl-2.5.10.drv'))
     assert d.pname == 'cyrus-sasl'
     assert d.version == '2.5.10'
 
@@ -55,11 +55,18 @@ def test_split_name_noversion():
     assert d.version is None
 
 
-def test_guess_cves_from_direct_patches():
-    deriv = load(tf('bzip2-1.0.6.0.1.drv'))
-    assert {'CVE-2016-3189'} == deriv.cves()
+def test_guess_cves_from_direct_patches_bzip2():
+    deriv = load(fix('bzip2-1.0.6.0.1.drv'))
+    assert {'CVE-2016-3189'} == deriv.patched()
 
 
 def test_guess_cves_from_fetchpatch():
-    deriv = load(tf('cpio-2.12.drv'))
-    assert {'CVE-2015-1197', 'CVE-2016-2037'} == deriv.cves()
+    deriv = load(fix('cpio-2.12.drv'))
+    assert {'CVE-2015-1197', 'CVE-2016-2037'} == deriv.patched()
+
+
+def test_ignore_patched_cves_during_check(nvd_modified):
+    """Test for CVE-2016-9844 which is listed but has a patch."""
+    deriv = load(fix('unzip-6.0.drv'))
+    deriv.check(nvd_modified)
+    assert set() == deriv.affected_by
