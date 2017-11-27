@@ -1,7 +1,5 @@
-from vulnix.derivation import Derive
 from vulnix.nvd import NVD, Archive, decompress
 from vulnix.utils import cve_url
-from vulnix.whitelist import WhiteList, WhiteListRule
 import http.server
 import os
 import pkg_resources
@@ -52,20 +50,3 @@ def nvd_modified(tmpdir):
                 'vulnix', 'tests/nvdcve-2.0-Modified.xml.gz'), 'rb') as f:
             a.parse(decompress(f, str(tmpdir)))
         return nvd
-
-
-def test_whitelist_selected_versions(nvd_modified):
-    w = WhiteList()
-    w.rules.append(WhiteListRule(name='mysql', version='5.5.51',
-                                 status='inprogress'))
-
-    d1 = Derive(envVars={'name': 'mysql', 'version': '5.5.51'})
-    d1.check(nvd_modified, w)
-    assert d1.is_affected
-    assert d1.status == 'inprogress'
-
-    d2 = Derive(envVars={'name': 'mysql', 'version': '5.7.14'})
-    d2.check(nvd_modified, w)
-    assert d2.is_affected
-    # Bug #24 - status was also set to 'inprogress'
-    assert d2.status is None

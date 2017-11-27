@@ -23,12 +23,8 @@ from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
 from .whitelist import WhiteList
 from .utils import cve_url, Timer
 import click
-import copy
-import glob
 import json
 import logging
-import os
-import os.path as p
 import pkg_resources
 import sys
 import urllib.request
@@ -173,7 +169,7 @@ def load_whitelists(default_whitelist, whitelist):
 def run(nvd, store, whitelist):
     affected = set()
     for derivation in store.derivations.values():
-        derivation.check(nvd, whitelist)
+        derivation.check(nvd)
         if derivation.is_affected:
             affected.add(derivation)
     return affected

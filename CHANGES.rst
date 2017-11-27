@@ -5,7 +5,8 @@ Changes
 1.3.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Guesses applied CVE patches out of the `patches` derivation envVar (see
+  nixpkgs #15660).
 
 
 1.3.4 (2017-10-29)

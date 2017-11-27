@@ -61,18 +61,15 @@ class Derive(object):
     def product_candidates(self):
         variation = self.pname.split('-')
         while variation:
-            yield '-'.join(variation)
+            yield '_'.join(variation)
             variation.pop()
 
-    def check(self, nvd, whitelist):
+    def check(self, nvd):
         for candidate in self.product_candidates:
             for vuln in nvd.by_product_name(candidate):
                 for affected_product in vuln.affected_products:
                     if not self.matches(vuln.cve_id, affected_product):
                         continue
-                    if (vuln, affected_product, self) in whitelist:
-                        continue
-
                     self.affected_by.add(vuln.cve_id)
                     break
 
@@ -99,3 +96,11 @@ class Derive(object):
     def referrers(self):
         return call(['nix-store', '--query', '--referrers',
                      self.store_path]).split('\n')
+
+    R_CVE = re.compile(r'CVE-\d{4}-\d+')
+
+    def cves(self):
+        """Guess which CVEs are patched from patch names."""
+        return set(
+            m.group(0) for m in self.R_CVE.finditer(
+                self.envVars.get('patches', '')))

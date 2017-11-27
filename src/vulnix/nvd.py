@@ -37,7 +37,7 @@ class NVD(object):
         self.mirror = mirror.rstrip('/') + '/'
         self.cache_dir = p.expanduser(cache_dir)
 
-        current_year = datetime.datetime.today().year
+        current_year = datetime.date.today().year
         self.relevant_archives = [
             str(x) for x in range(current_year - 5, current_year + 1)]
         self.relevant_archives.append('Modified')
@@ -101,7 +101,7 @@ class Meta(Persistent):
 def decompress(fileobj, dir=None):
     """Decompresses gzipped XML data into a temporary file.
 
-    Returns temporary file. The called takes responsibility to remove
+    Returns temporary file. The callee takes responsibility to remove
     that file after use.
     """
     tf = tempfile.NamedTemporaryFile(

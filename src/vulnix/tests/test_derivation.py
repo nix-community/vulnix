@@ -1,4 +1,4 @@
-from pkg_resources import resource_string
+from pkg_resources import resource_filename
 import os
 import pytest
 import tempfile
@@ -6,15 +6,19 @@ import tempfile
 from vulnix.derivation import Derive, split_name, load
 
 
+def tf(fixture):
+    return resource_filename('vulnix', 'tests/fixtures/{}'.format(fixture))
+
+
 def test_load_drv_explicit_version():
-    d = eval(resource_string('vulnix', 'tests/fixtures/cyrus-sasl-2.5.10.drv'))
+    d = load(tf('cyrus-sasl-2.5.10.drv'))
     assert d.pname == 'cyrus-sasl'
     assert d.version == '2.5.10'
 
 
 def test_product_candidates():
     d = Derive(envVars={'name': 'python2.7-pytest-runner-2.6.2.drv'})
-    assert (['python2.7-pytest-runner', 'python2.7-pytest', 'python2.7'] ==
+    assert (['python2.7_pytest_runner', 'python2.7_pytest', 'python2.7'] ==
             list(d.product_candidates))
 
 
@@ -49,3 +53,13 @@ def test_split_name_noversion():
     d = Derive(envVars={'name': 'hook'})
     assert d.pname == 'hook'
     assert d.version is None
+
+
+def test_guess_cves_from_direct_patches():
+    deriv = load(tf('bzip2-1.0.6.0.1.drv'))
+    assert {'CVE-2016-3189'} == deriv.cves()
+
+
+def test_guess_cves_from_fetchpatch():
+    deriv = load(tf('cpio-2.12.drv'))
+    assert {'CVE-2015-1197', 'CVE-2016-2037'} == deriv.cves()
