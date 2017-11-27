@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.3.5 (unreleased)
+1.4.0 (2017-11-27)
 ------------------
 
 - Guesses applied CVE patches out of the `patches` derivation envVar (see
