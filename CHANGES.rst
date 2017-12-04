@@ -5,7 +5,8 @@ Changes
 1.4.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Ignore case when guessing CVE identifiers from patch file names (thanks to
+  adisbladis).
 
 
 1.4.0 (2017-11-27)
