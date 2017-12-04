@@ -99,10 +99,10 @@ class Derive(object):
         return call(['nix-store', '--query', '--referrers',
                      self.store_path]).split('\n')
 
-    R_CVE = re.compile(r'CVE-\d{4}-\d+')
+    R_CVE = re.compile(r'CVE-\d{4}-\d+', flags=re.IGNORECASE)
 
     def patched(self):
         """Guess which CVEs are patched from patch names."""
         return set(
-            m.group(0) for m in self.R_CVE.finditer(
+            m.group(0).upper() for m in self.R_CVE.finditer(
                 self.envVars.get('patches', '')))
