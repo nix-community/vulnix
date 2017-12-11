@@ -65,6 +65,26 @@ def test_guess_cves_from_fetchpatch():
     assert {'CVE-2015-1197', 'CVE-2016-2037'} == deriv.patched()
 
 
+def test_patches_with_multiple_cves():
+    deriv = load(fix('audiofile-0.3.6.drv'))
+    assert {
+        'CVE-2015-7747',
+        'CVE-2017-6827',
+        'CVE-2017-6828',
+        'CVE-2017-6829',
+        'CVE-2017-6830',
+        'CVE-2017-6831',
+        'CVE-2017-6832',
+        'CVE-2017-6833',
+        'CVE-2017-6834',
+        'CVE-2017-6835',
+        'CVE-2017-6836',
+        'CVE-2017-6837',
+        'CVE-2017-6838',
+        'CVE-2017-6839',
+    } == deriv.patched()
+
+
 def test_ignore_patched_cves_during_check(nvd_modified):
     """Test for CVE-2016-9844 which is listed but has a patch."""
     deriv = load(fix('unzip-6.0.drv'))
