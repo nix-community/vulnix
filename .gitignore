@@ -6,16 +6,19 @@ develop-eggs/
 dist/
 *.egg-info/
 eggs
-.floo
-.flooignore
+htmlcov/
 include
 .installed.cfg
 lib/
 lib64
 /Library/Caches
+nvdcve-2.0-*.xml
+nvdcve-2.0-*.xml.gz
+official-cpe-dictionary*
 pip-selfcheck.json
 *.py?
 pyvenv.cfg
+.remote-sync.json
 /report.xml
 /result
 /result-*
@@ -24,5 +27,3 @@ pyvenv.cfg
 *.sublime-workspace
 *.sw?
 /tags
-htmlcov/
-.remote-sync.json
