@@ -20,7 +20,6 @@ See vulnix --help for a full list of options.
 
 from .nix import Store
 from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
-from .whitelist import WhiteList
 from .utils import cve_url, Timer
 import click
 import json
@@ -29,8 +28,6 @@ import pkg_resources
 import sys
 import urllib.request
 
-DEFAULT_WHITELIST = pkg_resources.resource_filename(
-    __name__, 'default_whitelist.yaml')
 CURRENT_SYSTEM = '/nix/var/nix/gcroots/current-system'
 
 _log = logging.getLogger(__name__)
@@ -47,42 +44,33 @@ def init_logging(verbose, debug):
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.getLogger('requests').setLevel(logging.ERROR)
-        if verbose:
+        if verbose >= 2:
+            logging.basicConfig(level=logging.DEBUG)
+        elif verbose >= 1:
             logging.basicConfig(level=logging.INFO)
         else:
             logging.basicConfig(level=logging.WARNING)
 
 
-def output_json(affected_derivations):
+def output_json(derivations):
     out = []
-    status = [0]
-    # get rid of duplicate entries
-    for d in {deriv.name: deriv for deriv in affected_derivations}.values():
+    status = 0
+    for d in sorted(derivations, key=lambda k: k.pname):
         out.append({
             'name': d.name,
             'pname': d.pname,
             'version': d.version,
-            'whitelist': d.status,
             'derivation': d.store_path,
             'affected_by': list(d.affected_by),
         })
-        status.append(1 if d.status == 'inprogress' else 2)
+        status = max([status, 2])
     print(json.dumps(out, indent=1))
-    return max(status)
+    return status
 
 
-def output(affected_derivations, verbosity, notfixed):
-    status = []
-    derivations = []
-    seen = {}
-    # we need name-version only once
-    for item in affected_derivations:
-        marker = item.name
-        if marker in seen:
-            continue
-        seen[marker] = 1
-        derivations.append(item)
-    derivations.sort(key=lambda k: k.pname)
+def output(derivations, verbosity):
+    status = 0
+    derivations = sorted(derivations, key=lambda k: k.pname)
 
     amount = len(derivations)
     if amount == 0:
@@ -95,32 +83,16 @@ def output(affected_derivations, verbosity, notfixed):
     click.secho(summary, fg='red')
 
     for derivation in derivations:
-        if derivation.status == 'inprogress':
-            progress = '*'
-        elif derivation.status == 'notfixed':
-            # Don't show 'notfixed' derivations if not wanted.
-            if not notfixed:
-                continue
-            progress = '!'
-        else:
-            progress = ''
-        click.echo('\n{}\n{}{}\n'.format('=' * 72, derivation.name, progress))
+        click.echo('\n{}'.format('=' * 72))
+        click.secho('{}\n'.format(derivation.name), fg='yellow')
         if verbosity >= 1:
-            click.echo(derivation.store_path)
-            if verbosity >= 2:
-                click.echo()
-                click.echo("Referenced by:")
-                for referrer in derivation.referrers():
-                    click.echo("\t" + referrer)
-                click.echo("Used by:")
-                for root in derivation.roots():
-                    click.echo("\t" + root)
+            click.secho(derivation.store_path, fg='magenta')
         click.echo("CVEs:")
         for cve_id in derivation.affected_by:
             click.echo("\t" + cve_url(cve_id))
-        status.append(1 if derivation.status == 'inprogress' else 2)
+        status = max([status, 2])
 
-    return max(status)
+    return status
 
 
 def populate_store(gc_roots, paths, requisites=True):
@@ -155,23 +127,17 @@ def open_resource(ctx, param, value):
             yield Resource(v)
 
 
-def load_whitelists(default_whitelist, whitelist):
-    wl = WhiteList()
-    if default_whitelist:
-        with open(DEFAULT_WHITELIST) as f:
-            wl.parse(f)
-    if whitelist:
-        for arg in whitelist:
-            wl.parse(arg.fp)
-    return wl
-
-
-def run(nvd, store, whitelist):
+def run(nvd, store):
     affected = set()
     for derivation in store.derivations.values():
         derivation.check(nvd)
         if derivation.is_affected:
             affected.add(derivation)
+    return affected
+
+
+def filter_wl(whitelist, affected):
+    # XXX
     return affected
 
 
@@ -186,9 +152,7 @@ def run(nvd, store, whitelist):
 @click.option('-w', '--whitelist', multiple=True, callback=open_resource,
               help='Add another whitelist ressource to declare exceptions.')
 @click.option('--default-whitelist/--no-default-whitelist', default=True,
-              help='Load built-in base whitelist from "{}". Additional '
-              'whitelist files can be specified using the "-w" option. '
-              'Default: yes'.format(DEFAULT_WHITELIST))
+              help='(kept for compatibility reasons)')
 @click.option('-c', '--cache-dir', type=click.Path(file_okay=False),
               default=DEFAULT_CACHE_DIR,
               help='Cache directory to store parsed archive data. '
@@ -207,11 +171,11 @@ def run(nvd, store, whitelist):
               help='Increase output verbosity.')
 @click.option('-V', '--version', is_flag=True,
               help='Print vulnix version and exit')
-@click.option('-F', '--notfixed', is_flag=True,
-              help='Show packages which are not fixed by upstream')
 @click.option('-j', '--json/--no-json', help='JSON vs. human readable output')
+@click.option('-F', '--notfixed', is_flag=True,
+              help='(kept for compatibility reasons)')
 def main(debug, verbose, whitelist, default_whitelist, gc_roots, system, path,
-         mirror, cache_dir, version, notfixed, requisites, json):
+         mirror, cache_dir, version, requisites, json, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
@@ -228,7 +192,8 @@ def main(debug, verbose, whitelist, default_whitelist, gc_roots, system, path,
 
     try:
         with Timer('Load whitelist'):
-            wl = load_whitelists(default_whitelist, whitelist)
+            # XXX
+            whitelist = []
 
         with Timer('Load derivations'):
             store = populate_store(gc_roots, paths, requisites)
@@ -238,16 +203,11 @@ def main(debug, verbose, whitelist, default_whitelist, gc_roots, system, path,
             with Timer('Load NVD data'):
                 nvd.update()
             with Timer('Scan vulnerabilities'):
-                affected = run(nvd, store, wl)
+                deriv = filter_wl(whitelist, run(nvd, store))
 
         if json:
-            sys.exit(output_json(affected))
-        if affected:
-            # sensu maps following return codes
-            # 0 - ok, 1 - warning, 2 - critical, 3 - unknown
-            sys.exit(output(affected, verbose, notfixed))
-        else:
-            click.secho('vulnix: no vulnerabilities detected', fg='green')
+            sys.exit(output_json(deriv))
+        sys.exit(output(deriv, verbose))
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort
     # the transaction and we will keep updating over and over.

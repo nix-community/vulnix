@@ -50,7 +50,7 @@ class NVD(object):
                 'Either use an in-memory NVD database or the ZODB backed '
                 'variant - not both!',
                 'Keys present', self._root.keys())
-        logger.info('Using cache in %s', self.cache_dir)
+        logger.debug('Using cache in %s', self.cache_dir)
         if not p.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
         storage = ZODB.FileStorage.FileStorage(
