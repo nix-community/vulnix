@@ -3,15 +3,8 @@
         - CVE-2015-2504
         - CVE-2015-7696
 -
-    cve: CVE-2015-2503
-    comment: |
-         microsoft access, accidentally matching the 'access' derivation
-
-         https://plan.flyingcircus.io/issues/18544
-
--
     name: libxslt
-
+    comment: "won't fix"
 
 -
     cve: CVE-2015-7696
@@ -23,9 +16,10 @@
     version: '2.0'
 
 -
-    vendor: microsoft
-    product: access
-
--
-    cve: CVE-2017-9113
-    status: notfixed
+    name: audiofile
+    version: '0.3.6'
+    cve:
+        - CVE-2017-6827
+        - CVE-2017-6834
+        - CVE-2017-6828
+    issue: "https://fb.flyingcircus.io/f/cases/26909/"
