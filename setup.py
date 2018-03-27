@@ -27,12 +27,12 @@ setup(
         'lxml==3.8.0',
         'pyyaml==3.12',
         'requests==2.18.3',
+        'toml>=0.9',
         'ZODB==5.2.4',
     ],
     extras_require={
         'test': [
             'pytest>=3.2',
-            'pytest-catchlog>=1.2',
             'pytest-cov>=2.5',
             'pytest-runner>=2.11,<3dev',
             'pytest-timeout>=1.2',

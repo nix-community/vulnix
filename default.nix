@@ -20,7 +20,6 @@ python.mkDerivation {
 
   buildInputs = [
     python.packages."pytest"
-    python.packages."pytest-catchlog"
     python.packages."pytest-cov"
     python.packages."pytest-timeout"
   ];

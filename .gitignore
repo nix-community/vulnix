@@ -17,6 +17,7 @@ nvdcve-2.0-*.xml.gz
 official-cpe-dictionary*
 pip-selfcheck.json
 *.py?
+.pytest_cache/
 pyvenv.cfg
 .remote-sync.json
 /report.xml

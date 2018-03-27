@@ -9,7 +9,6 @@ lxml==3.8.0
 persistent==4.2.4.2
 py==1.4.34
 pytest==3.2.2
-pytest-catchlog==1.2.2
 pytest-cov==2.5.1
 pytest-runner==2.11.1
 pytest-timeout==1.2.0

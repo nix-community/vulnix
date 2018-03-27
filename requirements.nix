@@ -308,24 +308,6 @@ let
 
 
 
-    "pytest-catchlog" = python.mkDerivation {
-      name = "pytest-catchlog-1.2.2";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/f2/2b/2faccdb1a978fab9dd0bf31cca9f6847fbe9184a0bdcc3011ac41dd44191/pytest-catchlog-1.2.2.zip"; sha256 = "4be15dc5ac1750f83960897f591453040dff044b5966fe24a91c2f7d04ecfcf0"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [
-      self."py"
-      self."pytest"
-    ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "https://github.com/eisensheng/pytest-catchlog";
-        license = licenses.mit;
-        description = "py.test plugin to catch log messages. This is a fork of pytest-capturelog.";
-      };
-    };
-
-
-
     "pytest-cov" = python.mkDerivation {
       name = "pytest-cov-2.5.1";
       src = pkgs.fetchurl { url = "https://pypi.python.org/packages/24/b4/7290d65b2f3633db51393bdf8ae66309b37620bc3ec116c5e357e3e37238/pytest-cov-2.5.1.tar.gz"; sha256 = "03aa752cf11db41d281ea1d807d954c4eda35cfa1b21d6971966cc041bbf6e2d"; };
