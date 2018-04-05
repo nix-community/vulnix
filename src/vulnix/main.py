@@ -150,7 +150,7 @@ def filter_wl(whitelist, affected):
 @click.argument('path', nargs=-1, type=click.Path(exists=True))
 # modify operation
 @click.option('-w', '--whitelist', multiple=True, callback=open_resource,
-              help='Add another whitelist ressource to declare exceptions.')
+              help='Add another whitelist resource to declare exceptions.')
 @click.option('--default-whitelist/--no-default-whitelist', default=True,
               help='(kept for compatibility reasons)')
 @click.option('-c', '--cache-dir', type=click.Path(file_okay=False),

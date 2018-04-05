@@ -15,6 +15,12 @@ def nvd_modified(tmpdir):
 
 
 @pytest.fixture
+def whitelist_toml():
+    return pkg_resources.resource_stream(
+            'vulnix', 'tests/fixtures/test_whitelist.toml')
+
+
+@pytest.fixture
 def whitelist_yaml():
     return pkg_resources.resource_stream(
             'vulnix', 'tests/fixtures/test_whitelist.yaml')

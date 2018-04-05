@@ -19,7 +19,7 @@ def split_name(fullname, version=None):
     m = R_VERSION.match(fullname)
     if m:
         return m.group(1), m.group(2)
-    # no idea
+    # no version
     return fullname, None
 
 

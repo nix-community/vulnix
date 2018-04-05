@@ -4,17 +4,18 @@
         - CVE-2015-7696
 -
     name: libxslt
-    comment: "won't fix"
-
+    comment: "broken, won't fix"
 -
     cve: CVE-2015-7696
     name: unzip
     status: inprogress
-
 -
     name: libxslt
     version: '2.0'
-
+    until: 2018-03-01
+-
+    name: audiofile
+    version: '0.3.2'
 -
     name: audiofile
     version: '0.3.6'

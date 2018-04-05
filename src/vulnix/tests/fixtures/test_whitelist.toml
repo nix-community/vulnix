@@ -1,0 +1,24 @@
+["*"]
+cve = ["CVE-2015-2504", "CVE-2015-7696"]
+
+[libxslt]
+comment = "broken, won't fix"
+
+[unzip]
+cve = "CVE-2015-7696"
+status = "inprogress"
+
+["libxslt-2.0"]
+until = "2018-03-01"
+
+["audiofile-0.3.2"]
+
+["audiofile-0.3.6"]
+cve = [
+  "CVE-2017-6827",
+  "CVE-2017-6834",
+  "CVE-2017-6828",
+]
+issue = "https://fb.flyingcircus.io/f/cases/26909/"
+
+# vim: set ft=cfg:
