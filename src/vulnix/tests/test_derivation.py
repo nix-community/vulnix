@@ -16,12 +16,6 @@ def test_load_drv_explicit_version():
     assert d.version == '2.5.10'
 
 
-def test_product_candidates():
-    d = Derive(envVars={'name': 'python2.7-pytest-runner-2.6.2.drv'})
-    assert (['python2.7_pytest_runner', 'python2.7_pytest', 'python2.7'] ==
-            list(d.product_candidates))
-
-
 def test_should_not_load_arbitrary_code():
     with tempfile.NamedTemporaryFile(prefix='security_breach') as b:
         with tempfile.NamedTemporaryFile(prefix='evil_eval', mode='w') as f:

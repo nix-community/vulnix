@@ -1,4 +1,5 @@
 from vulnix.nvd import NVD, Archive, decompress
+from vulnix.whitelist import Whitelist
 import pkg_resources
 import pytest
 
@@ -24,3 +25,9 @@ def whitelist_toml():
 def whitelist_yaml():
     return pkg_resources.resource_stream(
             'vulnix', 'tests/fixtures/test_whitelist.yaml')
+
+
+@pytest.fixture
+def whitelist():
+    return Whitelist.load(pkg_resources.resource_stream(
+            'vulnix', 'tests/fixtures/test_whitelist.toml'))

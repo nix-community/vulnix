@@ -10,14 +10,18 @@ from vulnix.derivation import split_name
 _log = logging.getLogger(__name__)
 
 
+MATCH_PERM = 'permanent'
+MATCH_TEMP = 'temporary'
+
+
 class WhitelistItem:
     """Single whitelist entry.
 
     Supported fields:
-    - name: package name
+    - pname: package name or `*` for any package
     - version: package version (only if pname is set)
     - cve: list of CVE ids
-    - issue: bug/case ID URL
+    - issue_url: bug/case ID URL
     - until: this entry will be disabled after the given date (YYYY-MM-DD)
     - comment: free form text
     - status (ignored for compatibility reasons)
@@ -31,30 +35,56 @@ class WhitelistItem:
     """
 
     def __init__(self, **kw):
-        for field in ['name', 'version']:
+        for field in ['pname', 'version']:
             self.__dict__[field] = kw.pop(field, None) or '*'
         self.cve = (kw.pop('cve', []))
         if isinstance(self.cve, list):
             self.cve = set(self.cve)
         else:
             self.cve = set([self.cve])
-        for field in ['issue', 'until', 'comment']:
+        for field in ['issue_url', 'until', 'comment']:
             self.__dict__[field] = kw.pop(field, None)
-        if self.issue:
-            (scheme, netloc, path) = urllib.parse.urlparse(self.issue)[0:3]
+        if self.issue_url:
+            (scheme, netloc, path) = urllib.parse.urlparse(self.issue_url)[0:3]
             if not scheme or not netloc or not path:
-                raise ValueError('issue must be a valid URL', self.issue)
+                raise ValueError('issue must be a valid URL', self.issue_url)
         if self.until and not (
                 isinstance(self.until, datetime.datetime) or
                 isinstance(self.until, datetime.date)):
             self.until = datetime.datetime.strptime(
                     self.until, '%Y-%m-%d').date()
-        if self.name == '*' and not self.cve:
-            raise RuntimeError('either name or CVE must be set', self.__dict__)
+        if self.pname == '*' and not self.cve:
+            raise RuntimeError('either pname or CVE must be set', self.__dict__)
         kw.pop('status', '')  # compat
         if kw:
             _log.warning('Unrecognized whitelist keys: {}'.format(kw.keys()),
                     str(self))
+
+    def covers(self, deriv):
+        """Is the given derivation covered by this whitelist item?
+
+        If so, a tuple (match type, whitelist item) is returned.
+        """
+        if self.pname != '*' and self.pname != deriv.pname:
+            return None
+        if self.version != '*' and self.version != deriv.version:
+            return None
+        if self.cve and not self.cve >= deriv.affected_by:
+            return None
+        if self.until:
+            if self.until <= datetime.date.today():
+                return None
+            else:
+                return (MATCH_TEMP, self)
+        return (MATCH_PERM, self)
+
+
+class Masked:
+
+    def __init__(self, derivation, matchtype, whitelist_item):
+        self.deriv = derivation
+        self.matchtype = matchtype
+        self.wli = whitelist_item
 
 
 class Whitelist:
@@ -63,7 +93,7 @@ class Whitelist:
         self.entries = collections.defaultdict(dict)
 
     def insert(self, wle):
-        self.entries[wle.name][wle.version] = wle
+        self.entries[wle.pname][wle.version] = wle
 
     @classmethod
     def load(cls, fobj):
@@ -79,7 +109,6 @@ class Whitelist:
                     tomlerr,
                     yamlerr)
 
-    # not yet implemented
     @classmethod
     def load_toml(cls, content):
         wl = cls()
@@ -89,14 +118,15 @@ class Whitelist:
             if len(v.values()) and isinstance(list(v.values())[0], dict):
                 raise RuntimeError('malformed section -- forgot quotes?', k)
             pname, version = split_name(k)
-            wl.insert(WhitelistItem(name=pname, version=version, **v))
+            wl.insert(WhitelistItem(pname=pname, version=version, **v))
         return wl
 
     @classmethod
     def load_yaml(cls, content):
         wl = cls()
         for item in yaml.load(content):
-            wl.insert(WhitelistItem(**item))
+            pname = item.pop('name', None)
+            wl.insert(WhitelistItem(pname=pname, **item))
         return wl
 
     def __len__(self):
@@ -104,3 +134,46 @@ class Whitelist:
 
     def __getitem__(self, key):
         return self.entries[key]
+
+    def candidates(self, pname, version):
+        try:
+            yield self.entries[pname][version]
+        except KeyError:
+            pass
+        try:
+            yield self.entries[pname]['*']
+        except KeyError:
+            pass
+        try:
+            yield self.entries['*']['*']
+        except KeyError:
+            pass
+
+    def find(self, deriv):
+        """Finds most specific matching whitelist rule.
+
+        Tries all relevant rules in turn. If a rule matches, a `Masked`
+        object is returned. Returns None otherwise.
+        """
+        for item in self.candidates(deriv.pname, deriv.version):
+            match = item.covers(deriv)
+            if match:
+                return Masked(deriv, match[0], match[1])
+
+    def filter(self, derivations):
+        """Splits a list of derivations into (unmasked, masked).
+
+        Masked derivations are those with at least one matching
+        whitelist rule. They are returned as `Masked` objects. In case
+        of multiple matching rules, the most specific (pname/version) is
+        selected. Unmasked derivations, e.g. those without any matching
+        whitelist rules, are returned unmodified.
+        """
+        unmasked, masked = [], []
+        for deriv in derivations:
+            m = self.find(deriv)
+            if m:
+                masked.append(m)
+            else:
+                unmasked.append(deriv)
+        return unmasked, masked

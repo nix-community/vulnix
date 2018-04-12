@@ -32,10 +32,11 @@ setup(
     ],
     extras_require={
         'test': [
-            'pytest>=3.2',
+            'freezegun>0.3',
             'pytest-cov>=2.5',
             'pytest-runner>=2.11,<3dev',
             'pytest-timeout>=1.2',
+            'pytest>=3.2',
             'setuptools_scm>=1.15',
         ],
     },

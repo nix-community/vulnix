@@ -1,10 +1,10 @@
 ["*"]
 cve = ["CVE-2015-2504", "CVE-2015-7696"]
 
-[libxslt]
+["libxslt"]
 comment = "broken, won't fix"
 
-[unzip]
+["unzip"]
 cve = "CVE-2015-7696"
 status = "inprogress"
 
@@ -19,6 +19,6 @@ cve = [
   "CVE-2017-6834",
   "CVE-2017-6828",
 ]
-issue = "https://fb.flyingcircus.io/f/cases/26909/"
+issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
 
 # vim: set ft=cfg:

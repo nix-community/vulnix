@@ -2,7 +2,8 @@ import re
 
 from vulnix.utils import call
 
-# see parseDrvName
+# see parseDrvName built-in Nix function
+# https://nixos.org/nix/manual/#ssec-builtins
 R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
 
 
@@ -38,42 +39,29 @@ class Derive(object):
     # The derivation files are just accidentally Python-syntax, but hey!
     def __init__(self, _output=None, _inputDrvs=None, _inputSrcs=None,
                  _system=None, _builder=None, _args=None,
-                 envVars={}, derivations=None):
+                 envVars={}, derivations=None, name=None, affected_by=None):
         self.envVars = dict(envVars)
-        self.name = self.envVars['name']
-        if 'version' in self.envVars:
-            self.version = self.envVars['version']
-            if 'pname' in self.envVars:
-                self.pname = self.envVars['pname']
-            else:
-                self.pname = split_name(self.name, self.envVars['version'])[0]
-        else:
-            self.pname, self.version = split_name(self.name)
+        self.name = name or self.envVars['name']
+        self.pname, self.version = split_name(self.name)
+        self.affected_by = affected_by or set()
 
-        self.affected_by = set()
-        self.status = None
+    def __repr__(self):
+        return '<Derive({}, {}, {})>'.format(
+                repr(self.name), repr(self.envVars), repr(self.affected_by))
 
     @property
     def is_affected(self):
         return bool(self.affected_by)
 
-    @property
-    def product_candidates(self):
-        variation = self.pname.split('-')
-        while variation:
-            yield '_'.join(variation)
-            variation.pop()
-
     def check(self, nvd):
         patched_cves = self.patched()
-        for candidate in self.product_candidates:
-            for vuln in nvd.by_product_name(candidate):
-                for affected_product in vuln.affected_products:
-                    if not self.matches(vuln.cve_id, affected_product):
-                        continue
-                    if vuln.cve_id not in patched_cves:
-                        self.affected_by.add(vuln.cve_id)
-                        break
+        for vuln in nvd.by_product_name(self.name):
+            for affected_product in vuln.affected_products:
+                if not self.matches(vuln.cve_id, affected_product):
+                    continue
+                if vuln.cve_id not in patched_cves:
+                    self.affected_by.add(vuln.cve_id)
+                    break
 
     def matches(self, cve_id, cpe):
         # Step 1: determine product name
