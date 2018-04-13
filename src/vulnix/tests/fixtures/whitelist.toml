@@ -20,5 +20,6 @@ cve = [
   "CVE-2017-6828",
 ]
 issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
+comment = "some issues not fixed by upstream"
 
 # vim: set ft=cfg:

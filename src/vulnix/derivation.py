@@ -7,20 +7,20 @@ from vulnix.utils import call
 R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
 
 
-def split_name(fullname, version=None):
-    """Returns the pure package name and version of a derivation.
+class NoVersionError(RuntimeError):
 
-    If the version is not already known, a bit of guesswork is involved.
-    The heuristic is the same as in builtins.parseDrvName.
-    """
+    def __init__(self, drv_name):
+        self.drv_name = drv_name
+
+
+def split_name(fullname):
+    """Returns the pure package name and version of a derivation."""
+    fullname = fullname.lower()
     if fullname.endswith('.drv'):
-        fullname = fullname[0:fullname.rindex('.drv')]
-    if version:
-        return fullname.replace('-' + version, ''), version
+        fullname = fullname[:-4]
     m = R_VERSION.match(fullname)
     if m:
         return m.group(1), m.group(2)
-    # no version
     return fullname, None
 
 
@@ -40,44 +40,38 @@ class Derive(object):
     def __init__(self, _output=None, _inputDrvs=None, _inputSrcs=None,
                  _system=None, _builder=None, _args=None,
                  envVars={}, derivations=None, name=None, affected_by=None):
-        self.envVars = dict(envVars)
-        self.name = name or self.envVars['name']
+        envVars = dict(envVars)
+        self.name = name or envVars['name']
         self.pname, self.version = split_name(self.name)
+        if not self.version:
+            raise NoVersionError(self.name)
+        self.patches = envVars.get('patches', '')
         self.affected_by = affected_by or set()
 
     def __repr__(self):
-        return '<Derive({}, {}, {})>'.format(
-                repr(self.name), repr(self.envVars), repr(self.affected_by))
+        return '<Derive({}, {})>'.format(
+                repr(self.name), repr(self.affected_by))
 
     @property
     def is_affected(self):
         return bool(self.affected_by)
 
+    def product_candidates(self):
+        return {self.pname, self.pname.replace('-', '_')}
+
     def check(self, nvd):
         patched_cves = self.patched()
-        for vuln in nvd.by_product_name(self.name):
-            for affected_product in vuln.affected_products:
-                if not self.matches(vuln.cve_id, affected_product):
-                    continue
-                if vuln.cve_id not in patched_cves:
-                    self.affected_by.add(vuln.cve_id)
-                    break
+        for prod in self.product_candidates():
+            for vuln in nvd.by_product_name(prod):
+                for cpe in vuln.affected_products:
+                    if not self.matches(cpe):
+                        continue
+                    if vuln.cve_id not in patched_cves:
+                        self.affected_by.add(vuln.cve_id)
+                        break
 
-    def matches(self, cve_id, cpe):
-        # Step 1: determine product name
-        prefix = cpe.product + '-'
-        if self.name == cpe.product:
-            version = None
-        elif self.name.startswith(prefix):
-            version = self.name.replace(prefix, '', 1)
-            if version not in cpe.versions:
-                return False
-        else:
-            # This product doesn't match at all.
-            return False
-
-        # We matched the product and think the version is affected.
-        return True
+    def matches(self, cpe):
+        return self.pname == cpe.product and self.version in cpe.versions
 
     def roots(self):
         return call(
@@ -92,5 +86,4 @@ class Derive(object):
     def patched(self):
         """Guess which CVEs are patched from patch names."""
         return set(
-            m.group(0).upper() for m in self.R_CVE.finditer(
-                self.envVars.get('patches', '')))
+            m.group(0).upper() for m in self.R_CVE.finditer(self.patches))

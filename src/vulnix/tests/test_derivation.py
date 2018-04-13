@@ -1,4 +1,4 @@
-from vulnix.derivation import Derive, split_name, load
+from vulnix.derivation import Derive, split_name, load, NoVersionError
 import os
 import pkg_resources
 import pytest
@@ -33,8 +33,7 @@ def test_split_name():
         'network', '2.6.3.2-r1.cabal')
     assert split_name('python2.7-pytest-runner-2.6.2.drv') == (
         'python2.7-pytest-runner', '2.6.2')
-    assert split_name('CVE-2017-5526.patch.drv', '5526.patch') == (
-        'CVE-2017', '5526.patch')
+    assert split_name('hook.drv') == ('hook', None)
 
 
 def test_split_nameversion():
@@ -44,9 +43,8 @@ def test_split_nameversion():
 
 
 def test_split_name_noversion():
-    d = Derive(envVars={'name': 'hook'})
-    assert d.pname == 'hook'
-    assert d.version is None
+    with pytest.raises(NoVersionError):
+        Derive(envVars={'name': 'hook'})
 
 
 def test_guess_cves_from_direct_patches_bzip2():

@@ -3,32 +3,27 @@ import freezegun
 import io
 import pytest
 
-from vulnix.whitelist import Whitelist, WhitelistItem, MATCH_TEMP, MATCH_PERM
+from vulnix.whitelist import Whitelist, WhitelistRule, MATCH_TEMP, MATCH_PERM
 from vulnix.derivation import Derive
 
 
 def check_whitelist_entries(wl):
-    assert len(wl) == 4
+    assert len(wl) == 6
 
-    assert len(wl['*']) == 1
-    entry = wl['*']['*']
-    assert entry.cve == set(['CVE-2015-2504', 'CVE-2015-7696'])
-    assert entry.issue_url is None
-    assert entry.comment is None
+    entry = wl['*']
+    assert entry.cve == {'CVE-2015-2504', 'CVE-2015-7696'}
+    assert entry.issue_url == set()
+    assert entry.comment == []
     assert not hasattr(entry, 'status')
 
-    assert len(wl['libxslt']) == 2
-    assert wl['libxslt']['*'].comment == "broken, won't fix"
-    assert wl['libxslt']['2.0'].until == datetime.date(2018, 3, 1)
+    assert wl['libxslt'].comment == ["broken, won't fix"]
+    assert wl['libxslt-2.0'].until == datetime.date(2018, 3, 1)
+    assert wl['unzip'].cve == {'CVE-2015-7696'}
+    assert wl['audiofile-0.3.2'] is not None
 
-    assert len(wl['unzip']) == 1
-    assert wl['unzip']['*'].cve == set(['CVE-2015-7696'])
-
-    assert len(wl['audiofile']) == 2
-    assert wl['audiofile']['0.3.2'] is not None
-    entry = wl['audiofile']['0.3.6']
-    assert entry.issue_url == 'https://fb.flyingcircus.io/f/cases/26909/'
-    assert entry.cve == set(['CVE-2017-6827', 'CVE-2017-6834', 'CVE-2017-6828'])
+    entry = wl['audiofile-0.3.6']
+    assert entry.issue_url == {'https://fb.flyingcircus.io/f/cases/26909/'}
+    assert entry.cve == {'CVE-2017-6827', 'CVE-2017-6834', 'CVE-2017-6828'}
 
 
 def test_from_yaml(whitelist_yaml):
@@ -59,41 +54,41 @@ def test_toml_malformed_url():
 
 
 def test_match_pname_version():
-    wli = WhitelistItem(pname='libxslt', version='2.0')
-    assert wli.covers(Derive(name='libxslt-2.0')) == (MATCH_PERM, wli)
-    assert not wli.covers(Derive(name='libxslt-2.1'))
+    rule = WhitelistRule(pname='libxslt', version='2.0')
+    assert rule.covers(Derive(name='libxslt-2.0')) == (MATCH_PERM, rule)
+    assert not rule.covers(Derive(name='libxslt-2.1'))
 
 
 def test_match_pname_only():
-    wli = WhitelistItem(pname='libxslt', version='*')
-    assert wli.covers(Derive(name='libxslt-2.0')) == (MATCH_PERM, wli)
-    assert wli.covers(Derive(name='libxslt-2.1')) == (MATCH_PERM, wli)
-    assert not wli.covers(Derive(name='libxml2-2.0'))
+    rule = WhitelistRule(pname='libxslt', version='*')
+    assert rule.covers(Derive(name='libxslt-2.0')) == (MATCH_PERM, rule)
+    assert rule.covers(Derive(name='libxslt-2.1')) == (MATCH_PERM, rule)
+    assert not rule.covers(Derive(name='libxml2-2.0'))
 
 
 def test_match_pname_version_cve():
-    wli = WhitelistItem(pname='cpio', version='2.12', cve=['CVE-2015-1197'])
+    rule = WhitelistRule(pname='cpio', version='2.12', cve=['CVE-2015-1197'])
     d = Derive(name='cpio-2.12', affected_by={'CVE-2015-1197'})
-    assert wli.covers(d) == (MATCH_PERM, wli)
+    assert rule.covers(d) == (MATCH_PERM, rule)
     d.affected_by.add('CVE-2016-2037')
-    assert not wli.covers(d)
+    assert not rule.covers(d)
 
 
 def test_match_cve_only():
-    wli = WhitelistItem(cve=['CVE-2015-1197', 'CVE-2016-2037'])
+    rule = WhitelistRule(cve=['CVE-2015-1197', 'CVE-2016-2037'])
     d = Derive(name='cpio-2.12', affected_by={'CVE-2015-1197'})
-    assert wli.covers(d) == (MATCH_PERM, wli)
+    assert rule.covers(d) == (MATCH_PERM, rule)
     d.affected_by.add('CVE-2016-2038')
-    assert not wli.covers(d)
+    assert not rule.covers(d)
 
 
 def test_until(whitelist_toml):
-    wli = WhitelistItem(pname='libxslt', until='2018-04-12')
+    rule = WhitelistRule(pname='libxslt', until='2018-04-12')
     d = Derive(name='libxslt-2.0')
     with freezegun.freeze_time('2018-04-11'):
-        assert wli.covers(d) == (MATCH_TEMP, wli)
+        assert rule.covers(d) == (MATCH_TEMP, rule)
     with freezegun.freeze_time('2018-04-12'):
-        assert not wli.covers(d)
+        assert not rule.covers(d)
 
 
 def test_not_whitelisted(whitelist):
@@ -114,5 +109,69 @@ def test_filter(whitelist):
     unfiltered, filtered = whitelist.filter(derivations)
     assert unfiltered == [d1, d4]
     assert [e.deriv.pname for e in filtered] == ['libxslt', 'audiofile']
-    assert filtered[0].wli.comment is not None
-    assert filtered[1].wli.issue_url is not None
+    assert len(filtered[0].rule.comment) == 1
+    assert len(filtered[1].rule.issue_url) == 1
+
+
+def test_merge(whitelist):
+    new = Whitelist.load(io.StringIO("""\
+["libxslt-2.0"]
+until = "2018-02-25"
+comment = "latest date wins"
+
+["audiofile-0.3.6"]
+cve = ["CVE-2017-6827", "CVE-2017-6839"]
+comment = "new stuff should be appended"
+issue_url = "https://github.com/NixOS/nixpkgs/issues/30959"
+
+["libtasn1-4.12"]
+cve = ["CVE-2017-10790"]
+"""))
+    whitelist.merge(new)
+    assert len(whitelist) == 7
+
+    libxslt = whitelist['libxslt-2.0']
+    assert libxslt.until == datetime.date(2018, 3, 1)
+    assert libxslt.comment == ['latest date wins']
+
+    audiofile = whitelist['audiofile-0.3.6']
+    assert audiofile.cve == {
+        'CVE-2017-6827',
+        'CVE-2017-6834',
+        'CVE-2017-6828',
+        'CVE-2017-6839',
+    }
+    assert audiofile.comment == [
+        'some issues not fixed by upstream',
+        'new stuff should be appended',
+    ]
+    assert audiofile.issue_url == {
+        'https://fb.flyingcircus.io/f/cases/26909/',
+        'https://github.com/NixOS/nixpkgs/issues/30959',
+    }
+
+    libtasn1 = whitelist['libtasn1-4.12']
+    assert libtasn1.cve == {'CVE-2017-10790'}
+
+
+def test_merge_into_empty():
+    wl = Whitelist()
+    new = Whitelist.load(io.StringIO("""\
+["libxslt"]
+["audiofile-0.3.6"]
+"""))
+    wl.merge(new)
+    assert set(wl.entries.keys()) == {'libxslt', 'audiofile-0.3.6'}
+
+
+def test_until_latest_wins(whitelist):
+    new = Whitelist.load(io.StringIO("""\
+["libxslt-2.0"]
+until = "2018-03-02"
+
+["audiofile-0.3.2"]
+until = "2018-04-01"
+"""))
+    whitelist.merge(new)
+    assert whitelist['libxslt-2.0'].until == datetime.date(2018, 3, 2)
+    assert whitelist['audiofile-0.3.2'].until == datetime.date(2018, 4, 1)

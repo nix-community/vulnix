@@ -224,9 +224,13 @@ class Vulnerability(Persistent):
     def __init__(self):
         self.affected_products = []
 
-    @staticmethod
-    def from_node(node):
-        self = Vulnerability()
+    def __repr__(self):
+        return '<Vulnerability({}, {} affected)>'.format(
+            self.cve_id, len(self.affected_products))
+
+    @classmethod
+    def from_node(cls, node):
+        self = cls()
         self.cve_id = node.get('id')
         affected_products = {}
         for product in node.findall('.//vuln:product', NS):
@@ -246,13 +250,13 @@ class CPE(Persistent):
 
     # These are the only attributes we're interested in. Reduce memory
     # footprint by not storing unused attributes.
-
     vendor = None
     product = None
+    versions = None
 
-    @staticmethod
-    def from_uri(uri):
-        self = CPE()
+    @classmethod
+    def from_uri(cls, uri):
+        self = cls()
         self.versions = set()
         protocol, identifier = uri.split(':/')
         assert protocol == 'cpe'
@@ -269,4 +273,4 @@ class CPE(Persistent):
         return self
 
     def __repr__(self):
-        return '<CPE %s>' % self.uri
+        return '<CPE({}:{})>'.format(self.product, repr(self.versions))

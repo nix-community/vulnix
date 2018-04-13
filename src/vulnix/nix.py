@@ -1,8 +1,8 @@
+from .derivation import load, split_name, NoVersionError
+from .utils import call
+
 import logging
 import os.path as p
-
-from vulnix.utils import call
-from vulnix import derivation
 
 _log = logging.getLogger(__name__)
 
@@ -12,7 +12,6 @@ class Store(object):
     def __init__(self, requisites=True):
         self.requisites = requisites
         self.derivations = {}
-        self.product_candidates = {}
 
     def add_gc_roots(self):
         """Add derivations found for all live GC roots.
@@ -49,12 +48,15 @@ class Store(object):
             return
         if drv_path in self.derivations:
             return
+        # quick'n'dirty check if this is a derivation with version
+        # load() may fail even if this pre-check succeeds as the derivation's
+        # 'name' attribute is the final source of truth
+        _pname, version = split_name(p.basename(drv_path)[:-4])
+        if not version:
+            return
         _log.debug('loading %s', drv_path)
-        drv_obj = derivation.load(drv_path)
-        if not drv_obj.version:
+        try:
+            drv_obj = load(drv_path)
+        except NoVersionError:
             return
         self.derivations[drv_path] = drv_obj
-        for product_candidate in drv_obj.product_candidates:
-            refs = self.product_candidates.setdefault(
-                product_candidate, [])
-            refs.append(drv_obj)
