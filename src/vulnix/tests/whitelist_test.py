@@ -142,7 +142,7 @@ cve = ["CVE-2017-10790"]
         'CVE-2017-6839',
     }
     assert audiofile.comment == [
-        'some issues not fixed by upstream',
+        'some issues not fixed upstream',
         'new stuff should be appended',
     ]
     assert audiofile.issue_url == {
@@ -175,3 +175,33 @@ until = "2018-04-01"
     whitelist.merge(new)
     assert whitelist['libxslt-2.0'].until == datetime.date(2018, 3, 2)
     assert whitelist['audiofile-0.3.2'].until == datetime.date(2018, 4, 1)
+
+
+def test_str(whitelist):
+    assert str(whitelist) == """\
+["*"]
+cve = [ "CVE-2015-2504", "CVE-2015-7696" ]
+
+[libxslt]
+comment = "broken, won't fix"
+
+[unzip]
+cve = "CVE-2015-7696"
+
+["libxslt-2.0"]
+until = "2018-03-01"
+
+["audiofile-0.3.2"]
+
+["audiofile-0.3.6"]
+cve = [ "CVE-2017-6827", "CVE-2017-6828", "CVE-2017-6834" ]
+comment = "some issues not fixed upstream"
+issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
+"""
+
+
+def test_convert_derivs(whitelist):
+    whitelist.add_from(Derive(
+        name='ffmpeg-3.4.2', affected_by={'CVE-2018-7557', 'CVE-2018-6912'}))
+    assert len(whitelist) == 7
+    assert whitelist['ffmpeg-3.4.2'].cve == {'CVE-2018-7557', 'CVE-2018-6912'}

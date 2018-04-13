@@ -103,8 +103,7 @@ def print_masked(masked, verbose):
 
 
 def output(affected, whitelisted, show_whitelisted, verbose):
-    derivations = sorted(affected, key=lambda k: k.pname)
-    amount = len(derivations)
+    amount = len(affected)
     if amount == 0:
         if len(whitelisted):
             click.secho('Nothing to show, {} more whitelisted'.
@@ -114,7 +113,7 @@ def output(affected, whitelisted, show_whitelisted, verbose):
         return
 
     click.secho('Found {} {}'.format(amount, adv(amount)), fg='red')
-    for derivation in derivations:
+    for derivation in affected:
         print_derivation(derivation, verbose)
     if not len(whitelisted):
         return
@@ -127,8 +126,8 @@ def output(affected, whitelisted, show_whitelisted, verbose):
             print_masked(masked_item, verbose)
     else:
         click.secho(
-            '\n...and {} more whitelisted (use `--show-whitelisted`)'.
-            format(len(whitelisted)), fg='blue')
+            '\n...and {} more whitelisted (use `--show-whitelisted` to '
+            'display)'.format(len(whitelisted)), fg='blue')
 
 
 def populate_store(gc_roots, paths, requisites=True):
@@ -142,12 +141,14 @@ def populate_store(gc_roots, paths, requisites=True):
 
 
 def run(nvd, store):
-    affected = set()
+    affected = []
     for derivation in store.derivations.values():
         derivation.check(nvd)
         if derivation.is_affected:
-            affected.add(derivation)
-    return affected
+            affected.append(derivation)
+    # weed out duplicates
+    unique = {deriv.name: deriv for deriv in affected}
+    return unique.values()
 
 
 @click.command('vulnix')
@@ -161,6 +162,8 @@ def run(nvd, store):
 @click.option('-w', '--whitelist', multiple=True, callback=open_resources,
               help='Load whitelist from file or URL (may be given multiple '
               'times).')
+@click.option('-W', '--write-whitelist', type=click.File(mode='w'),
+              help='Write TOML whitelist containing current matches.')
 @click.option('-c', '--cache-dir', type=click.Path(file_okay=False),
               default=DEFAULT_CACHE_DIR,
               help='Cache directory to store parsed archive data. '
@@ -184,8 +187,8 @@ def run(nvd, store):
               help='(obsolete; kept for compatibility reasons)')
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
-def main(verbose, whitelist, gc_roots, system, path, mirror, cache_dir,
-         version, requisites, json, show_whitelisted,
+def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
+         whitelist, write_whitelist, version, json, show_whitelisted,
          default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
@@ -222,6 +225,11 @@ def main(verbose, whitelist, gc_roots, system, path, mirror, cache_dir,
             output_json(affected, show_whitelisted)
         else:
             output(affected, masked, show_whitelisted, verbose)
+
+        if write_whitelist:
+            for d in affected:
+                whitelist.add_from(d)
+            write_whitelist.write(str(whitelist))
 
         if len(affected):
             sys.exit(2)

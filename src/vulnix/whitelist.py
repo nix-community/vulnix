@@ -14,6 +14,14 @@ MATCH_PERM = 'permanent'
 MATCH_TEMP = 'temporary'
 
 
+def dump_multivalued(val):
+    if len(val) == 1:
+        return list(val)[0]
+    l = list(val)
+    l.sort()
+    return l
+
+
 class WhitelistRule:
     """Single whitelist entry.
 
@@ -39,7 +47,12 @@ class WhitelistRule:
             self.__dict__[field] = kw.pop(field, None) or '*'
         for field in ['cve', 'issue_url']:
             v = kw.pop(field, [])
-            self.__dict__[field] = set(v) if isinstance(v, list) else set([v])
+            if isinstance(v, set):
+                self.__dict__[field] = v
+            elif isinstance(v, list):
+                self.__dict__[field] = set(v)
+            else:
+                self.__dict__[field] = set([v])
         if self.pname == '*' and not self.cve:
             raise RuntimeError('either pname or CVE must be set', kw)
         for url in self.issue_url:
@@ -65,6 +78,16 @@ class WhitelistRule:
         if self.version == '*':
             return self.pname
         return '{}-{}'.format(self.pname, self.version)
+
+    def dump(self):
+        res = {}
+        for field in ['cve', 'comment', 'issue_url']:
+            val = getattr(self, field)
+            if val:
+                res[field] = dump_multivalued(val)
+        if self.until:
+            res['until'] = str(self.until)
+        return res
 
     def update(self, other):
         if self.pname != other.pname or self.version != other.version:
@@ -115,8 +138,11 @@ class Whitelist:
     def __getitem__(self, key):
         return self.entries[key]
 
-    def insert(self, rule):
-        self.entries[rule.name] = rule
+    def __str__(self):
+        return toml.dumps(self.dump()).replace(',]\n', ' ]\n')
+
+    def dump(self):
+        return {k: v.dump() for k, v in self.entries.items()}
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
     YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
@@ -206,9 +232,20 @@ class Whitelist:
                 unmasked.append(deriv)
         return unmasked, masked
 
+    def insert(self, rule):
+        self.entries[rule.name] = rule
+
+    def update(self, rule):
+        name = rule.name
+        if name in self.entries:
+            self.entries[name].update(rule)
+        else:
+            self.entries[name] = rule
+
     def merge(self, other):
-        for pkg, rule in other.entries.items():
-            if pkg in self.entries:
-                self.entries[pkg].update(rule)
-            else:
-                self.entries[pkg] = rule
+        for rule in other.entries.values():
+            self.update(rule)
+
+    def add_from(self, deriv):
+        self.update(WhitelistRule(
+            pname=deriv.pname, version=deriv.version, cve=deriv.affected_by))
