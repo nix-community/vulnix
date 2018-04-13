@@ -22,7 +22,7 @@ from .nix import Store
 from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
 from .resource import open_resources
 from .utils import cve_url, Timer
-from .whitelist import Whitelist
+from .whitelist import Whitelist, MATCH_TEMP
 import click
 import json
 import logging
@@ -50,9 +50,11 @@ def init_logging(verbose):
         logging.basicConfig(level=logging.WARNING)
 
 
-def output_json(derivations):
+def output_json(derivations, show_whitelisted):
+    if show_whitelisted:
+        raise RuntimeError(
+            '--show-whitelisted does currently not support JSON mode')
     out = []
-    status = 0
     for d in sorted(derivations, key=lambda k: k.pname):
         out.append({
             'name': d.name,
@@ -61,37 +63,72 @@ def output_json(derivations):
             'derivation': d.store_path,
             'affected_by': list(d.affected_by),
         })
-        status = max([status, 2])
     print(json.dumps(out, indent=1))
-    return status
 
 
-def output(derivations, verbosity):
-    status = 0
-    derivations = sorted(derivations, key=lambda k: k.pname)
+def adv(n):
+    return 'advisory' if n == 1 else 'advisories'
 
+
+def print_derivation(derivation, verbose):
+    click.echo('\n{}'.format('=' * 72))
+    click.secho('{}\n'.format(derivation.name), fg='yellow')
+    if verbose >= 1:
+        click.secho(derivation.store_path, fg='magenta')
+    click.echo("CVEs:")
+    for cve_id in derivation.affected_by:
+        click.echo("\t" + cve_url(cve_id))
+
+
+def print_masked(masked, verbose):
+    click.echo('\n{}'.format('-' * 72))
+    if masked.matchtype == MATCH_TEMP:
+        until = ' until {}'.format(masked.rule.until)
+    else:
+        until = ''
+    click.echo('{} (whitelisted{})\n'.format(masked.deriv.name, until))
+    if verbose >= 1:
+        click.echo(masked.deriv.store_path)
+    click.echo("CVEs:")
+    for cve_id in masked.deriv.affected_by:
+        click.echo("\t" + cve_url(cve_id))
+    if masked.rule.issue_url:
+        click.echo('Issue URL:')
+        for url in masked.rule.issue_url:
+            click.echo('\t' + url)
+    if masked.rule.comment:
+        click.echo('Comment:')
+        for comment in masked.rule.comment:
+            click.echo('\t' + comment)
+
+
+def output(affected, whitelisted, show_whitelisted, verbose):
+    derivations = sorted(affected, key=lambda k: k.pname)
     amount = len(derivations)
     if amount == 0:
-        click.secho('Found no advisories. Excellent!', fg='green')
-        return 0
+        if len(whitelisted):
+            click.secho('Nothing to show, {} more whitelisted'.
+                format(len(whitelisted)), fg='blue')
+        else:
+            click.secho('Found no advisories. Excellent!', fg='green')
+        return
 
-    names = ', '.join(d.pname for d in derivations[:3])
-    summary = 'Found {} advisories for {}'.format(amount, names)
-    if amount > 3:
-        summary += ', ... (and {} more)'.format(amount - 3)
-    click.secho(summary, fg='red')
-
+    click.secho('Found {} {}'.format(amount, adv(amount)), fg='red')
     for derivation in derivations:
-        click.echo('\n{}'.format('=' * 72))
-        click.secho('{}\n'.format(derivation.name), fg='yellow')
-        if verbosity >= 1:
-            click.secho(derivation.store_path, fg='magenta')
-        click.echo("CVEs:")
-        for cve_id in derivation.affected_by:
-            click.echo("\t" + cve_url(cve_id))
-        status = max([status, 2])
+        print_derivation(derivation, verbose)
+    if not len(whitelisted):
+        return
 
-    return status
+    if show_whitelisted:
+        num_wl = len(whitelisted)
+        click.secho('\n{} {} masked by whitelists'.format(num_wl, adv(num_wl)),
+                    fg='blue')
+        for masked_item in whitelisted:
+            print_masked(masked_item, verbose)
+    else:
+        click.secho(
+            '\n...and {} more whitelisted (use `--show-whitelisted`)'.
+            format(len(whitelisted)), fg='blue')
 
 
 def populate_store(gc_roots, paths, requisites=True):
@@ -137,6 +174,8 @@ def run(nvd, store):
               default=DEFAULT_MIRROR)
 # output control
 @click.option('-j', '--json/--no-json', help='JSON vs. human readable output.')
+@click.option('-s', '--show-whitelisted', is_flag=True,
+              help='Shows whitelisted items as well')
 @click.option('-v', '--verbose', count=True,
               help='Increase output verbosity (up to 2 times).')
 @click.option('-V', '--version', is_flag=True,
@@ -145,8 +184,9 @@ def run(nvd, store):
               help='(obsolete; kept for compatibility reasons)')
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
-def main(verbose, whitelist, default_whitelist, gc_roots, system, path,
-         mirror, cache_dir, version, requisites, json, notfixed):
+def main(verbose, whitelist, gc_roots, system, path, mirror, cache_dir,
+         version, requisites, json, show_whitelisted,
+         default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
@@ -176,11 +216,18 @@ def main(verbose, whitelist, default_whitelist, gc_roots, system, path,
             with Timer('Load NVD data'):
                 nvd.update()
             with Timer('Scan vulnerabilities'):
-                affected, filtered = whitelist.filter(run(nvd, store))
+                affected, masked = whitelist.filter(run(nvd, store))
 
         if json:
-            sys.exit(output_json(affected))
-        sys.exit(output(affected, verbose))
+            output_json(affected, show_whitelisted)
+        else:
+            output(affected, masked, show_whitelisted, verbose)
+
+        if len(affected):
+            sys.exit(2)
+        elif len(masked):
+            sys.exit(1)
+        sys.exit(0)
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort
     # the transaction and we will keep updating over and over.
