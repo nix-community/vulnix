@@ -2,9 +2,12 @@ Changes
 =======
 
 
-1.4.1 (unreleased)
+1.6.0 (unreleased)
 ------------------
 
+- Completely reworked whitelisting subsystem. Whitelists can now be written as
+  TOML files and support a more expressive range of options including expiry
+  datedates. The old YAML syntax is still supported (#36).
 - Ignore case when guessing CVE identifiers from patch file names (thanks to
   adisbladis).
 
