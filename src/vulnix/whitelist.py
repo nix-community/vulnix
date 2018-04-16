@@ -1,3 +1,4 @@
+import collections
 import datetime
 import logging
 import re
@@ -12,6 +13,20 @@ _log = logging.getLogger(__name__)
 
 MATCH_PERM = 'permanent'
 MATCH_TEMP = 'temporary'
+
+
+def read_toml(content):
+    for k, v in toml.loads(content, collections.OrderedDict).items():
+        if len(v.values()) and isinstance(list(v.values())[0], dict):
+            raise RuntimeError('malformed section -- forgot quotes?', k)
+        pname, version = split_name(k)
+        yield WhitelistRule(pname=pname, version=version, **v)
+
+
+def read_yaml(content):
+    for item in yaml.load(content):
+        pname = item.pop('name', None)
+        yield WhitelistRule(pname=pname, **item)
 
 
 def dump_multivalued(val):
@@ -80,7 +95,7 @@ class WhitelistRule:
         return '{}-{}'.format(self.pname, self.version)
 
     def dump(self):
-        res = {}
+        res = collections.OrderedDict()
         for field in ['cve', 'comment', 'issue_url']:
             val = getattr(self, field)
             if val:
@@ -130,7 +145,7 @@ class Masked:
 class Whitelist:
 
     def __init__(self):
-        self.entries = {}
+        self.entries = collections.OrderedDict()
 
     def __len__(self):
         return len(self.entries)
@@ -142,7 +157,10 @@ class Whitelist:
         return toml.dumps(self.dump()).replace(',]\n', ' ]\n')
 
     def dump(self):
-        return {k: v.dump() for k, v in self.entries.items()}
+        res = collections.OrderedDict()
+        for k, v in self.entries.items():
+            res[k] = v.dump()
+        return res
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
     YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
@@ -156,38 +174,30 @@ class Whitelist:
         content = fobj.read()
         if isinstance(content, bytes):
             content = content.decode('utf-8')
-        name = ''
-        if hasattr(fobj, 'name') and fobj.name:
-            name = fobj.name
+        filename = ''
+        if hasattr(fobj, 'filename') and fobj.filename:
+            filename = fobj.filename
         elif hasattr(fobj, 'geturl'):
-            name = fobj.geturl()
-        if name.endswith('.toml'):
-            return cls.load_toml(content)
-        if name.endswith('.yaml'):
-            return cls.load_yaml(content)
-        if cls.TOML_SECTION_START.search(content):
-            return cls.load_toml(content)
-        if cls.YAML_SECTION_START.search(content):
-            return cls.load_yaml(content)
-        raise RuntimeError('cannot detect whitelist format')
+            filename = fobj.geturl()
 
-    @classmethod
-    def load_toml(cls, content):
-        wl = cls()
-        for k, v in toml.loads(content).items():
-            if len(v.values()) and isinstance(list(v.values())[0], dict):
-                raise RuntimeError('malformed section -- forgot quotes?', k)
-            pname, version = split_name(k)
-            wl.insert(WhitelistRule(pname=pname, version=version, **v))
-        return wl
+        if filename.endswith('.toml'):
+            gen = read_toml(content)
+        elif filename.endswith('.yaml'):
+            gen = read_yaml(content)
+        elif cls.TOML_SECTION_START.search(content):
+            gen = read_toml(content)
+        elif cls.YAML_SECTION_START.search(content):
+            gen = read_yaml(content)
+        else:
+            raise RuntimeError('cannot detect whitelist format')
 
-    @classmethod
-    def load_yaml(cls, content):
-        wl = cls()
-        for item in yaml.load(content):
-            pname = item.pop('name', None)
-            wl.insert(WhitelistRule(pname=pname, **item))
-        return wl
+        self = cls()
+        today = datetime.date.today()
+        for rule in gen:
+            if rule.until and rule.until >= today:
+                continue
+            self.insert(rule)
+        return self
 
     def candidates(self, pname, version):
         try:

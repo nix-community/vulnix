@@ -7,6 +7,7 @@ from vulnix.whitelist import Whitelist, WhitelistRule, MATCH_TEMP, MATCH_PERM
 from vulnix.derivation import Derive
 
 
+@freezegun.freeze_time('2018-02-28')
 def check_whitelist_entries(wl):
     assert len(wl) == 6
 
@@ -205,3 +206,9 @@ def test_convert_derivs(whitelist):
         name='ffmpeg-3.4.2', affected_by={'CVE-2018-7557', 'CVE-2018-6912'}))
     assert len(whitelist) == 7
     assert whitelist['ffmpeg-3.4.2'].cve == {'CVE-2018-7557', 'CVE-2018-6912'}
+
+
+@freezegun.freeze_time('2018-03-01')
+def test_load_should_remove_timeed_out_rules(whitelist_toml):
+    wl = Whitelist.load(whitelist_toml)
+    assert 'libxslt-2.0' not in wl.entries

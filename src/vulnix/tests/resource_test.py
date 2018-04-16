@@ -22,6 +22,7 @@ def http_server():
     port = httpd.server_port
     child = os.fork()
     if child == 0:
+        signal.alarm(3600)  # safety belt
         httpd.serve_forever()
         return  # never reached
     os.chdir(oldcwd)

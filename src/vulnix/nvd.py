@@ -137,7 +137,7 @@ class Download:
 
     def __enter__(self):
         logger.debug("Downloading {}".format(self.url))
-        r = requests.get(self.url, stream=True)
+        r = requests.get(self.url, stream=True, timeout=300)
         r.raise_for_status()
         self.xml = decompress(r.raw)
         return self.xml
