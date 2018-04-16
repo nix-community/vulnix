@@ -32,9 +32,9 @@ def read_yaml(content):
 def dump_multivalued(val):
     if len(val) == 1:
         return list(val)[0]
-    l = list(val)
-    l.sort()
-    return l
+    val_l = list(val)
+    val_l.sort()
+    return val_l
 
 
 class WhitelistRule:

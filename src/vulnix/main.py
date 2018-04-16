@@ -107,7 +107,7 @@ def output(affected, whitelisted, show_whitelisted, verbose):
     if amount == 0 and not show_whitelisted:
         if len(whitelisted):
             click.secho('Nothing to show, but {} left out due to whitelisting'.
-                format(len(whitelisted)), fg='blue')
+                        format(len(whitelisted)), fg='blue')
         else:
             click.secho('Found no advisories. Excellent!', fg='green')
         return
