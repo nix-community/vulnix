@@ -91,8 +91,8 @@ Syntax
 Whitelists are TOML_ files which contain the package to be filtered as section
 headers, followed by further per-package options.
 
-Selecting packages
-^^^^^^^^^^^^^^^^^^
+Section headings - package selection
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Exclude a package at a specific version::
 
@@ -111,61 +111,60 @@ Exclude all packages (see below for CVE filters, again)::
 Options
 ^^^^^^^
 
-Package selections can be further narrowed by CVE lists::
+cve
+  List of CVE identifiers to match. The whitelist rule is valid as long as the
+  detected CVEs are a subset of the CVEs listed here. If additional CVEs are
+  detected, this whitelist rule is not effective anymore.
 
-  ["openjpeg"]
-  cve = ["CVE-2017-17479", "CVE-2017-17480"]
+until
+  Date in the form "YYYY-MM-DD" which confines this rule's lifetime. On the
+  specified date and later, this whitelist rule is not effective anymore.
 
-This means that the *openjpeg* package will not be reported as long as it
-matches only the two specified CVEs. Once another CVE is listed in the database,
-it will be reported.
+issue_url
+  URL or list of URLs that point to any issue tracker. Informational only.
 
-Whitelist rules may have an expiry date with the `until` option::
-
-  ["libarchive-3.3.2"]
-  until = "2018-04-01"
-
-This means that libarchive-3.3.2 will be filtered out before 2018-04-01. On that
-date and afterwards, it will be reported again.
-
-The options `issue_url` and `comment` can be used to document further details
-why this whitelist entry has been created and so on. The former must contain a
-valid URLs while the latter is free form. They are only for informational
-purposepurposes and will be displayed with `vulnix --show-whitelisted`.
-
-Workflows
----------
-
-Whitelisting allow you to keep uninteresting stuff out of vulnix reports and
-concentrate on what is important.
-
-Excluding unfixable packages
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Add a version-specific whitelist rule for packages which have no applicable fix
-or where the impact is negligible. If a package is hit completely in error, add
-a version-independend whitelist rule.
-
-Example::
-
-  ["exiv2-0.26"]
-  comment = "No upstream fix available"
+comment
+  String or list of strings containing free text. Informational only.
 
 
-Marking packages as work in progress
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Examples
+--------
 
-Create a ticket on your favourite issue tracker and put the URL and optionally
-an expiry date into the whitelist::
+Create a ticket on your favourite issue tracker. Estimate the time to get the
+vulnerable package fixed. Create whitelist entry::
 
   ["ffmpeg-3.4.2"]
   cve = ["CVE-2018-6912", "CVE-2018-7557"]
   until = "2018-05-01"
-  issue_url = "issues.example.com/29952"
+  issue_url = "https://issues.example.com/29952"
+  comment = "need to backport patch"
 
-If the package is not fixed on the system by the specified date, it will pop up
-again in the report. If a new CVE gets published for this package version, it
-will be re-reported even before the specified date.
+This particular version of ffmpeg will be left out from reports until either
+another CVE gets published or the specified date is reached.
+
+
+CVE patch auto-detection
+========================
+
+`vulnix` will inspect derivations for patches which supposedly fix specific
+CVEs. When a patch filename contains one or more CVE identifiers, these will not
+reported anymore. Example Nix code::
+
+  patches = [ ./CVE-2018-6951.patch ];
+
+Patches which fix multiple CVEs should name them all with a non-numeric
+separator, e.g. `CVE-2017-14159+CVE-2017-17740.patch`.
+
+Auto-detection even works when patches are pulled via `fetchpatch` and friends
+as long as there is a CVE identifier in the name. Example::
+
+  patches = [
+    (fetchpatch {
+      name = "CVE-2018-9055.patch";
+      url = http://paste.opensuse.org/view/raw/330751ce;
+      sha256 = "0m798m6c4v9yyhql7x684j5kppcm6884n1rrb9ljz8p9aqq2jqnm";
+    })
+  ];
 
 
 .. _NIST: https://nvd.nist.gov/vuln/

@@ -6,6 +6,7 @@ develop-eggs/
 dist/
 *.egg-info/
 eggs
+.eggs/
 htmlcov/
 include
 .installed.cfg
@@ -19,6 +20,7 @@ pip-selfcheck.json
 *.py?
 .pytest_cache/
 pyvenv.cfg
+README.html
 .remote-sync.json
 /report.xml
 /result
@@ -28,4 +30,3 @@ pyvenv.cfg
 *.sublime-workspace
 *.sw?
 /tags
-.eggs/
