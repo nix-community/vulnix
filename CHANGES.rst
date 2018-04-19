@@ -9,7 +9,8 @@ Changes
   TOML files and support a more expressive range of options including expiry
   datedates. The old YAML syntax is still supported (#36).
 - Ignore case when guessing CVE identifiers from patch file names (thanks to
-  adisbladis).
+  @adisbladis).
+- Add man pages (#29).
 
 
 1.4.0 (2017-11-27)
