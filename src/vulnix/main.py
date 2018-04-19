@@ -76,8 +76,9 @@ def print_derivation(derivation, verbose):
     if verbose >= 1:
         click.secho(derivation.store_path, fg='magenta')
     click.echo("CVEs:")
+    fmt = cve_url if verbose else lambda x: x
     for cve_id in derivation.affected_by:
-        click.echo("\t" + cve_url(cve_id))
+        click.echo("\t" + fmt(cve_id))
 
 
 def print_masked(masked, verbose):
@@ -113,7 +114,7 @@ def output(affected, whitelisted, show_whitelisted, verbose):
         return
 
     click.secho('Found {} {}'.format(amount, adv(amount)), fg='red')
-    for derivation in affected:
+    for derivation in sorted(affected):
         print_derivation(derivation, verbose)
     if not len(whitelisted):
         return

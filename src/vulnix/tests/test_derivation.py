@@ -82,3 +82,17 @@ def test_ignore_patched_cves_during_check(nvd_modified):
     deriv = load(fix('unzip-6.0.drv'))
     deriv.check(nvd_modified)
     assert set() == deriv.affected_by
+
+
+def test_ordering():
+    assert Derive(name='python-2.7.14') == Derive(name='python-2.7.14')
+    assert Derive(name='python-2.7.14') != Derive(name='python-2.7.13')
+    assert (Derive(name='coreutils-8.29',
+                   affected_by={'CVE-2017-18018'}) <
+            Derive(name='patch-2.7.6',
+                   affected_by={'CVE-2018-6952', 'CVE-2018-6951'}))
+    assert Derive(name='python-2.7.14') > Derive(name='python-2.7.13')
+    assert not Derive(name='python-2.7.13') > Derive(name='python-2.7.14')
+    assert (Derive(name='patch-2.7.6',
+                   affected_by={'CVE-2018-6951', 'CVE-2018-6952'}) >
+            Derive(name='patch-2.7.6', affected_by={'CVE-2018-6951'}))

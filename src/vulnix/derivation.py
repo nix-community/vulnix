@@ -1,4 +1,5 @@
 import re
+import functools
 
 from vulnix.utils import call
 
@@ -31,6 +32,7 @@ def load(path):
     return d_obj
 
 
+@functools.total_ordering
 class Derive(object):
 
     store_path = None
@@ -51,6 +53,24 @@ class Derive(object):
     def __repr__(self):
         return '<Derive({}, {})>'.format(
                 repr(self.name), repr(self.affected_by))
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+        return ((self.name, self.version, self.affected_by) ==
+                (other.name, other.version, other.affected_by))
+
+    def __lt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+        return ((self.name, self.version, self.affected_by) <
+                (other.name, other.version, other.affected_by))
+
+    def __gt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+        return ((self.name, self.version, self.affected_by) >
+                (other.name, other.version, other.affected_by))
 
     @property
     def is_affected(self):
