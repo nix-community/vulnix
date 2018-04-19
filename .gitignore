@@ -4,8 +4,9 @@ bin/
 deploy-rsa
 develop-eggs/
 dist/
+/doc/vulnix*.[15]
+/doc/vulnix*.[15].html
 *.egg-info/
-eggs
 .eggs/
 htmlcov/
 include
