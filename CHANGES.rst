@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.6.0 (unreleased)
+1.6.0 (2018-04-19)
 ------------------
 
 - Completely reworked whitelisting subsystem. Whitelists can now be written as

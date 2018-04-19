@@ -5,6 +5,6 @@ include *.nix
 include *.rst
 include *.txt
 include VERSION
-recursive-exclude doc 2017-03-11-Vulnix.pdf
-recursive-include src *.py *.yaml *.xml *.xml.gz *.drv
+recursive-include src *.py *.yaml *.xml *.xml.gz *.drv *.toml
 recursive-include scripts *.json *.py
+recursive-include doc *.md *.txt Makefile
