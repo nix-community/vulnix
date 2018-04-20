@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.6.1 (unreleased)
+1.6.1 (2018-04-20)
 ------------------
 
 - Parse derivation files with `__structuredAttrs = true` (#37).
