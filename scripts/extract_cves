@@ -1,3 +1,0 @@
-#!/bin/sh
-# Just get me the CVE numbers from `vulnix --json` output
-jq '.[] | .affected_by ' | jq -s 'flatten(2)'
