@@ -22,13 +22,13 @@ setup(
     name='vulnix',
     version=version,
     install_requires=[
-        'click==6.7',
-        'colorama==0.3.9',
-        'lxml==3.8.0',
+        'click>=6.7',
+        'colorama>=0.3',
+        'lxml>=4',
         'pyyaml==3.12',
-        'requests==2.18.3',
+        'requests>=2.18',
         'toml>=0.9',
-        'ZODB==5.2.4',
+        'ZODB>=5.4',
     ],
     extras_require={
         'test': [
