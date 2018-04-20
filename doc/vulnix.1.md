@@ -122,11 +122,7 @@ initialized, only changed entries are fetched.
 The cache directory grows slowly but steadily as there new CVE advisories added
 on an ongoing basis.
 
-
-## BUGS
-
-Derivation files written by Nix up to 1.12 are currently parsed correctly.
-Support for Nix 2.0 is planned.
+`vulnix` is able to parse derivation files created by Nix up to version 2.0.
 
 
 ## EXAMPLES

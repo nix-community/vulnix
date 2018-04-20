@@ -65,7 +65,7 @@ whitelists.
 Derivations containing patches that have one or more CVE identifiers in their
 file name are considered patched against the specified vulnerabilities. `vulnix`
 behaves as if a whitelist entry containing program, version, and the specified
-CVE(s) would be present. See [Examples][] below.
+CVE(s) would be present. See [EXAMPLES][] below.
 
 ## NOTES
 

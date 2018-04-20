@@ -1,3 +1,4 @@
+import json
 import re
 import functools
 
@@ -32,6 +33,11 @@ def load(path):
     return d_obj
 
 
+def destructure(env):
+    """Decodes Nix 2.0 __structuredAttrs."""
+    return json.loads(env['__json'])
+
+
 @functools.total_ordering
 class Derive(object):
 
@@ -43,7 +49,9 @@ class Derive(object):
                  _system=None, _builder=None, _args=None,
                  envVars={}, derivations=None, name=None, affected_by=None):
         envVars = dict(envVars)
-        self.name = name or envVars['name']
+        self.name = name or envVars.get('name')
+        if not self.name:
+            self.name = destructure(envVars)['name']
         self.pname, self.version = split_name(self.name)
         if not self.version:
             raise NoVersionError(self.name)

@@ -96,3 +96,8 @@ def test_ordering():
     assert (Derive(name='patch-2.7.6',
                    affected_by={'CVE-2018-6951', 'CVE-2018-6952'}) >
             Derive(name='patch-2.7.6', affected_by={'CVE-2018-6951'}))
+
+
+def test_structured_attrs():
+    d = load(fix('structured-attrs-1.drv'))
+    assert d.name == 'structured-attrs-1'

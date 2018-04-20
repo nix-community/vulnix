@@ -5,7 +5,7 @@ Changes
 1.6.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Parse derivation files with `__structuredAttrs = true` (#37).
 
 
 1.6.0 (2018-04-19)
