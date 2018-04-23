@@ -5,7 +5,7 @@ Changes
 1.6.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Sort CVEs in JSON output.
 
 
 1.6.1 (2018-04-20)

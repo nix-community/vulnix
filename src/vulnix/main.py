@@ -61,7 +61,7 @@ def output_json(derivations, show_whitelisted):
             'pname': d.pname,
             'version': d.version,
             'derivation': d.store_path,
-            'affected_by': list(d.affected_by),
+            'affected_by': sorted(list(d.affected_by)),
         })
     print(json.dumps(out, indent=1))
 
