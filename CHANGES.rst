@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.6.2 (unreleased)
+1.6.2 (2018-05-02)
 ------------------
 
 - Sort CVEs in JSON output.
