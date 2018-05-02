@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.6.3 (unreleased)
+1.6.3 (2018-05-02)
 ------------------
 
 - *Really* fix FC-101294. Now for whitelists containing more than one line :)
