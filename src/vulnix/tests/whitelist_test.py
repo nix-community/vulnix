@@ -51,7 +51,7 @@ comment = "unquoted, triggers TOML's table syntax inadvertently"
 
 def test_toml_malformed_url():
     with pytest.raises(ValueError):
-        Whitelist.load(io.StringIO('[pkg]\nissue_url = "foobar"'))
+        Whitelist.load(io.StringIO('["pkg"]\nissue_url = "foobar"'))
 
 
 def test_match_pname_version():
@@ -212,3 +212,8 @@ def test_convert_derivs(whitelist):
 def test_load_should_remove_timeed_out_rules(whitelist_toml):
     wl = Whitelist.load(whitelist_toml)
     assert 'libxslt-2.0' not in wl.entries
+
+
+def test_unexpected_whitelist_101294():
+    with pytest.raises(RuntimeError):
+        Whitelist.load(io.StringIO('[ "package-1.2" ]\n'))

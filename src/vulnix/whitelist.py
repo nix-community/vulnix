@@ -14,11 +14,18 @@ _log = logging.getLogger(__name__)
 MATCH_PERM = 'permanent'
 MATCH_TEMP = 'temporary'
 
+# brackets must be followed/preceded immediately by quotation marks
+RE_INV_SECT_START = re.compile(r'^\s*\[[^"]')
+RE_INV_SECT_END = re.compile(r'[^"]\]$')
+
 
 def read_toml(content):
+    if RE_INV_SECT_START.search(content) or RE_INV_SECT_END.search(content):
+        raise RuntimeError('section header must start with \'["\' and end '
+                           'with \'"]\'')
     for k, v in toml.loads(content, collections.OrderedDict).items():
         if len(v.values()) and isinstance(list(v.values())[0], dict):
-            raise RuntimeError('malformed section -- forgot quotes?', k)
+            raise RuntimeError('malformed section header -- forgot quotes?', k)
         pname, version = split_name(k)
         yield WhitelistRule(pname=pname, version=version, **v)
 

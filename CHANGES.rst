@@ -6,6 +6,7 @@ Changes
 ------------------
 
 - Sort CVEs in JSON output.
+- Bugfix: fail clearly if section headers are not quoted (FC-101294).
 
 
 1.6.1 (2018-04-20)
@@ -29,7 +30,7 @@ Changes
 ------------------
 
 - Guesses applied CVE patches out of the `patches` derivation envVar (see
-  nixpkgs #15660).
+  nixpkgs FC-15660).
 
 
 1.3.4 (2017-10-29)
@@ -44,7 +45,7 @@ Changes
 1.3.3 (2017-10-16)
 ------------------
 
-- Fix return code bug (#28741).
+- Fix return code bug (FC-28741).
 - Fix partial whitelisting of products where several vulnerable versions are
   present on the system at the same time (#24).
 - Improve error reporting for incorrectly formed whitelist rules.
