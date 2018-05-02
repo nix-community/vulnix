@@ -5,7 +5,8 @@ Changes
 1.6.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- *Really* fix FC-101294. Now for whitelists containing more than one line :)
+- Fail on spaces between package and version in whitelist headers.
 
 
 1.6.2 (2018-05-02)

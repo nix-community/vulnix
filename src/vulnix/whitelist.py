@@ -15,14 +15,17 @@ MATCH_PERM = 'permanent'
 MATCH_TEMP = 'temporary'
 
 # brackets must be followed/preceded immediately by quotation marks
-RE_INV_SECT_START = re.compile(r'^\s*\[[^"]')
-RE_INV_SECT_END = re.compile(r'[^"]\]$')
+RE_INV_SECT_START = re.compile(r'^\s*\[[^"]', re.MULTILINE)
+RE_INV_SECT_END = re.compile(r'^\s*\[[^\]]*[^"]\]$', re.MULTILINE)
 
 
 def read_toml(content):
-    if RE_INV_SECT_START.search(content) or RE_INV_SECT_END.search(content):
-        raise RuntimeError('section header must start with \'["\' and end '
-                           'with \'"]\'')
+    m_begin = RE_INV_SECT_START.search(content)
+    m_end = RE_INV_SECT_END.search(content)
+    if m_begin or m_end:
+        raise RuntimeError(
+            'section header must start with \'["\' and end with \'"]\'',
+            m_begin, m_end)
     for k, v in toml.loads(content, collections.OrderedDict).items():
         if len(v.values()) and isinstance(list(v.values())[0], dict):
             raise RuntimeError('malformed section header -- forgot quotes?', k)
@@ -63,6 +66,9 @@ class WhitelistRule:
     If there are both package and CVE IDs set, only vulnerable items
     which match both are whitelisted.
     """
+
+    pname = None
+    version = None
 
     def __init__(self, **kw):
         for field in ['pname', 'version']:
@@ -171,6 +177,7 @@ class Whitelist:
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
     YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
+    SECTION_FORMAT = re.compile(r'^[a-z0-9_.*-]+$')
 
     @classmethod
     def load(cls, fobj):
@@ -201,6 +208,8 @@ class Whitelist:
         self = cls()
         today = datetime.date.today()
         for rule in gen:
+            if not self.SECTION_FORMAT.match(rule.pname):
+                raise RuntimeError('invalid package selector', rule.pname)
             if rule.until and rule.until >= today:
                 continue
             self.insert(rule)
