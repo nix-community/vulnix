@@ -5,7 +5,7 @@ Changes
 1.6.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Refine TOML section header check.
 
 
 1.6.3 (2018-05-02)

@@ -15,17 +15,21 @@ MATCH_PERM = 'permanent'
 MATCH_TEMP = 'temporary'
 
 # brackets must be followed/preceded immediately by quotation marks
-RE_INV_SECT_START = re.compile(r'^\s*\[[^"]', re.MULTILINE)
-RE_INV_SECT_END = re.compile(r'^\s*\[[^\]]*[^"]\]$', re.MULTILINE)
+RE_INV_SECT_START = re.compile(r'^\s*\[[^"a-zA-Z]', re.MULTILINE)
+RE_INV_SECT_END = re.compile(r'^\s*\[[^\]]*[^"a-zA-Z0-9]\]$', re.MULTILINE)
 
 
-def read_toml(content):
+def check_section_header(content):
     m_begin = RE_INV_SECT_START.search(content)
     m_end = RE_INV_SECT_END.search(content)
     if m_begin or m_end:
         raise RuntimeError(
             'section header must start with \'["\' and end with \'"]\'',
             m_begin, m_end)
+
+
+def read_toml(content):
+    check_section_header(content)
     for k, v in toml.loads(content, collections.OrderedDict).items():
         if len(v.values()) and isinstance(list(v.values())[0], dict):
             raise RuntimeError('malformed section header -- forgot quotes?', k)

@@ -230,3 +230,10 @@ def test_section_header_unexpected_space_2():
 ["broken-section 1.2"]
 comment = "incorrect whitespace between package and version"
 """))
+
+
+def test_section_header_alphanumeric():
+    Whitelist.load(io.StringIO("""
+[systemd-236]
+comment = "section headers consisting only of alphanum chars are ok"
+"""))
