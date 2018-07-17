@@ -16,8 +16,8 @@ until = "2018-03-01"
 ["audiofile-0.3.6"]
 cve = [
   "CVE-2017-6827",
-  "CVE-2017-6834",
   "CVE-2017-6828",
+  "CVE-2017-6834",
 ]
 issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
 comment = "some issues not fixed upstream"

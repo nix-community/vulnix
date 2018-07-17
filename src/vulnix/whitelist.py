@@ -7,12 +7,10 @@ import urllib.parse
 import yaml
 
 from vulnix.derivation import split_name
+from vulnix.output import Filtered
 
 _log = logging.getLogger(__name__)
 
-
-MATCH_PERM = 'permanent'
-MATCH_TEMP = 'temporary'
 
 # brackets must be followed/preceded immediately by quotation marks
 RE_INV_SECT_START = re.compile(r'^\s*\[[^"a-zA-Z]', re.MULTILINE)
@@ -138,28 +136,23 @@ class WhitelistRule:
         If so, a tuple (match type, whitelist item) is returned.
         """
         if self.pname != '*' and self.pname != deriv.pname:
-            return None
+            return False
         if self.version != '*' and self.version != deriv.version:
-            return None
-        if self.cve and not self.cve >= deriv.affected_by:
-            return None
-        if self.until:
-            if self.until <= datetime.date.today():
-                return None
-            else:
-                return (MATCH_TEMP, self)
-        return (MATCH_PERM, self)
-
-
-class Masked:
-
-    def __init__(self, derivation, matchtype, whitelist_rule):
-        self.deriv = derivation
-        self.matchtype = matchtype
-        self.rule = whitelist_rule
+            return False
+        if self.cve and self.cve & deriv.affected_by == set():
+            return False
+        if self.until and self.until <= datetime.date.today():
+            return False
+        return True
 
 
 class Whitelist:
+    """Collection of WhitelistRules.
+
+    It can be populated either by reading a config file (`load`) or by
+    synthesizing rules from derivations (`add_from`). A whitelist is
+    able to save itself into a config file with stable sort order.
+    """
 
     def __init__(self):
         self.entries = collections.OrderedDict()
@@ -172,12 +165,6 @@ class Whitelist:
 
     def __str__(self):
         return toml.dumps(self.dump()).replace(',]\n', ' ]\n')
-
-    def dump(self):
-        res = collections.OrderedDict()
-        for k, v in self.entries.items():
-            res[k] = v.dump()
-        return res
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
     YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
@@ -219,7 +206,14 @@ class Whitelist:
             self.insert(rule)
         return self
 
+    def dump(self):
+        res = collections.OrderedDict()
+        for k, v in self.entries.items():
+            res[k] = v.dump()
+        return res
+
     def candidates(self, pname, version):
+        """Matching rules in order of decreasing specificity."""
         try:
             yield self.entries['{}-{}'.format(pname, version)]
         except KeyError:
@@ -233,34 +227,20 @@ class Whitelist:
         except KeyError:
             pass
 
-    def find(self, deriv):
-        """Finds most specific matching whitelist rule.
-
-        Tries all relevant rules in turn. If a rule matches, a `Masked`
-        object is returned. Returns None otherwise.
-        """
-        for item in self.candidates(deriv.pname, deriv.version):
-            match = item.covers(deriv)
-            if match:
-                return Masked(deriv, match[0], match[1])
+    def find(self, derivation):
+        """Compiles all matching rules into a `Filtered` object."""
+        f = Filtered(derivation)
+        for cand in self.candidates(derivation.pname, derivation.version):
+            if cand.covers(derivation):
+                f.add(cand)
+        return f
 
     def filter(self, derivations):
-        """Splits a list of derivations into (unmasked, masked).
+        """Returns matching rules for all given derivation.
 
-        Masked derivations are those with at least one matching
-        whitelist rule. They are returned as `Masked` objects. In case
-        of multiple matching rules, the most specific (pname/version) is
-        selected. Unmasked derivations, e.g. those without any matching
-        whitelist rules, are returned unmodified.
+        Rules are wrapped in Filtered objects to keep track.
         """
-        unmasked, masked = [], []
-        for deriv in derivations:
-            m = self.find(deriv)
-            if m:
-                masked.append(m)
-            else:
-                unmasked.append(deriv)
-        return unmasked, masked
+        return [self.find(deriv) for deriv in derivations]
 
     def insert(self, rule):
         self.entries[rule.name] = rule

@@ -1,18 +1,17 @@
+import functools
 import json
 import re
-import functools
-
-from vulnix.utils import call
-
-# see parseDrvName built-in Nix function
-# https://nixos.org/nix/manual/#ssec-builtins
-R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
 
 
 class NoVersionError(RuntimeError):
 
     def __init__(self, drv_name):
         self.drv_name = drv_name
+
+
+# see parseDrvName built-in Nix function
+# https://nixos.org/nix/manual/#ssec-builtins
+R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
 
 
 def split_name(fullname):
@@ -100,14 +99,6 @@ class Derive(object):
 
     def matches(self, cpe):
         return self.pname == cpe.product and self.version in cpe.versions
-
-    def roots(self):
-        return call(
-            ['nix-store', '--query', '--roots', self.store_path]).split('\n')
-
-    def referrers(self):
-        return call(['nix-store', '--query', '--referrers',
-                     self.store_path]).split('\n')
 
     R_CVE = re.compile(r'CVE-\d{4}-\d+', flags=re.IGNORECASE)
 
