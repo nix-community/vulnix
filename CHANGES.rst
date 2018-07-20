@@ -2,9 +2,13 @@ Changes
 =======
 
 
-1.6.4 (unreleased)
-------------------
+1.7 (unreleased)
+----------------
 
+- Selective CVE reporting: Only those CVEs are reported for which no whitelist
+  entry exists (#41).
+- Consider all applicable whitelist entries for a given package (pkg-version,
+  pkg, "*") (#42).
 - Refine TOML section header check.
 
 
