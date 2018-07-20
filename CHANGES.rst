@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.7 (unreleased)
+1.7 (2018-07-20)
 ----------------
 
 - Selective CVE reporting: Only those CVEs are reported for which no whitelist
