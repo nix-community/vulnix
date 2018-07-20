@@ -30,9 +30,9 @@ Each rule is started by a TOML section header. The following forms are allowed:
   Matches derivations with the specified program name and an arbitrary version
   for which no more specific rule is present.
 
-* `["`*`"]`:
+* `["*"]`:
   Matches arbitrary derivations that are not covered by a more specific rule.
-  Note that the `cve` field **must** be specified in this case.
+  Note that the `cve` field must be specified in this case.
 
 Each rule is optionally followed by the following fields:
 
@@ -60,35 +60,29 @@ consists of a list of dicts with the keys `name` (derivation name), `version`,
 compatibility reasons). Note that the `issue_url` field is not valid in YAML
 whitelists.
 
-## Automated patch whitelisting
-
-Derivations containing patches that have one or more CVE identifiers in their
-file name are considered patched against the specified vulnerabilities. `vulnix`
-behaves as if a whitelist entry containing program, version, and the specified
-CVE(s) would be present. See [EXAMPLES][] below.
-
 ## NOTES
 
-For any given derivation, only the most specific rule is applicable.
+For any given derivation, all relevant rules are applied in order of decreasing
+specificity.
 
 Multiple whitelists can be used by passing more than one `-w` option to
 `vulnix`. Multiple whitelist are merged in order. For merging, the following
 rules apply:
 
 * Rules containing a version and those without are considered different. Only
-  rules with the same headings are merged.
+  rules with the same headers are merged.
 
 * CVE lists are concatenated and duplicates are removed.
 
-* Comments and issue URLs are converted to lists (if necessary) and
-  concatenated.
+* Comments and issue URLs are converted to lists and concatenated.
 
 ## EXAMPLES
 
-Whitelist in TOML with three rules:
-The first one matches a specific version of PCRE until a given date.
-The second one matches all versions of GNU patch as long as the set of published CVEs is a subset of the listed CVEs.
-The third matches any derivation which is affected by no more than the listed CVEs.
+Whitelist in TOML format with three rules:
+The first one matches a specific version of `PCRE` until a given date.
+The second one matches all versions of GNU `patch` as long as the set of
+published CVEs is a subset of the listed CVEs. The third matches any
+derivation which is affected by no more than the listed CVEs.
 
 ```
 ["pcre-8.41"]
@@ -108,22 +102,6 @@ cve = [
   "CVE-2017-6833",
 ]
 ```
-
-Nix code in a derivation which applies a patch against CVE-2018-9055. Note the
-**name** attribute.
-
-```
-patches = [
-  (fetchpatch {
-    name = "CVE-2018-9055.patch";
-    url = http://paste.opensuse.org/view/raw/330751ce;
-    sha256 = "0m798m6c4v9yyhql7x684j5kppcm6884n1rrb9ljz8p9aqq2jqnm";
-  })
-];
-```
-
-A patch against two CVEs in one could be named
-_CVE-2018-9055+CVE-2018-9600.patch_, for example.
 
 ## SEE ALSO
 

@@ -18,9 +18,12 @@ The last argument specifies where to start the search and can be either:
 * A file in the Nix store for which a deriver is known.
 * A link into the Nix store (e.g. _result_).
 
+Prior to scanning, parts of the NIST NVD database are fetched and parsed.  This
+database copy is cached between `vulnix` invocations and checked in regular
+intervals.
+
 `vulnix` uses whitelists to mask certain combinations of packages and CVEs that
-should not be reported. The NIST NVD is cached between `vulnix` invocations and
-updated in regular intervals.
+should not be reported.
 
 ## OPTIONS
 
@@ -58,14 +61,11 @@ updated in regular intervals.
   _https://static.nvd.nist.gov/feeds/xml/cve/_.
 
 * `-j`, `--json`:
-  Outputs affected package versions as JSON document. The result is a list of
-  dicts containing the following keys: name - package name and version; pname -
-  package name without version; version - version only; affected_by - list of
-  CVE identifiers; derivation - pathname of the scanned derivation file.
+  Outputs affected package versions as JSON document. See [JSON output] below.
 
 * `-s`, `--show-whitelisted`:
-  Prints out whitelisted results in addition to regular (non-whitelisted)
-  results. Note that this option is currently not compatible with `--json`.
+  Shows whitelisted results in addition to regular (non-whitelisted)
+  results.
 
 * `-v`, `--verbose`:
   Prints additional pieces of information on _stderr_. This includes NVD
@@ -85,7 +85,7 @@ Exit status are compatible with the [Nagios plugin development
 guidelines](https://nagios-plugins.org/doc/guidelines.html) which means that it
 can be directly used in the majority of monitoring systems.
 
-`vulnix` exits 0zero if no vulnerabilities were found. If all
+`vulnix` exits 0 if no vulnerabilities were found. If all
 vulnerabilities were whitelisted, it exits 1. Otherwise, found
 vulnerabilities lead to exit status 2. Exit status 3 indicates an error
 condition.
@@ -111,9 +111,30 @@ The Nix store is assumed to be under _/nix/store_. This pathname is hardcoded.
 
 ## NOTES
 
-`vulnix` auto-detects patches which contain one or more CVE identifiers in
-derivation files and auto-whitelists the named vulnerabilities. See
-vulnix-whitelist(5) for details.
+### Patch detection
+
+`vulnix` tries to detect patches for specific CVEs. These are automatically
+excluded from reports.
+
+The `patches` field of each derivation is scanned for names containing CVE
+identifiers. If a single patch fixes multiple vulnerabilities, all relevant CVE
+identifiers should be given in the patch name, separated by arbitrary
+non-numerical characters. See [EXAMPLES] below.
+
+### JSON output
+
+When invoked with `--json`, a JSON document consisting of a list of dicts is
+written to stdout. Each list item is an affected derivation and contains the
+following keys:
+
+- _name_ - package name and version
+- _pname_ - package name without version
+- _version_ - version only
+- _affected_by_ - list of applicable CVE identifiers
+- _whitelisted_ - list of CVE identifiers which are masked by whitelist entries
+- _derivation_ - pathname of the scanned derivation file
+
+## BUGS
 
 Invoking `vulnix` with an empty cache directory can take quite a while since it
 needs to download and process NIST NVD archives of the last 5 years. Once
@@ -122,7 +143,9 @@ initialized, only changed entries are fetched.
 The cache directory grows slowly but steadily as there new CVE advisories added
 on an ongoing basis.
 
-`vulnix` is able to parse derivation files created by Nix up to version 2.0.
+## COMPATIBILITY
+
+`vulnix` is able to parse derivation files created by `Nix` version 1.x and 2.0.
 
 
 ## EXAMPLES
@@ -159,8 +182,25 @@ vulnix -j \
   result
 ```
 
+An excerpt from a derivation source which applies a patch against CVE-2018-9055.
+Note the **name** attribute which contains an CVE identifier:
+
+```
+patches = [
+  (fetchpatch {
+    name = "CVE-2018-9055.patch";
+    url = http://paste.opensuse.org/view/raw/330751ce;
+    sha256 = "0m798m6c4v9yyhql7x684j5kppcm6884n1rrb9ljz8p9aqq2jqnm";
+  })
+];
+```
+
+If the patch fixes two vulnerabilities, it could be named
+_CVE-2018-9055+CVE-2018-9600.patch_, for example.
+
 
 ## SEE ALSO
 
 vulnix-whitelist(5), nix-store(1), nix-build(1),
-[NIST NVD](https://nvd.nist.gov)
+[NIST NVD](https://nvd.nist.gov),
+[Nix](https://nixos.org/nix/)
