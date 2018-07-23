@@ -9,6 +9,7 @@ import os.path
 def project_path(*names):
     return os.path.join(os.path.dirname(__file__), *names)
 
+
 with open(project_path('VERSION')) as f:
     version = f.read().strip()
 
@@ -25,7 +26,7 @@ setup(
         'click>=6.7',
         'colorama>=0.3',
         'lxml>=4',
-        'pyyaml==3.12',
+        'pyyaml>=3.12,<4',
         'requests>=2.18',
         'toml>=0.9',
         'ZODB>=5.4',

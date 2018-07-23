@@ -6,6 +6,8 @@ Changes
 ------------------
 
 - Improve error messages when TOML files contain syntax errors.
+- Fix install requirements so that they match upstream nixpkgs
+  (NixOS/nixpkgs#43999).
 
 
 1.7 (2018-07-20)
