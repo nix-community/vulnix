@@ -180,11 +180,17 @@ class Whitelist:
         if isinstance(content, bytes):
             content = content.decode('utf-8')
         filename = ''
-        if hasattr(fobj, 'filename') and fobj.filename:
-            filename = fobj.filename
+        if hasattr(fobj, 'name') and fobj.name:
+            filename = fobj.name
         elif hasattr(fobj, 'geturl'):
             filename = fobj.geturl()
+        try:
+            return cls._parse_cfg(content, filename)
+        except (toml.TomlDecodeError, IndexError) as e:
+            raise RuntimeError('failed to load `{}`: {}'.format(filename, e))
 
+    @classmethod
+    def _parse_cfg(cls, content, filename):
         if filename.endswith('.toml'):
             gen = read_toml(content)
         elif filename.endswith('.yaml'):
@@ -207,6 +213,7 @@ class Whitelist:
         return self
 
     def dump(self):
+        """Serializes whitelist into dict."""
         res = collections.OrderedDict()
         for k, v in self.entries.items():
             res[k] = v.dump()

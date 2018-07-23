@@ -2,10 +2,10 @@ Changes
 =======
 
 
-1.8 (unreleased)
-----------------
+1.7.1 (unreleased)
+------------------
 
-- Nothing changed yet.
+- Improve error messages when TOML files contain syntax errors.
 
 
 1.7 (2018-07-20)
