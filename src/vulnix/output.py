@@ -125,12 +125,12 @@ def output_json(items, show_whitelisted=False):
 
 
 def output(items, json=False, show_whitelisted=False, verbose=False):
-        if json:
-            output_json(items, show_whitelisted)
-        else:
-            output_text(items, show_whitelisted, verbose)
-        if any(i.report for i in items):
-            return 2
-        if any(i.masked for i in items):
-            return 1
-        return 0
+    if json:
+        output_json(items, show_whitelisted)
+    else:
+        output_text(items, show_whitelisted, verbose)
+    if any(i.report for i in items):
+        return 2
+    if any(i.masked for i in items):
+        return 1
+    return 0
