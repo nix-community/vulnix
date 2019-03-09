@@ -85,10 +85,13 @@ Exit status are compatible with the [Nagios plugin development
 guidelines](https://nagios-plugins.org/doc/guidelines.html) which means that it
 can be directly used in the majority of monitoring systems.
 
-`vulnix` exits 0 if no vulnerabilities were found. If all
-vulnerabilities were whitelisted, it exits 1. Otherwise, found
+`vulnix` exits 0 if no vulnerabilities are found. If all of the
+shown vulnerabilities are whitelisted, it exits 1. Otherwise, found
 vulnerabilities lead to exit status 2. Exit status 3 indicates an error
 condition.
+
+Note that exit status 1 may never occur if the `--show-whitelisted` option is
+not given.
 
 
 ## ENVIRONMENT

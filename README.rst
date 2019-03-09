@@ -10,20 +10,20 @@ monitoring integration for Sensu.
 
 Example output::
 
-  Found 5 advisories
+  2 derivations with active advisories
 
-  ========================================================================
+  ------------------------------------------------------------------------
   libxslt-1.1.29
 
   CVEs:
-          https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2017-5029
+          CVE-2017-5029
 
-  ========================================================================
+  ------------------------------------------------------------------------
   pcre-8.40
 
   CVEs:
-          https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2017-7245
-          https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2017-7244
+          CVE-2017-7245
+          CVE-2017-7244
           [...]
 
 

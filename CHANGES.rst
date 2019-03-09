@@ -2,9 +2,10 @@ Changes
 =======
 
 
-1.7.2 (unreleased)
+1.8.0 (unreleased)
 ------------------
 
+- Exit code 1 is returned only in conjunction with `--show-whitelisted` (#45).
 - Fix bug in the processing of the 'until' whitelist field (#43).
 
 

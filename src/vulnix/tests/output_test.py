@@ -147,8 +147,9 @@ def test_exitcode(items, capsys):
     assert output([], json=True) == 0
     # something to report
     assert output(items) == 2
-    # get everything masked
+    # everything masked
     for i in items:
         i.add(WhitelistRule(pname=i.derivation.pname))
-    assert output(items) == 1
+    assert output(items) == 0
+    assert output(items, show_whitelisted=True) == 1
     capsys.readouterr()  # swallow stdout/stderr: it doesn't matter here

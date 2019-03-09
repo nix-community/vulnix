@@ -95,7 +95,7 @@ def output_text(items, show_whitelisted=False, verbose=False):
         len(report)), fg='red')
     if wl and not show_whitelisted:
         click.secho('{} derivations left out due to whitelisting'.format(
-            len(wl)), fg='blue', dim=True)
+            len(wl)), fg='blue')
 
     for i in sorted(report, key=attrgetter('derivation')):
         i.print(verbose, show_whitelisted)
@@ -104,7 +104,7 @@ def output_text(items, show_whitelisted=False, verbose=False):
             i.print(verbose, show_whitelisted)
     if wl and not show_whitelisted:
         click.secho('\nuse --show-whitelisted to see derivations with only '
-                    'whitelisted CVEs', dim=True, fg='blue')
+                    'whitelisted CVEs', fg='blue')
 
 
 def output_json(items, show_whitelisted=False):
@@ -131,6 +131,6 @@ def output(items, json=False, show_whitelisted=False, verbose=False):
         output_text(items, show_whitelisted, verbose)
     if any(i.report for i in items):
         return 2
-    if any(i.masked for i in items):
+    if show_whitelisted and any(i.masked for i in items):
         return 1
     return 0
