@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.8.0 (unreleased)
+1.8.0 (2019-03-09)
 ------------------
 
 - Exit code 1 is returned only in conjunction with `--show-whitelisted` (#45).
