@@ -3,8 +3,8 @@ Building vulnix
 
 To create a development environment, use a Python 3 virtualenv::
 
-    python3.6 -m venv .
-    bin/pip install -e .\[test]
+    python3 -m venv .
+    bin/pip install -e ".[test]"
 
 Run tests::
 

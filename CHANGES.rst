@@ -5,7 +5,7 @@ Changes
 1.7.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix bug in the processing of the 'until' whitelist field (#43).
 
 
 1.7.1 (2018-07-23)

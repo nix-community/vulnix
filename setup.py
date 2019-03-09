@@ -59,9 +59,9 @@ License :: OSI Approved :: BSD License
 Operating System :: POSIX
 Programming Language :: Python
 Programming Language :: Python :: 3 :: Only
-Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
 Topic :: System :: Systems Administration
 """[:-1].split('\n'),
     description=__doc__.strip(),

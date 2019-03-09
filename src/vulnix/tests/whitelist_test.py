@@ -40,6 +40,12 @@ def test_neither_name_nor_cve():
         Whitelist.load(io.StringIO('-\n  comment: invalid entry\n'))
 
 
+def test_parse_until():
+    wl = Whitelist.load(io.StringIO('["libarchive"]\nuntil = "2019-03-10"\n'))
+    assert len(wl.entries) == 1
+    assert wl.entries['libarchive'].until == datetime.date(2019, 3, 10)
+
+
 def test_match_pname_version():
     rule = WhitelistRule(pname='libxslt', version='2.0')
     assert rule.covers(Derive(name='libxslt-2.0'))
@@ -173,7 +179,8 @@ until = "2018-04-01"
     assert whitelist['audiofile-0.3.2'].until == datetime.date(2018, 4, 1)
 
 
-def test_str(whitelist):
+@freezegun.freeze_time('2018-02-28')
+def test_dump_str(whitelist):
     assert str(whitelist) == """\
 ["*"]
 cve = [ "CVE-2015-2504", "CVE-2015-7696" ]
@@ -196,19 +203,25 @@ issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
 """
 
 
-def test_convert_derivs(whitelist):
-    # XXX unclear
-    before = len(whitelist)
-    whitelist.add_from(Derive(
-        name='ffmpeg-3.4.2', affected_by={'CVE-2018-7557', 'CVE-2018-6912'}))
-    assert len(whitelist) == before + 1
-    assert whitelist['ffmpeg-3.4.2'].cve == {'CVE-2018-7557', 'CVE-2018-6912'}
-
-
 @freezegun.freeze_time('2018-03-01')
-def test_load_should_remove_timeed_out_rules(whitelist_toml):
-    wl = Whitelist.load(whitelist_toml)
-    assert 'libxslt-2.0' not in wl.entries
+def test_dump_str_remove_outdated(whitelist):
+    assert str(whitelist) == """\
+["*"]
+cve = [ "CVE-2015-2504", "CVE-2015-7696" ]
+
+[libxslt]
+comment = "broken, won't fix"
+
+[unzip]
+cve = "CVE-2015-7696"
+
+["audiofile-0.3.2"]
+
+["audiofile-0.3.6"]
+cve = [ "CVE-2017-6827", "CVE-2017-6828", "CVE-2017-6834" ]
+comment = "some issues not fixed upstream"
+issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
+"""
 
 
 def test_toml_missing_quote():

@@ -110,6 +110,13 @@ class WhitelistRule:
         return '{}-{}'.format(self.pname, self.version)
 
     def dump(self):
+        """Returns this entry as a ready-to-serialize dict.
+
+        If this entry has expired, None is returned. The date in the
+        'until' field is already formatted.
+        """
+        if self.until and self.until <= datetime.date.today():
+            return None
         res = collections.OrderedDict()
         for field in ['cve', 'comment', 'issue_url']:
             val = getattr(self, field)
@@ -203,12 +210,9 @@ class Whitelist:
             raise RuntimeError('cannot detect whitelist format')
 
         self = cls()
-        today = datetime.date.today()
         for rule in gen:
             if not self.SECTION_FORMAT.match(rule.pname):
                 raise RuntimeError('invalid package selector', rule.pname)
-            if rule.until and rule.until >= today:
-                continue
             self.insert(rule)
         return self
 
@@ -216,7 +220,9 @@ class Whitelist:
         """Serializes whitelist into dict."""
         res = collections.OrderedDict()
         for k, v in self.entries.items():
-            res[k] = v.dump()
+            entry = v.dump()
+            if entry is not None:
+                res[k] = entry
         return res
 
     def candidates(self, pname, version):
