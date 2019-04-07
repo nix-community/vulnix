@@ -26,7 +26,7 @@ setup(
         'click>=6.7',
         'colorama>=0.3',
         'lxml>=4',
-        'pyyaml>=3.12,<4',
+        'pyyaml>=3.12,<6',
         'requests>=2.18',
         'toml>=0.9',
         'ZODB>=5.4',
