@@ -36,7 +36,7 @@ def read_toml(content):
 
 
 def read_yaml(content):
-    for item in yaml.load(content):
+    for item in yaml.safe_load(content):
         pname = item.pop('name', None)
         yield WhitelistRule(pname=pname, **item)
 
