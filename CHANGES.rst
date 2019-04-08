@@ -2,10 +2,10 @@ Changes
 =======
 
 
-1.8.1 (unreleased)
+1.8.1 (2019-04-08)
 ------------------
 
-- Nothing changed yet.
+- Builds with both PyYAML 3.13 and 5.1 (#49).
 
 
 1.8.0 (2019-03-09)
