@@ -43,7 +43,7 @@ System requirements
 - Depends on being able to interact with the Nix store database
   (/nix/var/nix/db). This means that it must either run as the same user that
   owns the Nix store database or `nix-daemon` must be active.
-- Parses `*.drv` files directly. Tested with Nix 1.10 and 1.11.
+- Parses `*.drv` files directly. Tested with Nix >=1.10 and 2.x.
 - It refuses to work without some locale environment settings. Try `export
   LANG=C.UTF-8` if you see encoding errors.
 
