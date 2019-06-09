@@ -59,25 +59,25 @@ class Derive(object):
 
     def __repr__(self):
         return '<Derive({}, {})>'.format(
-                repr(self.name), repr(self.affected_by))
+            repr(self.name), repr(self.affected_by))
+
+    def _key(self):
+        return self.name, self.version, self.affected_by
 
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplemented
-        return ((self.name, self.version, self.affected_by) ==
-                (other.name, other.version, other.affected_by))
+        return self._key() == other._key()
 
     def __lt__(self, other):
         if type(self) != type(other):
             return NotImplemented
-        return ((self.name, self.version, self.affected_by) <
-                (other.name, other.version, other.affected_by))
+        return self._key() < other._key()
 
     def __gt__(self, other):
         if type(self) != type(other):
             return NotImplemented
-        return ((self.name, self.version, self.affected_by) >
-                (other.name, other.version, other.affected_by))
+        return self._key() > other._key()
 
     @property
     def is_affected(self):

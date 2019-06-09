@@ -67,7 +67,7 @@ class Filtered:
         if not verbose:
             return
         issues = functools.reduce(
-                set.union, (r.issue_url for r in self.rules), set())
+            set.union, (r.issue_url for r in self.rules), set())
         if issues:
             click.secho('Issue(s):', fg='cyan', dim=wl)
             for url in issues:

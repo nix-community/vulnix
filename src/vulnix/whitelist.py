@@ -93,12 +93,11 @@ class WhitelistRule:
         self.comment = v if isinstance(v, list) else [v]
         self.until = None
         if 'until' in kw:
-            if not (isinstance(kw['until'], datetime.datetime) or
-                    isinstance(kw['until'], datetime.date)):
+            if isinstance(kw['until'], (datetime.datetime, datetime.date)):
+                self.until = kw.pop('until')
+            else:
                 self.until = datetime.datetime.strptime(
                     kw.pop('until'), '%Y-%m-%d').date()
-            else:
-                self.until = kw.pop('until')
         kw.pop('status', '')  # compat
         if kw:
             _log.warning('Unrecognized whitelist keys: {}'.format(kw.keys()))
