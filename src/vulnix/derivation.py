@@ -11,7 +11,7 @@ class NoVersionError(RuntimeError):
 
 # see parseDrvName built-in Nix function
 # https://nixos.org/nix/manual/#ssec-builtins
-R_VERSION = re.compile(r'^(\S+)-([0-9]\S*)$')
+R_VERSION = re.compile(r'^(\S+?)-([0-9]\S*)$')
 
 
 def split_name(fullname):
