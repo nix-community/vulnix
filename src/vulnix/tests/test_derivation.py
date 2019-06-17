@@ -37,9 +37,9 @@ def test_split_name():
 
 
 def test_split_nameversion():
-    d = Derive(envVars={'name': 'bundler-1.10.5'})
+    d = Derive(envVars={'name': 'bundler-1.10.5-0'})
     assert d.pname == 'bundler'
-    assert d.version == '1.10.5'
+    assert d.version == '1.10.5-0'
 
 
 def test_split_name_noversion():
