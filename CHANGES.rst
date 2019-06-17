@@ -2,10 +2,11 @@ Changes
 =======
 
 
-1.8.2 (unreleased)
+1.8.2 (2019-06-17)
 ------------------
 
-- Nothing changed yet.
+- Process package versions containing a hyphen properly (e.g., R versions)
+  (#50).
 
 
 1.8.1 (2019-04-08)
