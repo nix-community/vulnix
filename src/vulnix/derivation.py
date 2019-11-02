@@ -87,6 +87,7 @@ class Derive(object):
         return {self.pname, self.pname.replace('-', '_')}
 
     def check(self, nvd):
+        # XXX nvd.affected(product, version)
         patched_cves = self.patched()
         for prod in self.product_candidates():
             for vuln in nvd.by_product_name(prod):

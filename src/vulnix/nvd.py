@@ -1,11 +1,10 @@
 from .utils import batch
 from BTrees import OOBTree
-from lxml import etree
 from persistent import Persistent
-import ZODB
-import ZODB.FileStorage
 import datetime
+import functools
 import gzip
+import json
 import logging
 import os
 import os.path as p
@@ -14,12 +13,11 @@ import shutil
 import tempfile
 import time
 import transaction
+import ZODB
+import ZODB.FileStorage
 
-DEFAULT_MIRROR = 'https://static.nvd.nist.gov/feeds/xml/cve/'
+DEFAULT_MIRROR = 'https://nvd.nist.gov/feeds/json/cve/1.1/'
 DEFAULT_CACHE_DIR = '~/.cache/vulnix'
-
-NS = {'feed': 'http://scap.nist.gov/schema/feed/vulnerability/2.0',
-      'vuln': 'http://scap.nist.gov/schema/vulnerability/0.4'}
 
 logger = logging.getLogger(__name__)
 
@@ -35,242 +33,181 @@ class NVD(object):
     def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
         self.mirror = mirror.rstrip('/') + '/'
         self.cache_dir = p.expanduser(cache_dir)
-        self._root = {}
-        self._root['meta'] = Meta()
-        self._root['archives'] = {}
-
-        current_year = datetime.date.today().year
-        self.relevant_archives = [
-            str(x) for x in range(current_year - 5, current_year + 1)]
-        self.relevant_archives.append('Modified')
+        # XXX computation missing
+        self.relevant_archives = 'modified'
 
     def __enter__(self):
-        if self._root['archives'].keys():
-            raise RuntimeError(
-                'Either use an in-memory NVD database or the ZODB backed '
-                'variant - not both!',
-                'Keys present', self._root.keys())
         logger.debug('Using cache in %s', self.cache_dir)
-        if not p.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
+        os.makedirs(self.cache_dir, exist_ok=True)
         storage = ZODB.FileStorage.FileStorage(
             p.join(self.cache_dir, 'Data.fs'))
         self._db = ZODB.DB(storage)
         self._connection = self._db.open()
         self._root = self._connection.root()
+        self._root.setdefault('archive', OOBTree.OOBTree())
+        self._root.setdefault('advisory', OOBTree.OOBTree())
+        self._root.setdefault('by_product', OOBTree.OOBTree())
         self._root.setdefault('meta', Meta())
-        self._root.setdefault('archives', OOBTree.OOBTree())
+        return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
         if exc_type is None:
             transaction.commit()
             meta = self._root['meta']
             if self.has_updates:
-                meta.unpacked += 1
-                if meta.unpacked > 25:
+                meta.pack_counter += 1
+                if meta.pack_counter > 25:
                     logger.debug('Packing database')
                     self._db.pack()
-                    meta.unpacked = 0
+                    meta.pack_counter = 0
                 transaction.commit()
         else:
             transaction.abort()
         self._connection.close()
 
-    def by_product_name(self, name):
-        for archive in self._root['archives'].values():
-            yield from archive.by_product_name(name)
-
-    def add(self, archive):
-        """Inserts an Archive object."""
-        if archive.name not in self._root['archives']:
-            self._root['archives'][archive.name] = archive
-
     def update(self):
-        # Add missing archives
         for a in self.relevant_archives:
-            self.add(Archive(a))
-
-        # Remove superfluous archives
-        for a in self._root['archives']:
-            if a not in self.relevant_archives:
-                del self._root['archives'][a]
-
-        for archive in self._root['archives'].values():
-            self.has_updates |= archive.update(self.mirror)
+            arch = Archive(a)
+            arch.download(self.mirror)
+            self.add(arch)
+            self.has_updates = True
         transaction.commit()
 
+    def add(self, archive):
+        advisories = self._root['advisory']
+        for (cve_id, adv) in archive.items():
+            advisories[cve_id] = adv
 
-class Meta(Persistent):
-    """A small grab bag to store persistent meta information in
-    the database.
+    def reindex(self):
+        # XXX TODO
+        pass
 
-    """
-
-    unpacked = 0
-
-
-def decompress(fileobj, dir=None):
-    """Decompresses gzipped XML data into a temporary file.
-
-    Returns temporary file. The callee takes responsibility to remove
-    that file after use.
-    """
-    tf = tempfile.NamedTemporaryFile(
-        'wb', prefix='vulnix.nvd.', suffix='.xml', delete=False, dir=dir)
-    logger.debug("Uncompressing {}".format(tf.name))
-    with gzip.open(fileobj, 'rb') as f_in:
-        shutil.copyfileobj(f_in, tf)
-    tf.close()
-    return tf.name
+    def by_cve_id(self, cve_id):
+        return self._root['advisory'][cve_id]
 
 
-class Download:
-    """Wrapper for downloading compressed XML data.
-
-    Uncompressed XML is written to a temporary file and deleted once the
-    context is exited.
-    """
-
-    def __init__(self, url):
-        self.url = url
-        self.xml = None
-
-    def __enter__(self):
-        logger.debug("Downloading {}".format(self.url))
-        r = requests.get(self.url, stream=True, timeout=300)
-        r.raise_for_status()
-        self.xml = decompress(r.raw)
-        return self.xml
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        os.unlink(self.xml)
-        self.xml = None
-        return False  # re-raise
-
-
-class Archive(Persistent):
-
-    last_update = 0
+class Archive:
 
     def __init__(self, name):
         self.name = name
-        self.products = OOBTree.OOBTree()
-        # Either set to a duration to update every `age_limit` seconds or to
-        # None to never update after the initial fetch.
-        if name == 'Modified':
-            # Is updated every two hours.
-            self.age_limit = 3600
-        elif name == str(datetime.date.today().year):
-            # The current year is only updated every 8 days
-            # (folding in the data from Modified).
-            self.age_limit = 4 * 86400
-        else:
-            # Check for errata (quite infrequent).
-            self.age_limit = 30 * 86400
+        self.download_uri = 'nvdcve-1.1-{}.json.gz'.format(name)
+        self.advisories = {}
 
-    @property
-    def upstream_filename(self):
-        return 'nvdcve-2.0-{}.xml.gz'.format(self.name)
+    def download(self, mirror):
+        url = mirror + self.download_uri
+        logger.debug('Downloading %s', url)
+        req = requests.get(url)
+        req.raise_for_status()
+        self.parse(gzip.decompress(req.content))
 
-    @property
-    def is_current(self):
-        if self.age_limit is None:
-            # We don't want to update and we have been fetched before - we're
-            # good.
-            return bool(self.last_update)
-        age = time.time() - self.last_update
-        return age < self.age_limit
+    def parse(self, nvd_json):
+        raw = json.loads(nvd_json)
+        for item in raw['CVE_Items']:
+            try:
+                vuln = Vulnerability.parse(item)
+                self.advisories[vuln.cve_id] = vuln
+            except ValueError:
+                logger.debug('failed to parse NVD item: %s', item)
 
-    def by_product_name(self, name):
-        return self.products.get(name, [])
-
-    def update(self, mirror):
-        if self.is_current:
-            logger.debug('"{}" is up-to-date'.format(self.name))
-            return False
-        self.products.clear()
-        logger.info('Updating "{}"'.format(self.name))
-        with Download(mirror + self.upstream_filename) as xml:
-            self.parse(xml)
-        self.last_update = time.time()
-        return True
-
-    def parse(self, filename):
-        logger.debug("Parsing {}".format(filename))
-        parser = etree.iterparse(
-            filename, tag='{' + NS['feed'] + '}entry')
-        for event, node in batch(parser, 500, transaction.savepoint):
-            vx = Vulnerability.from_node(node)
-            # We don't use a ZODB set here as we a) won't ever change this
-            # again in the future (we just rebuild the tree) and also I want to
-            # avoid making millions of micro-records.
-            for cpe in vx.affected_products:
-                self.products.setdefault(cpe.product, set())
-                self.products[cpe.product].add(vx)
-            # We need to explicitly clear this node. iterparse only builds the
-            # tree incrementally but does not remove data that isn't needed any
-            # longer.  See
-            # http://www.ibm.com/developerworks/xml/library/x-hiperfparse/
-            node.clear()
-            while node.getprevious() is not None:
-                del node.getparent()[0]
+    def items(self):
+        return self.advisories.items()
 
 
 class Vulnerability(Persistent):
 
     cve_id = None
-    affected_products = ()
+    nodes = None
+    cvss2 = None
+    cvss3 = None
 
-    def __init__(self):
-        self.affected_products = []
-
-    def __repr__(self):
-        return '<Vulnerability({}, {} affected)>'.format(
-            self.cve_id, len(self.affected_products))
+    def __init__(self, cve_id, nodes=None, cvss2=None, cvss3=None):
+        self.cve_id = cve_id
+        self.nodes = nodes or []
+        self.cvss2 = cvss2
+        self.cvss3 = cvss3
 
     @classmethod
-    def from_node(cls, node):
-        self = cls()
-        self.cve_id = node.get('id')
-        affected_products = {}
-        for product in node.findall('.//vuln:product', NS):
-            cpe = CPE.from_uri(product.text)
-            if cpe.product is None:
-                # This usually indicates a combination where some vulnerability
-                # only applies for a specific operating system *vendor*
-                continue
-            key = (cpe.vendor, cpe.product)
-            master_cpe = affected_products.setdefault(key, cpe)
-            master_cpe.versions.update(cpe.versions)
-        self.affected_products = list(affected_products.values())
-        return self
+    def parse(cls, item):
+        # XXX data model too weak
+        # need to represent nodes
+        # see CVE-2019-6471 for example
+        # XXX see CVE-2010-0748 for broken AND/OR logic
+        res = cls(item['cve']['CVE_data_meta']['ID'])
+        if 'configurations' in item:
+            res.nodes = Node.parse(item['configurations'].get('nodes', {}))
+        return res
+
+        # return vulns
+
+    def __repr__(self):
+        return '<Vulnerability {}>'.format(self.cve_id)
 
 
-class CPE(Persistent):
+class Node(Persistent):
 
-    # These are the only attributes we're interested in. Reduce memory
-    # footprint by not storing unused attributes.
     vendor = None
     product = None
     versions = None
 
+    def __init__(self, vendor, product, versions=None):
+        self.vendor = vendor
+        self.product = product
+        self.versions = versions or []
+
     @classmethod
-    def from_uri(cls, uri):
-        self = cls()
-        self.versions = set()
-        protocol, identifier = uri.split(':/')
-        assert protocol == 'cpe'
-        component_list = identifier.split(':')
-        components = ['part', 'vendor', 'product', 'version', 'update',
-                      'edition', 'lang']
-        while component_list:
-            component_name = components.pop(0)
-            component_value = component_list.pop(0)
-            if component_name == 'version':
-                self.versions.add(component_value)
-            elif hasattr(self, component_name):
-                setattr(self, component_name, component_value)
-        return self
+    def parse(cls, nodes):
+        res = []
+        for node in nodes:
+            res += cls.parse_matches(node.get('cpe_match', []))
+            res += cls.parse(node.get('children', []))
+        return res
+
+    @classmethod
+    def parse_matches(cls, cpe_match):
+        nodes = []
+        for expr in cpe_match:
+            if expr['vulnerable'] is not True:
+                continue
+            (cpe, cpevers, typ, vendor, product, vers, rev, _) = \
+                expr['cpe23Uri'].split(':', 7)
+            if cpe != 'cpe' or cpevers != '2.3' or typ != 'a':
+                continue
+            e = cls(vendor, product)
+            v = e.versions
+            if 'versionStartIncluding' in expr:
+                v.append('>=' + expr['versionStartIncluding'])
+            if 'versionStartExcluding' in expr:
+                v.append('>' + expr['versionStartExcluding'])
+            if 'versionEndIncluding' in expr:
+                v.append('<=' + expr['versionEndIncluding'])
+            if 'versionEndExcluding' in expr:
+                v.append('<' + expr['versionEndExcluding'])
+            if vers and vers != '*' and vers != '-':
+                if rev and rev != '*' and rev != '-':
+                    vers = vers + '-' + rev
+                v.append('=' + vers)
+            # no point adding an expr without any version match
+            if v:
+                nodes.append(e)
+        # Check if all (vendor, product) pairs are the same.
+        if len(nodes) > 1:
+            if (all(nodes[0].vendor == v.vendor for v in nodes[1:]) and
+                    all(nodes[0].product == v.product for v in nodes[1:])):
+                for v in nodes[1:]:
+                    nodes[0].versions.extend(v.versions)
+                return [nodes[0]]
+        return nodes
+
+    def __eq__(self, other):
+        return (self.vendor == other.vendor and
+                self.product == other.product and
+                self.versions == other.versions)
 
     def __repr__(self):
-        return '<CPE({}:{})>'.format(self.product, repr(self.versions))
+        return '<Node {}, {}, {}>'.format(
+            self.vendor, self.product, self.versions)
+
+
+class Meta(Persistent):
+    """Metadate for database maintenance control"""
+    pack_counter = 0

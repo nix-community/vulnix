@@ -1,5 +1,3 @@
-# This should be only one line. If it must be multi-line, indent the second
-# line onwards to keep the PKG-INFO file format intact.
 """Scans a Nix store for derivations that are affected by vulnerabilities."""
 
 from setuptools import setup, find_packages
@@ -25,7 +23,6 @@ setup(
     install_requires=[
         'click>=6.7',
         'colorama>=0.3',
-        'lxml>=4',
         'pyyaml>=3.13,<6',
         'requests>=2.18',
         'toml>=0.9',
