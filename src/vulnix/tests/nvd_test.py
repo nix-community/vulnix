@@ -26,15 +26,18 @@ def nvd(tmpdir, http_server):
     return nvd
 
 
-def test_update(nvd):
-    with nvd:
-        nvd.update()
-        # XXX assertions missing
-
-
 def load(cve):
     return json.loads(pkg_resources.resource_string(
         'vulnix', 'tests/fixtures/{}.json'.format(cve)))
+
+
+def test_update(nvd):
+    with nvd:
+        nvd.update()
+        assert len(nvd._root['advisory']) == 834
+        cve = nvd.by_id('CVE-2010-0748')
+        assert cve == Vulnerability.parse(load('CVE-2010-0748'))
+        assert cve == nvd.by_product('transmission')[0]
 
 
 def test_parse_vuln():

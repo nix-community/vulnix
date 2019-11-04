@@ -1,17 +1,11 @@
-from .utils import batch
 from BTrees import OOBTree
 from persistent import Persistent
-import datetime
-import functools
 import gzip
 import json
 import logging
 import os
 import os.path as p
 import requests
-import shutil
-import tempfile
-import time
 import transaction
 import ZODB
 import ZODB.FileStorage
@@ -71,6 +65,7 @@ class NVD(object):
             arch.download(self.mirror)
             self.add(arch)
             self.has_updates = True
+        self.reindex()
         transaction.commit()
 
     def add(self, archive):
@@ -79,11 +74,20 @@ class NVD(object):
             advisories[cve_id] = adv
 
     def reindex(self):
-        # XXX TODO
-        pass
+        del self._root['by_product']
+        bp = OOBTree.OOBTree()
+        for vuln in self._root['advisory'].values():
+            for prod in (n.product for n in vuln.nodes):
+                if prod not in bp:
+                    bp[prod] = []
+                bp[prod].append(vuln)
+        self._root['by_product'] = bp
 
-    def by_cve_id(self, cve_id):
+    def by_id(self, cve_id):
         return self._root['advisory'][cve_id]
+
+    def by_product(self, product):
+        return self._root['by_product'][product]
 
 
 class Archive:
@@ -128,19 +132,19 @@ class Vulnerability(Persistent):
 
     @classmethod
     def parse(cls, item):
-        # XXX data model too weak
-        # need to represent nodes
-        # see CVE-2019-6471 for example
-        # XXX see CVE-2010-0748 for broken AND/OR logic
         res = cls(item['cve']['CVE_data_meta']['ID'])
         if 'configurations' in item:
             res.nodes = Node.parse(item['configurations'].get('nodes', {}))
         return res
 
-        # return vulns
-
     def __repr__(self):
         return '<Vulnerability {}>'.format(self.cve_id)
+
+    def __eq__(self, other):
+        return (self.cve_id == other.cve_id and
+                self.nodes == other.nodes and
+                self.cvss2 == other.cvss2 and
+                self.cvss3 == other.cvss3)
 
 
 class Node(Persistent):
@@ -166,7 +170,7 @@ class Node(Persistent):
     def parse_matches(cls, cpe_match):
         nodes = []
         for expr in cpe_match:
-            if expr['vulnerable'] is not True:
+            if expr.get('vulnerable') is not True:
                 continue
             (cpe, cpevers, typ, vendor, product, vers, rev, _) = \
                 expr['cpe23Uri'].split(':', 7)

@@ -1,9 +1,10 @@
+import itertools
 import logging
+import re
 import subprocess
 import sys
 import tempfile
 import time
-from semantic_version import Version
 
 _log = logging.getLogger(__name__)
 
@@ -47,22 +48,45 @@ class Timer:
         return False  # re-raise
 
 
-# XXX unused
-def normalize_version(vers):
-    """Try to fit a version string from the wild into SemVer.
+R_COMP = re.compile(r'([0-9]+|[^0-9.-]+)')
 
-    This is a bit hand-wavy. Apply some heuristics to make version strings seen
-    in the CVE database to be accepted by Version.coerce(). Note that this may
-    fail and raise a ValueError.
-    """
+
+def split_components(vers):
+    return [c for c in R_COMP.split(vers) if c not in ('', '.', '-')]
+
+
+def components_lt(left, right):
     try:
-        # try if it is accepted right away
-        return Version.coerce(vers).truncate('prerelease')
-    except ValueError:
-        pass
-    # sometimes people use meaningless prefixes
-    if vers.startswith('r') or vers.startswith('v'):
-        vers = vers[1:]
-    # semantic_version does not accept leading zeroes anywhere
-    vers = re.sub(r'0+([0-9])', r'\1', vers)
-    return Version.coerce(vers).truncate('prerelease')
+        lnum = int(left)
+    except (ValueError):
+        lnum = None
+    try:
+        rnum = int(right)
+    except (ValueError):
+        rnum = None
+    if lnum is not None and rnum is not None:
+        return lnum < rnum
+    if left == '' and rnum is not None:
+        return True
+    if left == 'pre' and right != 'pre':
+        return True
+    if right == 'pre':
+        return False
+    if rnum is not None:
+        return True
+    if lnum is not None:
+        return False
+    return left < right
+
+
+def compare_versions(left, right):
+    left_ = split_components(left)
+    right_ = split_components(right)
+    for (lc, rc) in itertools.zip_longest(left_, right_, fillvalue=''):
+        if lc == rc:
+            continue
+        if components_lt(lc, rc):
+            return -1
+        if components_lt(rc, lc):
+            return 1
+    return 0
