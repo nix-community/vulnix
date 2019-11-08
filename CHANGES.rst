@@ -2,10 +2,13 @@ Changes
 =======
 
 
-1.8.3 (unreleased)
+1.9.0 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Pull NVD feeds from https://nvd.nist.gov/feeds/json/cve/1.1/ as XML feeds are
+  being discontinued (#55).
+
+- Support version ranges in CPE entries.
 
 
 1.8.2 (2019-06-17)

@@ -1,29 +1,6 @@
-from vulnix.nvd import NVD, Vulnerability, Node
-import http.server
+from vulnix.nvd import Vulnerability, Node
 import json
-import os
 import pkg_resources
-import pytest
-import threading
-
-
-@pytest.yield_fixture
-def http_server():
-    os.chdir(os.path.dirname(__file__) + '/fixtures')
-    handler = http.server.SimpleHTTPRequestHandler
-    httpd = http.server.HTTPServer(("127.0.0.1", 0), handler)
-    port = httpd.socket.getsockname()[1]
-    mirror_url = 'http://127.0.0.1:{}/'.format(port)
-    t = threading.Thread(target=httpd.serve_forever, daemon=True)
-    t.start()
-    yield mirror_url
-
-
-@pytest.fixture
-def nvd(tmpdir, http_server):
-    nvd = NVD(mirror=http_server, cache_dir=str(tmpdir))
-    nvd.relevant_archives = ['modified']
-    return nvd
 
 
 def load(cve):
@@ -32,12 +9,11 @@ def load(cve):
 
 
 def test_update(nvd):
-    with nvd:
-        nvd.update()
-        assert len(nvd._root['advisory']) == 834
-        cve = nvd.by_id('CVE-2010-0748')
-        assert cve == Vulnerability.parse(load('CVE-2010-0748'))
-        assert cve == nvd.by_product('transmission')[0]
+    nvd.update()
+    assert len(nvd._root['advisory']) == 835
+    cve = nvd.by_id('CVE-2010-0748')
+    assert cve == Vulnerability.parse(load('CVE-2010-0748'))
+    assert cve == nvd.by_product('transmission')[0]
 
 
 def test_parse_vuln():
@@ -75,3 +51,7 @@ def test_ignore_AND_operator():
     assert v.nodes == [
         Node('transmissionbt', 'transmission', ['<1.92'])
     ]
+
+
+def test_product_not_found(nvd):
+    assert [] == nvd.by_product('nonexistent-product')

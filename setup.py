@@ -32,7 +32,7 @@ setup(
         'test': [
             'freezegun>0.3',
             'pytest>=3.2',
-            'pytest-cov>=2.5',
+            'pytest-cov>=2.7',
             'pytest-flake8',
             'pytest-runner>=2.11,<3dev',
             'pytest-timeout>=1.2',

@@ -1,5 +1,7 @@
 from BTrees import OOBTree
+from datetime import datetime, date, timedelta
 from persistent import Persistent
+from .utils import compare_versions
 import gzip
 import json
 import logging
@@ -22,15 +24,14 @@ class NVD(object):
     https://nvd.nist.gov/
     """
 
-    has_updates = False
-
     def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
         self.mirror = mirror.rstrip('/') + '/'
         self.cache_dir = p.expanduser(cache_dir)
-        # XXX computation missing
-        self.relevant_archives = 'modified'
+        current = date.today().year
+        self.available_archives = [y for y in range(current-5, current+1)]
 
     def __enter__(self):
+        """Keeps database connection open while in this context."""
         logger.debug('Using cache in %s', self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
         storage = ZODB.FileStorage.FileStorage(
@@ -38,35 +39,51 @@ class NVD(object):
         self._db = ZODB.DB(storage)
         self._connection = self._db.open()
         self._root = self._connection.root()
-        self._root.setdefault('archive', OOBTree.OOBTree())
         self._root.setdefault('advisory', OOBTree.OOBTree())
         self._root.setdefault('by_product', OOBTree.OOBTree())
         self._root.setdefault('meta', Meta())
+        try:
+            del self._root['archives']
+        except KeyError:
+            pass
         return self
 
     def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
         if exc_type is None:
-            transaction.commit()
-            meta = self._root['meta']
-            if self.has_updates:
-                meta.pack_counter += 1
-                if meta.pack_counter > 25:
-                    logger.debug('Packing database')
-                    self._db.pack()
-                    meta.pack_counter = 0
+            if self._root['meta'].should_pack():
+                logger.debug('Packing database')
                 transaction.commit()
+                self._db.pack()
+            transaction.commit()
         else:
             transaction.abort()
         self._connection.close()
+        self._connection = None
+        self._db = None
+
+    def relevant_archives(self):
+        """Returns list of NVD archives to check.
+
+        If there was an update within the last hour, noting is done. If
+        the last update was recent enough to be covered by the
+        'modified' feed, only that is checked. Else, all feeds are
+        checked.
+        """
+        last_update = self._root['meta'].last_update
+        if last_update > datetime.now() - timedelta(hours=1):
+            return []
+        # the "modified" feed is sufficient if used frequently enough
+        if last_update > datetime.now() - timedelta(days=7):
+            return ['modified']
+        return self.available_archives + ['modified']
 
     def update(self):
-        for a in self.relevant_archives:
+        """Download archives (if changed) and add CVEs to database."""
+        for a in self.relevant_archives():
             arch = Archive(a)
-            arch.download(self.mirror)
+            arch.download(self.mirror, self._root['meta'])
             self.add(arch)
-            self.has_updates = True
         self.reindex()
-        transaction.commit()
 
     def add(self, archive):
         advisories = self._root['advisory']
@@ -74,6 +91,7 @@ class NVD(object):
             advisories[cve_id] = adv
 
     def reindex(self):
+        """Regenerate product index."""
         del self._root['by_product']
         bp = OOBTree.OOBTree()
         for vuln in self._root['advisory'].values():
@@ -84,25 +102,55 @@ class NVD(object):
         self._root['by_product'] = bp
 
     def by_id(self, cve_id):
+        """Returns vuln or raises KeyError."""
         return self._root['advisory'][cve_id]
 
     def by_product(self, product):
-        return self._root['by_product'][product]
+        """Returns list of matching vulns or empty list."""
+        try:
+            return self._root['by_product'][product]
+        except KeyError:
+            return []
+
+    def affected(self, pname, version):
+        """Returns list of matching vulnerabilities."""
+        res = set()
+        for vuln in self.by_product(pname):
+            if vuln.match(pname, version):
+                res.add(vuln)
+        return res
 
 
 class Archive:
 
+    """Single JSON data structure from NIST NVD."""
+
     def __init__(self, name):
+        """Creates JSON feed object.
+
+        `name` consists of a year or "modified".
+        """
         self.name = name
         self.download_uri = 'nvdcve-1.1-{}.json.gz'.format(name)
         self.advisories = {}
 
-    def download(self, mirror):
+    def download(self, mirror, metadata):
+        """Fetches compressed JSON data from NIST.
+
+        Nothing is done if we have already seen the same version of
+        the feed before.
+        """
         url = mirror + self.download_uri
-        logger.debug('Downloading %s', url)
-        req = requests.get(url)
-        req.raise_for_status()
-        self.parse(gzip.decompress(req.content))
+        logger.info('Loading %s', url)
+        r = requests.get(url, headers=metadata.headers_for(url))
+        r.raise_for_status()
+        if r.status_code == 200:
+            logger.debug('Parsing JSON feed "%s"', self.name)
+            self.parse(gzip.decompress(r.content))
+            metadata.update_headers_for(url, r.headers)
+            metadata.last_update = datetime.now()
+        else:
+            logger.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
 
     def parse(self, nvd_json):
         raw = json.loads(nvd_json)
@@ -111,10 +159,38 @@ class Archive:
                 vuln = Vulnerability.parse(item)
                 self.advisories[vuln.cve_id] = vuln
             except ValueError:
-                logger.debug('failed to parse NVD item: %s', item)
+                logger.debug('Failed to parse NVD item: %s', item)
 
     def items(self):
         return self.advisories.items()
+
+
+class Meta(Persistent):
+    """Metadate for database maintenance control"""
+
+    pack_counter = 0
+    last_update = datetime(1970, 1, 1)
+    etag = None
+
+    def should_pack(self):
+        self.pack_counter += 1
+        if self.pack_counter > 25:
+            self.pack_counter = 0
+            return True
+        return False
+
+    def headers_for(self, url):
+        """Returns dict of additional request headers."""
+        if self.etag and url in self.etag:
+            return {'If-None-Match': self.etag[url]}
+        return {}
+
+    def update_headers_for(self, url, resp_headers):
+        """Updates self from HTTP response headers."""
+        if 'ETag' in resp_headers:
+            if self.etag is None:
+                self.etag = OOBTree.OOBTree()
+            self.etag[url] = resp_headers['ETag']
 
 
 class Vulnerability(Persistent):
@@ -137,6 +213,9 @@ class Vulnerability(Persistent):
             res.nodes = Node.parse(item['configurations'].get('nodes', {}))
         return res
 
+    def __str__(self):
+        return self.cve_id
+
     def __repr__(self):
         return '<Vulnerability {}>'.format(self.cve_id)
 
@@ -145,6 +224,16 @@ class Vulnerability(Persistent):
                 self.nodes == other.nodes and
                 self.cvss2 == other.cvss2 and
                 self.cvss3 == other.cvss3)
+
+    def __hash__(self):
+        return hash(self.cve_id)
+
+    def match(self, _pname, pvers):
+        for n in self.nodes:
+            for v in n.versions:
+                if version_match(pvers, v):
+                    return True
+        return False
 
 
 class Node(Persistent):
@@ -208,10 +297,20 @@ class Node(Persistent):
                 self.versions == other.versions)
 
     def __repr__(self):
-        return '<Node {}, {}, {}>'.format(
+        return '<Node {}:{}, {}>'.format(
             self.vendor, self.product, self.versions)
 
 
-class Meta(Persistent):
-    """Metadate for database maintenance control"""
-    pack_counter = 0
+def version_match(pvers, spec):
+    """Returns True if package version `pvers` complies with `spec`."""
+    if spec[0] == '=':
+        return compare_versions(pvers, spec[1:]) == 0
+    elif spec[0] == '>':
+        if spec[1] == '=':
+            return compare_versions(pvers, spec[2:]) in (0, 1)
+        return compare_versions(pvers, spec[1:]) == 1
+    elif spec[0] == '<':
+        if spec[1] == '=':
+            return compare_versions(pvers, spec[2:]) in (-1, 0)
+        return compare_versions(pvers, spec[1:]) == -1
+    raise ValueError('Invalid version spec', spec)

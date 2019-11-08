@@ -1,17 +1,17 @@
-from vulnix.derivation import Derive, split_name, load, NoVersionError
+from vulnix.derivation import Derive, split_name, load, SkipDrv
 import os
 import pkg_resources
 import pytest
 import tempfile
 
 
-def fix(fixture):
-    return pkg_resources.resource_filename(
-        'vulnix', 'tests/fixtures/{}'.format(fixture))
+def drv(fixture):
+    return load(pkg_resources.resource_filename(
+        'vulnix', 'tests/fixtures/{}.drv'.format(fixture)))
 
 
 def test_load_drv_explicit_version():
-    d = load(fix('cyrus-sasl-2.5.10.drv'))
+    d = drv('cyrus-sasl-2.5.10')
     assert d.pname == 'cyrus-sasl'
     assert d.version == '2.5.10'
 
@@ -43,22 +43,22 @@ def test_split_nameversion():
 
 
 def test_split_name_noversion():
-    with pytest.raises(NoVersionError):
+    with pytest.raises(SkipDrv):
         Derive(envVars={'name': 'hook'})
 
 
 def test_guess_cves_from_direct_patches_bzip2():
-    deriv = load(fix('bzip2-1.0.6.0.1.drv'))
-    assert {'CVE-2016-3189'} == deriv.patched()
+    deriv = drv('bzip2-1.0.6.0.1')
+    assert {'CVE-2016-3189'} == deriv.applied_patches()
 
 
 def test_guess_cves_from_fetchpatch():
-    deriv = load(fix('cpio-2.12.drv'))
-    assert {'CVE-2015-1197', 'CVE-2016-2037'} == deriv.patched()
+    deriv = drv('cpio-2.12')
+    assert {'CVE-2015-1197', 'CVE-2016-2037'} == deriv.applied_patches()
 
 
 def test_patches_with_multiple_cves():
-    deriv = load(fix('audiofile-0.3.6.drv'))
+    deriv = drv('audiofile-0.3.6')
     assert {
         'CVE-2015-7747',
         'CVE-2017-6827',
@@ -74,31 +74,37 @@ def test_patches_with_multiple_cves():
         'CVE-2017-6837',
         'CVE-2017-6838',
         'CVE-2017-6839',
-    } == deriv.patched()
+    } == deriv.applied_patches()
 
 
-def test_ignore_patched_cves_during_check(nvd_modified):
+def test_check_returns_cves(nvd):
     """Test for CVE-2016-9844 which is listed but has a patch."""
-    deriv = load(fix('unzip-6.0.drv'))
-    deriv.check(nvd_modified)
-    assert set() == deriv.affected_by
+    nvd.update()
+    d = drv('transmission-1.91')
+    assert {'CVE-2010-0748', 'CVE-2010-0749'} == d.check(nvd)
+
+
+def test_ignore_patched_cves_during_check(nvd):
+    """Test for CVE-2016-9844 which is listed but has a patch."""
+    nvd.update()
+    d = drv('unzip-6.0')
+    assert set() == d.check(nvd)
 
 
 def test_ordering():
     assert Derive(name='python-2.7.14') == Derive(name='python-2.7.14')
     assert Derive(name='python-2.7.14') != Derive(name='python-2.7.13')
-    assert Derive(
-        name='coreutils-8.29', affected_by={'CVE-2017-18018'}
-    ) < Derive(
-        name='patch-2.7.6', affected_by={'CVE-2018-6952', 'CVE-2018-6951'})
+    assert Derive(name='coreutils-8.29') < Derive(name='patch-2.7.6')
+    assert Derive(name='python-2.7.6') > Derive(name='patch-2.7.6')
     assert Derive(name='python-2.7.14') > Derive(name='python-2.7.13')
     assert not Derive(name='python-2.7.13') > Derive(name='python-2.7.14')
-    assert Derive(
-        name='patch-2.7.6', affected_by={'CVE-2018-6951', 'CVE-2018-6952'}
-    ) > Derive(
-        name='patch-2.7.6', affected_by={'CVE-2018-6951'})
 
 
 def test_structured_attrs():
-    d = load(fix('structured-attrs-1.drv'))
+    d = drv('structured-attrs-1')
     assert d.name == 'structured-attrs-1'
+
+
+def test_product_candidates():
+    assert ['linux-kernel', 'linux_kernel'] == list(
+        Derive(name='linux-kernel-4.0').product_candidates())

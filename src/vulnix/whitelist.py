@@ -136,7 +136,7 @@ class WhitelistRule:
         self.issue_url.update(other.issue_url)
         self.comment.extend(other.comment)
 
-    def covers(self, deriv):
+    def covers(self, deriv, vulns=set()):
         """Is the given derivation covered by this whitelist item?
 
         If so, a tuple (match type, whitelist item) is returned.
@@ -145,7 +145,7 @@ class WhitelistRule:
             return False
         if self.version != '*' and self.version != deriv.version:
             return False
-        if self.cve and self.cve & deriv.affected_by == set():
+        if self.cve and vulns and self.cve & vulns == set():
             return False
         if self.until and self.until <= datetime.date.today():
             return False
@@ -239,20 +239,16 @@ class Whitelist:
         except KeyError:
             pass
 
-    def find(self, derivation):
+    def find(self, derivation, vulns):
         """Compiles all matching rules into a `Filtered` object."""
-        f = Filtered(derivation)
+        f = Filtered(derivation, vulns)
         for cand in self.candidates(derivation.pname, derivation.version):
-            if cand.covers(derivation):
+            if cand.covers(derivation, vulns):
                 f.add(cand)
         return f
 
-    def filter(self, derivations):
-        """Returns matching rules for all given derivation.
-
-        Rules are wrapped in Filtered objects to keep track.
-        """
-        return [self.find(deriv) for deriv in derivations]
+    def filter(self, affected):
+        return [self.find(deriv, vulns) for (deriv, vulns) in affected.items()]
 
     def insert(self, rule):
         self.entries[rule.name] = rule
@@ -268,6 +264,8 @@ class Whitelist:
         for rule in other.entries.values():
             self.update(rule)
 
-    def add_from(self, deriv):
+    def add_from(self, filtered_item):
         self.update(WhitelistRule(
-            pname=deriv.pname, version=deriv.version, cve=deriv.affected_by))
+            pname=filtered_item.derivation.pname,
+            version=filtered_item.derivation.version,
+            cve=filtered_item.report))

@@ -19,10 +19,10 @@ class Filtered:
 
     until = None
 
-    def __init__(self, derivation):
+    def __init__(self, derivation, vulnerabilities):
         self.derivation = derivation
         self.rules = []
-        self.report = derivation.affected_by
+        self.report = vulnerabilities
         self.masked = set()
 
     def __repr__(self):

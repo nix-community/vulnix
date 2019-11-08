@@ -61,14 +61,14 @@ def populate_store(gc_roots, paths, requisites=True):
 
 
 def run(nvd, store):
-    affected = []
+    """Returns a dict with affected derivations and vulnerabilities."""
+    affected = {}
     for derivation in store.derivations.values():
-        derivation.check(nvd)
-        if derivation.is_affected:
-            affected.append(derivation)
-    # weed out duplicates
-    unique = {deriv.name: deriv for deriv in affected}
-    return unique.values()
+        vuln = derivation.check(nvd)
+        if vuln:
+            affected[derivation] = vuln
+    _log.debug("unfiltered affected: %r", affected)
+    return affected
 
 
 @click.command('vulnix')
@@ -132,17 +132,17 @@ def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
                 whitelist.merge(Whitelist.load(wl))
         with Timer('Load derivations'):
             store = populate_store(gc_roots, paths, requisites)
-        nvd = NVD(mirror, cache_dir)
-        with nvd:
-            with Timer('Load NVD data'):
-                nvd.update()
-            with Timer('Scan vulnerabilities'):
-                items = whitelist.filter(run(nvd, store))
+        with Timer('Scan vulnerabilities'):
+            nvd = NVD(mirror, cache_dir)
+            with nvd:
+                with Timer('Load NVD data'):
+                    nvd.update()
+                filtered_items = whitelist.filter(run(nvd, store))
 
-        rc = output(items, json, show_whitelisted, verbose)
+        rc = output(filtered_items, json, show_whitelisted, verbose)
         if write_whitelist:
-            for i in items:
-                whitelist.add_from(i.derivation)
+            for i in filtered_items:
+                whitelist.add_from(i)
             write_whitelist.write(str(whitelist))
         sys.exit(rc)
 

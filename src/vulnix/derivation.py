@@ -1,12 +1,12 @@
 import functools
 import json
 import re
+from .utils import compare_versions
 
 
-class NoVersionError(RuntimeError):
+class SkipDrv(RuntimeError):
 
-    def __init__(self, drv_name):
-        self.drv_name = drv_name
+    pass
 
 
 # see parseDrvName built-in Nix function
@@ -45,65 +45,67 @@ class Derive(object):
     # This __init__ is compatible with the structure in the derivation file.
     # The derivation files are just accidentally Python-syntax, but hey!
     def __init__(self, _output=None, _inputDrvs=None, _inputSrcs=None,
-                 _system=None, _builder=None, _args=None,
-                 envVars={}, derivations=None, name=None, affected_by=None):
+                 _system=None, builder=None, _args=None,
+                 envVars={}, derivations=None, name=None, patches=None):
         envVars = dict(envVars)
         self.name = name or envVars.get('name')
         if not self.name:
             self.name = destructure(envVars)['name']
+        for e in ['.tar.gz', '.tar.bz2', '.tar.xz', '.zip', '.patch', '.diff']:
+            if self.name.endswith(e):
+                raise SkipDrv()
+
         self.pname, self.version = split_name(self.name)
         if not self.version:
-            raise NoVersionError(self.name)
-        self.patches = envVars.get('patches', '')
-        self.affected_by = affected_by or set()
+            raise SkipDrv()
+        self.patches = patches or envVars.get('patches', '')
 
     def __repr__(self):
-        return '<Derive({}, {})>'.format(
-            repr(self.name), repr(self.affected_by))
-
-    def _key(self):
-        return self.name, self.version, self.affected_by
+        return '<Derive({})>'.format(repr(self.name))
 
     def __eq__(self, other):
         if type(self) != type(other):
-            return NotImplemented
-        return self._key() == other._key()
+            return NotImplementedError()
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
     def __lt__(self, other):
-        if type(self) != type(other):
-            return NotImplemented
-        return self._key() < other._key()
+        if self.pname < other.pname:
+            return True
+        if self.pname > other.pname:
+            return False
+        return compare_versions(self.version, other.version) == -1
 
     def __gt__(self, other):
-        if type(self) != type(other):
-            return NotImplemented
-        return self._key() > other._key()
-
-    @property
-    def is_affected(self):
-        return bool(self.affected_by)
+        if self.pname > other.pname:
+            return True
+        if self.pname < other.pname:
+            return True
+        return compare_versions(self.version, other.version) == 1
 
     def product_candidates(self):
-        return {self.pname, self.pname.replace('-', '_')}
+        yield self.pname
+        alternative = self.pname.replace('-', '_')
+        if alternative != self.pname:
+            yield alternative
 
     def check(self, nvd):
-        # XXX nvd.affected(product, version)
-        patched_cves = self.patched()
-        for prod in self.product_candidates():
-            for vuln in nvd.by_product_name(prod):
-                for cpe in vuln.affected_products:
-                    if not self.matches(cpe):
-                        continue
-                    if vuln.cve_id not in patched_cves:
-                        self.affected_by.add(vuln.cve_id)
-                        break
-
-    def matches(self, cpe):
-        return self.pname == cpe.product and self.version in cpe.versions
+        affected_by = set()
+        patched_cves = self.applied_patches()
+        for pname in self.product_candidates():
+            for vuln in nvd.affected(pname, self.version):
+                if vuln.cve_id not in patched_cves:
+                    affected_by.add(vuln.cve_id)
+            if affected_by:
+                # don't try further product candidates
+                return affected_by
+        return affected_by
 
     R_CVE = re.compile(r'CVE-\d{4}-\d+', flags=re.IGNORECASE)
 
-    def patched(self):
+    def applied_patches(self):
         """Guess which CVEs are patched from patch names."""
         return set(
             m.group(0).upper() for m in self.R_CVE.finditer(self.patches))

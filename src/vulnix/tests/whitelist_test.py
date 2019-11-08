@@ -61,25 +61,20 @@ def test_match_pname_only():
 
 def test_match_pname_version_cve():
     rule = WhitelistRule(pname='cpio', version='2.12', cve=['CVE-2015-1197'])
-    d = Derive(name='cpio-2.12', affected_by={'CVE-2015-1197'})
-    assert rule.covers(d)
-    d = Derive(name='cpio-2.12', affected_by={'CVE-2015-1198'})
-    assert not rule.covers(d)
+    assert rule.covers(Derive(name='cpio-2.12'), {'CVE-2015-1197'})
+    assert not rule.covers(Derive(name='cpio-2.12'), {'CVE-2015-1198'})
 
 
 def test_match_cve_only():
     rule = WhitelistRule(cve=['CVE-2015-1197', 'CVE-2016-2037'])
-    d = Derive(name='cpio-2.12', affected_by={'CVE-2015-1197'})
-    assert rule.covers(d)
-    d = Derive(name='cpio-2.12', affected_by={'CVE-2016-2038'})
-    assert not rule.covers(d)
+    assert rule.covers(Derive(name='cpio-2.12'), {'CVE-2015-1197'})
+    assert not rule.covers(Derive(name='cpio-2.12'), {'CVE-2016-2038'})
 
 
 def test_match_partial():
     rule = WhitelistRule(cve=['CVE-2015-1197', 'CVE-2016-2037'])
-    d = Derive(name='cpio-2.12',
-               affected_by={'CVE-2015-1197', 'CVE-2015-1198'})
-    assert rule.covers(d)
+    assert rule.covers(
+            Derive(name='cpio-2.12'), {'CVE-2015-1197', 'CVE-2015-1198'})
 
 
 def test_until(whitelist_toml):
@@ -92,23 +87,23 @@ def test_until(whitelist_toml):
 
 
 def test_not_whitelisted(whitelist):
-    d = Derive(name='cpio-2.12', affected_by={'CVE-2016-2037'})
-    filtered = whitelist.find(d)
+    filtered = whitelist.find(Derive(name='cpio-2.12'), {'CVE-2016-2037'})
     assert filtered.rules == []
-    assert filtered.report == d.affected_by
+    assert filtered.report == {'CVE-2016-2037'}
 
 
 def test_filter(whitelist):
-    # not filtered
-    d0 = Derive(name='cpio-2.12', affected_by={'CVE-2016-2037'})
-    # partially filtered
-    d1 = Derive(name='audiofile-0.3.6',
-                affected_by={'CVE-2017-6826', 'CVE-2017-6827'})
-    # fully filtered
-    d2 = Derive(name='unzip-6.0', affected_by={'CVE-2015-7696'})
-    # fully filtered w/o specific CVEs
-    d3 = Derive(name='audiofile-0.3.2', affected_by={'CVE-2018-2668'})
-    f = whitelist.filter([d0, d1, d2, d3])
+    affected = {
+        # not filtered
+        Derive(name='cpio-2.12'): {'CVE-2016-2037'},
+        # partially filtered
+        Derive(name='audiofile-0.3.6'): {'CVE-2017-6826', 'CVE-2017-6827'},
+        # fully filtered
+        Derive(name='unzip-6.0'): {'CVE-2015-7696'},
+        # fully filtered w/o specific CVEs
+        Derive(name='audiofile-0.3.2'): {'CVE-2018-2668'},
+    }
+    f = whitelist.filter(affected)
     assert f[0].report == {'CVE-2016-2037'}
     assert f[1].report == {'CVE-2017-6826'}
     assert f[2].report == set()

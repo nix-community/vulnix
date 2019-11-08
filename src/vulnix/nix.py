@@ -1,4 +1,4 @@
-from .derivation import load, split_name, NoVersionError
+from .derivation import load, split_name, SkipDrv
 from .utils import call
 
 import logging
@@ -57,6 +57,6 @@ class Store(object):
         _log.debug('loading %s', drv_path)
         try:
             drv_obj = load(drv_path)
-        except NoVersionError:
+        except SkipDrv:
             return
         self.derivations[drv_path] = drv_obj

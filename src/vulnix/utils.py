@@ -9,16 +9,6 @@ import time
 _log = logging.getLogger(__name__)
 
 
-def batch(iterable, size, callable):
-    b = size
-    for x in iterable:
-        yield x
-        b -= 1
-        if not b:
-            callable()
-            b = size
-
-
 def call(cmd):
     """Executes `cmd` and swallow stderr iff returncode is 0."""
     with tempfile.TemporaryFile(prefix='stderr') as capture:
@@ -56,6 +46,7 @@ def split_components(vers):
 
 
 def components_lt(left, right):
+    """Port from nix/src/libexpr/names.cc"""
     try:
         lnum = int(left)
     except (ValueError):
@@ -80,6 +71,14 @@ def components_lt(left, right):
 
 
 def compare_versions(left, right):
+    """Compare two versions with the same logic as `nix-env u`.
+
+    Returns -1 if `left` is older than `right`, 1 if `left` is newer
+    than `right`, and 0 if both versions are considered equal.
+
+    See https://nixos.org/nix/manual/#ssec-version-comparisons for rules
+    and examples.
+    """
     left_ = split_components(left)
     right_ = split_components(right)
     for (lc, rc) in itertools.zip_longest(left_, right_, fillvalue=''):
