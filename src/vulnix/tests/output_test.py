@@ -1,3 +1,4 @@
+from vulnix.vulnerability import Vulnerability
 from vulnix.derivation import Derive
 from vulnix.output import Filtered, output, output_text, output_json
 from vulnix.whitelist import WhitelistRule
@@ -5,22 +6,24 @@ import datetime
 import json
 import pytest
 
+V = Vulnerability
+
 
 @pytest.fixture
 def deriv():
     d = Derive(name='test-0.2')
     d.store_path = '/nix/store/zsawgflc1fq77ijjzb1369zi6kxnc36j-test-0.2'
-    return (d, {'CVE-2018-0001', 'CVE-2018-0002', 'CVE-2018-0003'})
+    return (d, {V('CVE-2018-0001'), V('CVE-2018-0002'), V('CVE-2018-0003')})
 
 
 @pytest.fixture
 def deriv1():
-    return (Derive(name='foo-1'), {'CVE-2018-0004', 'CVE-2018-0005'})
+    return (Derive(name='foo-1'), {V('CVE-2018-0004'), V('CVE-2018-0005')})
 
 
 @pytest.fixture
 def deriv2():
-    return (Derive(name='bar-2'), {'CVE-2018-0006'})
+    return (Derive(name='bar-2'), {V('CVE-2018-0006')})
 
 
 @pytest.fixture
@@ -35,7 +38,10 @@ def items(deriv, deriv1, deriv2):
 
 def test_init(deriv):
     f = Filtered(*deriv)
-    assert f.report == {'CVE-2018-0001', 'CVE-2018-0002', 'CVE-2018-0003'}
+    assert f.report == {
+        V('CVE-2018-0001'),
+        V('CVE-2018-0002'),
+        V('CVE-2018-0003')}
     assert not f.masked
 
 
@@ -47,8 +53,8 @@ def test_add_unspecific_rule(deriv):
 
 def test_add_rule_with_cves(filt):
     filt.add(WhitelistRule(pname='test', version='1.2', cve={'CVE-2018-0001'}))
-    assert filt.report == {'CVE-2018-0002', 'CVE-2018-0003'}
-    assert filt.masked == {'CVE-2018-0001'}
+    assert filt.report == {V('CVE-2018-0002'), V('CVE-2018-0003')}
+    assert filt.masked == {V('CVE-2018-0001')}
 
 
 def test_add_temporary_whitelist(filt):

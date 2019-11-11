@@ -64,9 +64,9 @@ def run(nvd, store):
     """Returns a dict with affected derivations and vulnerabilities."""
     affected = {}
     for derivation in store.derivations.values():
-        vuln = derivation.check(nvd)
-        if vuln:
-            affected[derivation] = vuln
+        vulns = derivation.check(nvd)
+        if vulns:
+            affected[derivation] = vulns
     _log.debug("unfiltered affected: %r", affected)
     return affected
 
@@ -132,18 +132,19 @@ def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
                 whitelist.merge(Whitelist.load(wl))
         with Timer('Load derivations'):
             store = populate_store(gc_roots, paths, requisites)
-        with Timer('Scan vulnerabilities'):
+        with Timer('Open databaase'):
             nvd = NVD(mirror, cache_dir)
-            with nvd:
-                with Timer('Load NVD data'):
-                    nvd.update()
+        with nvd:
+            with Timer('Update NVD data'):
+                nvd.update()
+            with Timer('Scan vulnerabilities'):
                 filtered_items = whitelist.filter(run(nvd, store))
 
-        rc = output(filtered_items, json, show_whitelisted, verbose)
-        if write_whitelist:
-            for i in filtered_items:
-                whitelist.add_from(i)
-            write_whitelist.write(str(whitelist))
+            rc = output(filtered_items, json, show_whitelisted, verbose)
+            if write_whitelist:
+                for i in filtered_items:
+                    whitelist.add_from(i)
+                write_whitelist.write(str(whitelist))
         sys.exit(rc)
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort

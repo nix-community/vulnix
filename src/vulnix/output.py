@@ -37,7 +37,8 @@ class Filtered:
                 self.until = wl_rule.until
         if wl_rule.cve:
             for r in wl_rule.cve:
-                mask = self.report & wl_rule.cve
+                mask = set(vuln for vuln in self.report
+                           if vuln.cve_id in wl_rule.cve)
                 self.report -= mask
                 self.masked |= mask
         else:
@@ -57,11 +58,11 @@ class Filtered:
             click.secho(d.store_path, fg='magenta', dim=wl)
 
         click.secho("CVEs:", dim=wl)
-        for cve_id in sorted(self.report):
-            click.echo("\t" + _fmt(cve_id))
+        for vuln in sorted(self.report):
+            click.echo("\t" + _fmt(vuln.cve_id))
         if show_masked:
-            for cve_id in sorted(self.masked):
-                click.secho("\t{} (whitelisted)".format(_fmt(cve_id)),
+            for vuln in sorted(self.masked):
+                click.secho("\t{} (whitelisted)".format(_fmt(vuln.cve_id)),
                             dim=True)
 
         if not verbose:
@@ -79,9 +80,9 @@ class Filtered:
                     click.secho('\t' + comment, fg='blue', dim=wl)
 
 
-def output_text(items, show_whitelisted=False, verbose=False):
-    report = [i for i in items if i.report]
-    wl = [i for i in items if not i.report]
+def output_text(vulns, show_whitelisted=False, verbose=False):
+    report = [v for v in vulns if v.report]
+    wl = [v for v in vulns if not v.report]
 
     if not report and not show_whitelisted:
         if wl:
@@ -118,8 +119,8 @@ def output_json(items, show_whitelisted=False):
             'pname': d.pname,
             'version': d.version,
             'derivation': d.store_path,
-            'affected_by': sorted(list(i.report)),
-            'whitelisted': sorted(list(i.masked)),
+            'affected_by': sorted(v.cve_id for v in i.report),
+            'whitelisted': sorted(v.cve_id for v in i.masked)
         })
     print(json.dumps(out, indent=1))
 

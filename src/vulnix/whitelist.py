@@ -145,7 +145,8 @@ class WhitelistRule:
             return False
         if self.version != '*' and self.version != deriv.version:
             return False
-        if self.cve and vulns and self.cve & vulns == set():
+        if self.cve and vulns and \
+                self.cve & set(v.cve_id for v in vulns) == set():
             return False
         if self.until and self.until <= datetime.date.today():
             return False

@@ -97,7 +97,7 @@ class Derive(object):
         for pname in self.product_candidates():
             for vuln in nvd.affected(pname, self.version):
                 if vuln.cve_id not in patched_cves:
-                    affected_by.add(vuln.cve_id)
+                    affected_by.add(vuln)
             if affected_by:
                 # don't try further product candidates
                 return affected_by

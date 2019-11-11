@@ -1,8 +1,11 @@
+from vulnix.vulnerability import Vulnerability
 from vulnix.derivation import Derive, split_name, load, SkipDrv
 import os
 import pkg_resources
 import pytest
 import tempfile
+
+V = Vulnerability
 
 
 def drv(fixture):
@@ -81,7 +84,7 @@ def test_check_returns_cves(nvd):
     """Test for CVE-2016-9844 which is listed but has a patch."""
     nvd.update()
     d = drv('transmission-1.91')
-    assert {'CVE-2010-0748', 'CVE-2010-0749'} == d.check(nvd)
+    assert {V('CVE-2010-0748'), V('CVE-2010-0749')} == d.check(nvd)
 
 
 def test_ignore_patched_cves_during_check(nvd):
