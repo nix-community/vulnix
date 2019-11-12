@@ -1,7 +1,8 @@
+from .utils import compare_versions
+import collections
 import functools
 import json
 import re
-from .utils import compare_versions
 
 
 class SkipDrv(RuntimeError):
@@ -16,7 +17,6 @@ R_VERSION = re.compile(r'^(\S+?)-([0-9]\S*)$')
 
 def split_name(fullname):
     """Returns the pure package name and version of a derivation."""
-    fullname = fullname.lower()
     if fullname.endswith('.drv'):
         fullname = fullname[:-4]
     m = R_VERSION.match(fullname)
@@ -86,10 +86,11 @@ class Derive(object):
         return compare_versions(self.version, other.version) == 1
 
     def product_candidates(self):
-        yield self.pname
-        alternative = self.pname.replace('-', '_')
-        if alternative != self.pname:
-            yield alternative
+        """Return product name variations in order of preference."""
+        underscore = self.pname.replace('-', '_')
+        dedup = collections.OrderedDict.fromkeys(
+            [self.pname, underscore, self.pname.lower(), underscore.lower()])
+        return list(dedup)
 
     def check(self, nvd):
         affected_by = set()

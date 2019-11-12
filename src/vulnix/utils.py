@@ -79,6 +79,8 @@ def compare_versions(left, right):
     See https://nixos.org/nix/manual/#ssec-version-comparisons for rules
     and examples.
     """
+    if left == right:
+        return 0
     left_ = split_components(left)
     right_ = split_components(right)
     for (lc, rc) in itertools.zip_longest(left_, right_, fillvalue=''):

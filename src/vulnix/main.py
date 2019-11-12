@@ -64,6 +64,9 @@ def run(nvd, store):
     """Returns a dict with affected derivations and vulnerabilities."""
     affected = {}
     for derivation in store.derivations.values():
+        if derivation in affected:
+            # derivation reported multiple times by Nix
+            continue
         vulns = derivation.check(nvd)
         if vulns:
             affected[derivation] = vulns
@@ -132,9 +135,7 @@ def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
                 whitelist.merge(Whitelist.load(wl))
         with Timer('Load derivations'):
             store = populate_store(gc_roots, paths, requisites)
-        with Timer('Open databaase'):
-            nvd = NVD(mirror, cache_dir)
-        with nvd:
+        with NVD(mirror, cache_dir) as nvd:
             with Timer('Update NVD data'):
                 nvd.update()
             with Timer('Scan vulnerabilities'):

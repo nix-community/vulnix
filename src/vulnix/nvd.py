@@ -15,7 +15,7 @@ import ZODB.FileStorage
 DEFAULT_MIRROR = 'https://nvd.nist.gov/feeds/json/cve/1.1/'
 DEFAULT_CACHE_DIR = '~/.cache/vulnix'
 
-logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class NVD(object):
@@ -32,7 +32,7 @@ class NVD(object):
 
     def __enter__(self):
         """Keeps database connection open while in this context."""
-        logger.debug('Using cache in %s', self.cache_dir)
+        _log.debug('Opening database in %s', self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
         storage = ZODB.FileStorage.FileStorage(
             p.join(self.cache_dir, 'Data.fs'))
@@ -50,9 +50,8 @@ class NVD(object):
 
     def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
         if exc_type is None:
-            if self._root['meta'].should_pack():
-                logger.debug('Packing database')
-                transaction.commit()
+            if self.meta.should_pack():
+                _log.debug('Packing database')
                 self._db.pack()
             transaction.commit()
         else:
@@ -60,6 +59,10 @@ class NVD(object):
         self._connection.close()
         self._connection = None
         self._db = None
+
+    @property
+    def meta(self):
+        return self._root['meta']
 
     def relevant_archives(self):
         """Returns list of NVD archives to check.
@@ -69,7 +72,7 @@ class NVD(object):
         'modified' feed, only that is checked. Else, all feeds are
         checked.
         """
-        last_update = self._root['meta'].last_update
+        last_update = self.meta.last_update
         if last_update > datetime.now() - timedelta(hours=1):
             return []
         # the "modified" feed is sufficient if used frequently enough
@@ -79,11 +82,14 @@ class NVD(object):
 
     def update(self):
         """Download archives (if changed) and add CVEs to database."""
+        changed = []
         for a in self.relevant_archives():
             arch = Archive(a)
-            arch.download(self.mirror, self._root['meta'])
+            changed.append(arch.download(self.mirror, self.meta))
             self.add(arch)
-        self.reindex()
+        if any(changed):
+            self.meta.last_update = datetime.now()
+            self.reindex()
 
     def add(self, archive):
         advisories = self._root['advisory']
@@ -92,6 +98,7 @@ class NVD(object):
 
     def reindex(self):
         """Regenerate product index."""
+        _log.debug('Reindexing database')
         del self._root['by_product']
         bp = OOBTree.OOBTree()
         for vuln in self._root['advisory'].values():
@@ -100,6 +107,7 @@ class NVD(object):
                     bp[prod] = []
                 bp[prod].append(vuln)
         self._root['by_product'] = bp
+        transaction.commit()
 
     def by_id(self, cve_id):
         """Returns vuln or raises KeyError."""
@@ -134,23 +142,26 @@ class Archive:
         self.download_uri = 'nvdcve-1.1-{}.json.gz'.format(name)
         self.advisories = {}
 
-    def download(self, mirror, metadata):
+    def download(self, mirror, meta):
         """Fetches compressed JSON data from NIST.
 
         Nothing is done if we have already seen the same version of
         the feed before.
+
+        Returns True if anything has been loaded successfully.
         """
         url = mirror + self.download_uri
-        logger.info('Loading %s', url)
-        r = requests.get(url, headers=metadata.headers_for(url))
+        _log.info('Loading %s', url)
+        r = requests.get(url, headers=meta.headers_for(url))
         r.raise_for_status()
         if r.status_code == 200:
-            logger.debug('Parsing JSON feed "%s"', self.name)
+            _log.debug('Loading JSON feed "%s"', self.name)
             self.parse(gzip.decompress(r.content))
-            metadata.update_headers_for(url, r.headers)
-            metadata.last_update = datetime.now()
+            meta.update_headers_for(url, r.headers)
+            return True
         else:
-            logger.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
+            _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
+            return False
 
     def parse(self, nvd_json):
         raw = json.loads(nvd_json)
@@ -159,7 +170,7 @@ class Archive:
                 vuln = Vulnerability.parse(item)
                 self.advisories[vuln.cve_id] = vuln
             except ValueError:
-                logger.debug('Failed to parse NVD item: %s', item)
+                _log.debug('Failed to parse NVD item: %s', item)
 
     def items(self):
         return self.advisories.items()

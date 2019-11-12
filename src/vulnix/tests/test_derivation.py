@@ -109,5 +109,11 @@ def test_structured_attrs():
 
 
 def test_product_candidates():
-    assert ['linux-kernel', 'linux_kernel'] == list(
-        Derive(name='linux-kernel-4.0').product_candidates())
+    assert ['linux-kernel', 'linux_kernel'] == Derive(
+        name='linux-kernel-4.0').product_candidates()
+    assert [
+        'Email-Address',
+        'Email_Address',
+        'email-address',
+        'email_address',
+    ] == Derive(name='Email-Address-1').product_candidates()
