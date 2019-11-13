@@ -11,7 +11,7 @@ class Store(object):
 
     def __init__(self, requisites=True):
         self.requisites = requisites
-        self.derivations = {}
+        self.derivations = set()
 
     def add_gc_roots(self):
         """Add derivations found for all live GC roots.
@@ -46,8 +46,6 @@ class Store(object):
     def update(self, drv_path):
         if not drv_path.endswith('.drv'):
             return
-        if drv_path in self.derivations:
-            return
         # quick'n'dirty check if this is a derivation with version
         # load() may fail even if this pre-check succeeds as the derivation's
         # 'name' attribute is the final source of truth
@@ -59,4 +57,4 @@ class Store(object):
             drv_obj = load(drv_path)
         except SkipDrv:
             return
-        self.derivations[drv_path] = drv_obj
+        self.derivations.add(drv_obj)

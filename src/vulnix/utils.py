@@ -1,6 +1,5 @@
 import itertools
 import logging
-import re
 import subprocess
 import sys
 import tempfile
@@ -38,13 +37,6 @@ class Timer:
         return False  # re-raise
 
 
-R_COMP = re.compile(r'([0-9]+|[^0-9.-]+)')
-
-
-def split_components(vers):
-    return [c for c in R_COMP.split(vers) if c not in ('', '.', '-')]
-
-
 def components_lt(left, right):
     """Port from nix/src/libexpr/names.cc"""
     try:
@@ -70,8 +62,31 @@ def components_lt(left, right):
     return left < right
 
 
+def category(char):
+    """Classify `char` into: punctuation, digit, non-digit."""
+    if char in ('.', '-'):
+        return 0
+    if char in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'):
+        return 1
+    return 2
+
+
+def split_components(v):
+    """Yield cohesive groups of digits or non-digits. Skip punctuation."""
+    start = 0
+    stop = len(v)
+    while start < stop:
+        cat0 = category(v[start])
+        i = start + 1
+        while i < stop and category(v[i]) == cat0:
+            i += 1
+        if cat0 != 0:
+            yield v[start:i]
+        start = i
+
+
 def compare_versions(left, right):
-    """Compare two versions with the same logic as `nix-env u`.
+    """Compare two versions with the same logic as `nix-env -u`.
 
     Returns -1 if `left` is older than `right`, 1 if `left` is newer
     than `right`, and 0 if both versions are considered equal.
@@ -81,9 +96,8 @@ def compare_versions(left, right):
     """
     if left == right:
         return 0
-    left_ = split_components(left)
-    right_ = split_components(right)
-    for (lc, rc) in itertools.zip_longest(left_, right_, fillvalue=''):
+    for (lc, rc) in itertools.zip_longest(
+            split_components(left), split_components(right), fillvalue=''):
         if lc == rc:
             continue
         if components_lt(lc, rc):

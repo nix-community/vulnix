@@ -63,10 +63,7 @@ def populate_store(gc_roots, paths, requisites=True):
 def run(nvd, store):
     """Returns a dict with affected derivations and vulnerabilities."""
     affected = {}
-    for derivation in store.derivations.values():
-        if derivation in affected:
-            # derivation reported multiple times by Nix
-            continue
+    for derivation in store.derivations:
         vulns = derivation.check(nvd)
         if vulns:
             affected[derivation] = vulns

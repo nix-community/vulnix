@@ -98,7 +98,7 @@ class NVD(object):
 
     def reindex(self):
         """Regenerate product index."""
-        _log.debug('Reindexing database')
+        _log.info('Reindexing database')
         del self._root['by_product']
         bp = OOBTree.OOBTree()
         for vuln in self._root['advisory'].values():

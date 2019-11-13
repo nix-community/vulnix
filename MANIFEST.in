@@ -1,9 +1,7 @@
 exclude doc
-include example_sensu_check.json
 include LICENSE
 include *.nix
-include *.rst
 include *.txt
 include VERSION
-recursive-include src *.py *.yaml *.xml *.xml.gz *.drv *.toml
-recursive-include doc *.md *.txt Makefile
+recursive-include src *.py *.yaml *.drv *.toml *.json
+recursive-include doc *.md Makefile
