@@ -2,15 +2,15 @@ Changes
 =======
 
 
-1.9.0 (unreleased)
+1.9.0 (2019-11-13)
 ------------------
 
-- Pull NVD feeds from https://nvd.nist.gov/feeds/json/cve/1.1/ as XML feeds are
-  being discontinued (#55).
-
-- Support version ranges in CPE entries.
+- Pull NVD feeds from https://nvd.nist.gov/feeds/json/cve/1.1/ as XML feeds have
+  been discontinued (#55).
 
 - Print CVSS v3 base scores for each CVE. Order by descending CVSS score (#53).
+
+- Evaluate version ranges in CPE entries.
 
 
 1.8.2 (2019-06-17)
