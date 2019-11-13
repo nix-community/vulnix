@@ -102,10 +102,10 @@ class NVD(object):
         del self._root['by_product']
         bp = OOBTree.OOBTree()
         for vuln in self._root['advisory'].values():
-            for prod in (n.product for n in vuln.nodes):
-                if prod not in bp:
-                    bp[prod] = []
-                bp[prod].append(vuln)
+            if vuln.nodes:
+                for prod in (n.product for n in vuln.nodes):
+                    bp.setdefault(prod, [])
+                    bp[prod].append(vuln)
         self._root['by_product'] = bp
         transaction.commit()
 
