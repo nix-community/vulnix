@@ -1,12 +1,11 @@
 from .utils import compare_versions
-import collections
 import functools
 import json
 import re
 
 
 class SkipDrv(RuntimeError):
-
+    """This derivation cannot be treated as package."""
     pass
 
 
@@ -37,21 +36,30 @@ def destructure(env):
     return json.loads(env['__json'])
 
 
+IGNORE_EXT = {
+    '.tar.gz', '.tar.bz2', '.tar.xz', 'tar.lz', '.zip', '.patch', '.diff'
+}
+
+
 @functools.total_ordering
 class Derive(object):
+    """Nix derivation as found as .drv files in the Nix store."""
 
     store_path = None
 
-    # This __init__ is compatible with the structure in the derivation file.
-    # The derivation files are just accidentally Python-syntax, but hey!
     def __init__(self, _output=None, _inputDrvs=None, _inputSrcs=None,
                  _system=None, builder=None, _args=None,
                  envVars={}, derivations=None, name=None, patches=None):
+        """Create a derivation from a .drv file.
+
+        The derivation files are just accidentally Python-syntax, but
+        hey! :-)
+        """
         envVars = dict(envVars)
         self.name = name or envVars.get('name')
         if not self.name:
             self.name = destructure(envVars)['name']
-        for e in ['.tar.gz', '.tar.bz2', '.tar.xz', '.zip', '.patch', '.diff']:
+        for e in IGNORE_EXT:
             if self.name.endswith(e):
                 raise SkipDrv()
 
@@ -82,15 +90,17 @@ class Derive(object):
         if self.pname > other.pname:
             return True
         if self.pname < other.pname:
-            return True
+            return False
         return compare_versions(self.version, other.version) == 1
 
     def product_candidates(self):
         """Return product name variations in order of preference."""
         underscore = self.pname.replace('-', '_')
-        dedup = collections.OrderedDict.fromkeys(
-            [self.pname, underscore, self.pname.lower(), underscore.lower()])
-        return list(dedup)
+        c = [self.pname, underscore, self.pname.lower(), underscore.lower()]
+        yield c[0]
+        for i in range(1, len(c)):
+            if c[i] not in c[0:i]:
+                yield c[i]
 
     def check(self, nvd):
         affected_by = set()

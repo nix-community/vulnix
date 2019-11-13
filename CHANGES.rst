@@ -10,6 +10,8 @@ Changes
 
 - Support version ranges in CPE entries.
 
+- Print CVSS v3 base scores for each CVE. Order by descending CVSS score (#53).
+
 
 1.8.2 (2019-06-17)
 ------------------

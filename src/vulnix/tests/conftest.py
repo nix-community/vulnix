@@ -63,6 +63,6 @@ def http_server():
 @pytest.yield_fixture
 def nvd(tmpdir, http_server):
     nvd = NVD(mirror=http_server, cache_dir=str(tmpdir))
-    nvd.available_archives = []
+    nvd.available_archives = ['modified']
     with nvd:
         yield nvd

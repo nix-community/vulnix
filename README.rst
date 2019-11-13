@@ -15,16 +15,14 @@ Example output::
   ------------------------------------------------------------------------
   libxslt-1.1.29
 
-  CVEs:
-          CVE-2017-5029
+  CVE-2017-5029
 
   ------------------------------------------------------------------------
   pcre-8.40
 
-  CVEs:
-          CVE-2017-7245
-          CVE-2017-7244
-          [...]
+  CVE-2017-7245
+  CVE-2017-7244
+  [...]
 
 
 Theory of operation
@@ -33,6 +31,12 @@ Theory of operation
 `vulnix` pulls all published CVEs from NIST_ and caches them locally. It
 matches name and version of all derivations referenced from the command line
 against known CVE entries. A *whitelist* is used to filter out unwanted results.
+
+Matching Nix package names to NVD products is currently done via a coarse
+heuristic. First, a direct match is tried. If no product can be found,
+variations with lower case and underscore instead of hyphen are tried. It is
+clear that this mapping is too simplistic and needs to be improved in future
+versions.
 
 
 System requirements

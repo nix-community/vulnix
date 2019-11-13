@@ -78,7 +78,7 @@ class NVD(object):
         # the "modified" feed is sufficient if used frequently enough
         if last_update > datetime.now() - timedelta(days=7):
             return ['modified']
-        return self.available_archives + ['modified']
+        return self.available_archives
 
     def update(self):
         """Download archives (if changed) and add CVEs to database."""

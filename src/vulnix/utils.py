@@ -91,3 +91,13 @@ def compare_versions(left, right):
         if components_lt(rc, lc):
             return 1
     return 0
+
+
+def haskeys(d, *keys):
+    """Returns True if all keys are present in a nested dict `d`."""
+    if len(keys) == 1:
+        return keys[0] in d
+    first = keys[0]
+    if first in d and isinstance(d[first], dict):
+        return haskeys(d[first], *keys[1:])
+    return False

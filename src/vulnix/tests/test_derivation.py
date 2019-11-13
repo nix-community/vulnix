@@ -84,7 +84,9 @@ def test_check_returns_cves(nvd):
     """Test for CVE-2016-9844 which is listed but has a patch."""
     nvd.update()
     d = drv('transmission-1.91')
-    assert {V('CVE-2010-0748'), V('CVE-2010-0749')} == d.check(nvd)
+    assert d.check(nvd) == {
+        V('CVE-2010-0748', cvssv3=9.8), V('CVE-2010-0749', cvssv3=5.3)
+    }
 
 
 def test_ignore_patched_cves_during_check(nvd):
@@ -98,9 +100,12 @@ def test_ordering():
     assert Derive(name='python-2.7.14') == Derive(name='python-2.7.14')
     assert Derive(name='python-2.7.14') != Derive(name='python-2.7.13')
     assert Derive(name='coreutils-8.29') < Derive(name='patch-2.7.6')
+    assert not Derive(name='python-2.7.5') < Derive(name='patch-2.7.6')
     assert Derive(name='python-2.7.6') > Derive(name='patch-2.7.6')
     assert Derive(name='python-2.7.14') > Derive(name='python-2.7.13')
+    assert not Derive(name='patch-2.7.14') > Derive(name='python-2.7.13')
     assert not Derive(name='python-2.7.13') > Derive(name='python-2.7.14')
+    assert Derive(name='openssl-1.0.1d') < Derive(name='openssl-1.0.1e')
 
 
 def test_structured_attrs():
@@ -109,11 +114,11 @@ def test_structured_attrs():
 
 
 def test_product_candidates():
-    assert ['linux-kernel', 'linux_kernel'] == Derive(
-        name='linux-kernel-4.0').product_candidates()
+    assert ['linux-kernel', 'linux_kernel'] == list(Derive(
+        name='linux-kernel-4.0').product_candidates())
     assert [
         'Email-Address',
         'Email_Address',
         'email-address',
         'email_address',
-    ] == Derive(name='Email-Address-1').product_candidates()
+    ] == list(Derive(name='Email-Address-1').product_candidates())

@@ -13,7 +13,11 @@ V = Vulnerability
 def deriv():
     d = Derive(name='test-0.2')
     d.store_path = '/nix/store/zsawgflc1fq77ijjzb1369zi6kxnc36j-test-0.2'
-    return (d, {V('CVE-2018-0001'), V('CVE-2018-0002'), V('CVE-2018-0003')})
+    return (d, {
+        V('CVE-2018-0001'),
+        V('CVE-2018-0002'),
+        V('CVE-2018-0003', cvssv3=9.8),
+    })
 
 
 @pytest.fixture
@@ -23,7 +27,7 @@ def deriv1():
 
 @pytest.fixture
 def deriv2():
-    return (Derive(name='bar-2'), {V('CVE-2018-0006')})
+    return (Derive(name='bar-2'), {V('CVE-2018-0006', cvssv3=5.0)})
 
 
 @pytest.fixture
@@ -82,16 +86,14 @@ def test_output_text(wl_items, capsys):
 ------------------------------------------------------------------------
 foo-1
 
-CVEs:
-\tCVE-2018-0005
+CVE-2018-0005
 
 ------------------------------------------------------------------------
 test-0.2
 
-CVEs:
-\tCVE-2018-0001
-\tCVE-2018-0002
-\tCVE-2018-0003
+CVE-2018-0001
+CVE-2018-0002
+CVE-2018-0003
 
 use --show-whitelisted to see derivations with only whitelisted CVEs
 """
@@ -105,28 +107,30 @@ def test_output_text_verbose(wl_items, capsys):
 ------------------------------------------------------------------------
 foo-1
 
-CVEs:
-\thttps://nvd.nist.gov/vuln/detail/CVE-2018-0005
-\thttps://nvd.nist.gov/vuln/detail/CVE-2018-0004 (whitelisted)
+CVE                                                CVSSv3
+https://nvd.nist.gov/vuln/detail/CVE-2018-0005
+https://nvd.nist.gov/vuln/detail/CVE-2018-0004  [whitelisted]
+
 Issue(s):
-\thttps://tracker/4
+https://tracker/4
 
 ------------------------------------------------------------------------
 test-0.2
 
 /nix/store/zsawgflc1fq77ijjzb1369zi6kxnc36j-test-0.2
-CVEs:
-\thttps://nvd.nist.gov/vuln/detail/CVE-2018-0001
-\thttps://nvd.nist.gov/vuln/detail/CVE-2018-0002
-\thttps://nvd.nist.gov/vuln/detail/CVE-2018-0003
+CVE                                                CVSSv3
+https://nvd.nist.gov/vuln/detail/CVE-2018-0003     9.8
+https://nvd.nist.gov/vuln/detail/CVE-2018-0001
+https://nvd.nist.gov/vuln/detail/CVE-2018-0002
 
 ------------------------------------------------------------------------
 bar-2
 
-CVEs:
-\thttps://nvd.nist.gov/vuln/detail/CVE-2018-0006 (whitelisted)
+CVE                                                CVSSv3
+https://nvd.nist.gov/vuln/detail/CVE-2018-0006     5.0  [whitelisted]
+
 Comment:
-\tirrelevant
+* irrelevant
 """
 
 
@@ -138,13 +142,18 @@ def test_output_json(wl_items, capsys):
          'name': 'foo-1',
          'pname': 'foo',
          'version': '1',
-         'whitelisted': ['CVE-2018-0004']},
+         'whitelisted': ['CVE-2018-0004'],
+         'cvssv3_basescore': {}},
         {'affected_by': ['CVE-2018-0001', 'CVE-2018-0002', 'CVE-2018-0003'],
          'derivation': '/nix/store/zsawgflc1fq77ijjzb1369zi6kxnc36j-test-0.2',
          'name': 'test-0.2',
          'pname': 'test',
          'version': '0.2',
-         'whitelisted': []}]
+         'whitelisted': [],
+         'cvssv3_basescore': {
+             'CVE-2018-0003': 9.8,
+         }},
+    ]
 
 
 def test_exitcode(items, capsys):

@@ -136,6 +136,7 @@ following keys:
 - _affected_by_ - list of applicable CVE identifiers
 - _whitelisted_ - list of CVE identifiers which are masked by whitelist entries
 - _derivation_ - pathname of the scanned derivation file
+- _cvssv3_basescore_ - dict of CVSS v3 impact base scores for each CVE found
 
 ## BUGS
 
@@ -148,7 +149,8 @@ on an ongoing basis.
 
 ## COMPATIBILITY
 
-`vulnix` is able to parse derivation files created by `Nix` version 1.x and 2.0.
+`vulnix` is known to parse derivation files created by `Nix` versions up
+to 2.3.
 
 
 ## EXAMPLES

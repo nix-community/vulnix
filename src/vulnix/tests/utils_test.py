@@ -1,4 +1,4 @@
-from vulnix.utils import compare_versions, split_components
+from vulnix.utils import compare_versions, split_components, haskeys
 
 
 def test_compare_versions():
@@ -22,3 +22,11 @@ def test_split_components():
     assert ['2', '3', 'pre', '1'] == split_components('2.3pre1')
     assert ['2019', '11', '01'] == split_components('2019-11-01')
     assert ['5', '1', 'a', 'lts'] == split_components('5.1a-lts')
+
+
+def test_haskeys():
+    assert not haskeys({}, 'foo')
+    assert haskeys({'foo': 1}, 'foo')
+    assert not haskeys({'foo': 1}, 'foo', 'bar')
+    assert haskeys({'foo': {'bar': 1}}, 'foo', 'bar')
+    assert not haskeys({'foo': {'bar': 1}}, 'foo', 'baz')

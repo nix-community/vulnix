@@ -4,8 +4,16 @@ import functools
 import json
 
 
-def cve_url(cve_id):
-    return 'https://nvd.nist.gov/vuln/detail/' + cve_id
+def fmt_vuln(v):
+    out = 'https://nvd.nist.gov/vuln/detail/{:17}'.format(v.cve_id)
+    if v.cvssv3:
+        out += ' {}'.format(v.cvssv3)
+    return out.rstrip()
+
+
+def vuln_sort_key(v):
+    """Sort by CVSSv3 descending and CVE_ID ascending."""
+    return (-v.cvssv3, v)
 
 
 class Filtered:
@@ -48,7 +56,8 @@ class Filtered:
     def print(self, verbose=0, show_masked=False):
         if not self.report and not show_masked:
             return
-        _fmt = cve_url if verbose else lambda x: x
+        _fmt = fmt_vuln if verbose else lambda v: v.cve_id
+        _key = vuln_sort_key if verbose else lambda v: v
         d = self.derivation
         wl = not self.report
 
@@ -57,27 +66,27 @@ class Filtered:
         if verbose and d.store_path:
             click.secho(d.store_path, fg='magenta', dim=wl)
 
-        click.secho("CVEs:", dim=wl)
-        for vuln in sorted(self.report):
-            click.echo("\t" + _fmt(vuln.cve_id))
+        if verbose:
+            click.secho('{:50} {}'.format('CVE', 'CVSSv3'), dim=wl)
+        for v in sorted(self.report, key=_key):
+            click.echo(_fmt(v))
         if show_masked:
-            for vuln in sorted(self.masked):
-                click.secho("\t{} (whitelisted)".format(_fmt(vuln.cve_id)),
-                            dim=True)
+            for v in sorted(self.masked, key=_key):
+                click.secho("{}  [whitelisted]".format(_fmt(v)), dim=True)
 
         if not verbose:
             return
         issues = functools.reduce(
             set.union, (r.issue_url for r in self.rules), set())
         if issues:
-            click.secho('Issue(s):', fg='cyan', dim=wl)
+            click.secho('\nIssue(s):', fg='cyan', dim=wl)
             for url in issues:
-                click.secho('\t' + url, fg='cyan', dim=wl)
+                click.secho(url, fg='cyan', dim=wl)
         for rule in self.rules:
             if rule.comment:
-                click.secho('Comment:', fg='blue', dim=wl)
+                click.secho('\nComment:', fg='blue', dim=wl)
                 for comment in rule.comment:
-                    click.secho('\t' + comment, fg='blue', dim=wl)
+                    click.secho('* ' + comment, fg='blue', dim=wl)
 
 
 def output_text(vulns, show_whitelisted=False, verbose=False):
@@ -120,7 +129,9 @@ def output_json(items, show_whitelisted=False):
             'version': d.version,
             'derivation': d.store_path,
             'affected_by': sorted(v.cve_id for v in i.report),
-            'whitelisted': sorted(v.cve_id for v in i.masked)
+            'whitelisted': sorted(v.cve_id for v in i.masked),
+            'cvssv3_basescore':
+                {v.cve_id: v.cvssv3 for v in (i.report | i.masked) if v.cvssv3}
         })
     print(json.dumps(out, indent=1))
 
