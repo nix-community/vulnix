@@ -1,7 +1,6 @@
 exclude doc
 include LICENSE
-include *.nix
-include *.txt
 include VERSION
-recursive-include src *.py *.yaml *.drv *.toml *.json
-recursive-include doc *.md Makefile
+include *.rst
+recursive-include src *.py *.yaml *.drv *.toml *.json *.json.gz
+recursive-include doc *.txt *.md Makefile
