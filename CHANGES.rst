@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.9.1 (unreleased)
+1.9.1 (2019-11-14)
 ------------------
 
 - Fix packaging bug.
