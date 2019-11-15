@@ -5,7 +5,9 @@ Changes
 1.9.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Improve performance by pre-fetching all cached CPE configurations for each
+  candidate vulnerability. This change requires to rebuild the ZODB database,
+  which is done transparently.
 
 
 1.9.1 (2019-11-14)

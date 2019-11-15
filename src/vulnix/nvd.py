@@ -39,14 +39,29 @@ class NVD(object):
         self._db = ZODB.DB(storage)
         self._connection = self._db.open()
         self._root = self._connection.root()
-        self._root.setdefault('advisory', OOBTree.OOBTree())
-        self._root.setdefault('by_product', OOBTree.OOBTree())
-        self._root.setdefault('meta', Meta())
         try:
-            del self._root['archives']
-        except KeyError:
-            pass
+            self._root.setdefault('advisory', OOBTree.OOBTree())
+            self._root.setdefault('by_product', OOBTree.OOBTree())
+            self._root.setdefault('meta', Meta())
+            if 'archives' in self._root:
+                del self._root['archives']
+                _log.warn('Pre-1.9.0 database found -- Rebuilding DB')
+            try:
+                # quick check if Vulnerability objects are loadable
+                self._root['advisory'].values()[0].nodes[0]
+            except IndexError:
+                pass
+        except TypeError:
+            self.reinit_db()
         return self
+
+    def reinit_db(self):
+        """Rebuild DB from scratch."""
+        _log.warn('Incompatible objects found in database - rebuilding DB '
+                  'from scratch')
+        self._root['advisory'] = OOBTree.OOBTree()
+        self._root['by_product'] = OOBTree.OOBTree()
+        self._root['meta'] = Meta()
 
     def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
         if exc_type is None:
