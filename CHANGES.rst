@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.9.2 (unreleased)
+1.9.2 (2019-11-16)
 ------------------
 
 - Improve performance by pre-fetching all cached CPE configurations for each
