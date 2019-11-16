@@ -9,6 +9,9 @@ Changes
   candidate vulnerability. This change requires to rebuild the ZODB database,
   which is done transparently.
 
+- Fix bug that crashed vulnix when trying to extend existing whitelist entries
+  with new CVEs (#57).
+
 
 1.9.1 (2019-11-14)
 ------------------

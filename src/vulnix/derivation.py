@@ -1,7 +1,10 @@
 from .utils import compare_versions
 import functools
 import json
+import logging
 import re
+
+_log = logging.getLogger(__name__)
 
 
 class SkipDrv(RuntimeError):
@@ -27,6 +30,7 @@ def split_name(fullname):
 def load(path):
     with open(path) as f:
         d_obj = eval(f.read(), {'__builtins__': {}, 'Derive': Derive}, {})
+    _log.debug('Loading drv %s', d_obj.name)
     d_obj.store_path = path
     return d_obj
 
@@ -37,8 +41,8 @@ def destructure(env):
 
 
 IGNORE_EXT = {
-    '.tar.gz', '.tar.bz2', '.tar.xz', 'tar.lz', '.zip', '.patch', '.diff',
-    '.gem'
+    '.tar.gz', '.tar.bz2', '.tar.xz', 'tar.lz', '.zip', '.gem',
+    '.patch', '.patch.gz', '.patch.xz', '.diff',
 }
 
 

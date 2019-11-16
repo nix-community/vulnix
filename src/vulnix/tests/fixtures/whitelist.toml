@@ -10,6 +10,7 @@ status = "inprogress"
 
 ["libxslt-2.0"]
 until = "2018-03-01"
+cve = [ "CVE-2015-9019", "CVE-2017-2477" ]
 
 ["audiofile-0.3.2"]
 

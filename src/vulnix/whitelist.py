@@ -171,6 +171,7 @@ class Whitelist:
         return self.entries[key]
 
     def __str__(self):
+        """Formats whitelist as string. Used to dump it to a file."""
         return toml.dumps(self.dump()).replace(',]\n', ' ]\n')
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
@@ -220,6 +221,7 @@ class Whitelist:
         """Serializes whitelist into dict."""
         res = collections.OrderedDict()
         for k, v in self.entries.items():
+            _log.debug('Creating WL entry for %s', k)
             entry = v.dump()
             if entry is not None:
                 res[k] = entry
@@ -269,4 +271,4 @@ class Whitelist:
         self.update(WhitelistRule(
             pname=filtered_item.derivation.pname,
             version=filtered_item.derivation.version,
-            cve=filtered_item.report))
+            cve={i.cve_id for i in filtered_item.report}))

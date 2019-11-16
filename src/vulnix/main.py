@@ -82,7 +82,7 @@ def run(nvd, store):
 @click.option('-w', '--whitelist', multiple=True, callback=open_resources,
               help='Load whitelist from file or URL (may be given multiple '
               'times).')
-@click.option('-W', '--write-whitelist', type=click.File(mode='w'),
+@click.option('-W', '--write-whitelist', type=click.File(mode='a'),
               help='Write TOML whitelist containing current matches.')
 @click.option('-c', '--cache-dir', type=click.Path(file_okay=False),
               default=DEFAULT_CACHE_DIR,
@@ -142,7 +142,9 @@ def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
             if write_whitelist:
                 for i in filtered_items:
                     whitelist.add_from(i)
-                write_whitelist.write(str(whitelist))
+                write_whitelist.close()
+                with open(write_whitelist.name, 'w') as f:
+                    f.write(str(whitelist))
         sys.exit(rc)
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort

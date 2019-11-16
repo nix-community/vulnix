@@ -1,11 +1,11 @@
+from vulnix.derivation import Derive
+from vulnix.output import Filtered
+from vulnix.vulnerability import Vulnerability
+from vulnix.whitelist import Whitelist, WhitelistRule
 import datetime
 import freezegun
 import io
 import pytest
-
-from vulnix.whitelist import Whitelist, WhitelistRule
-from vulnix.derivation import Derive
-from vulnix.vulnerability import Vulnerability
 
 V = Vulnerability
 
@@ -191,6 +191,7 @@ comment = "broken, won't fix"
 cve = "CVE-2015-7696"
 
 ["libxslt-2.0"]
+cve = [ "CVE-2015-9019", "CVE-2017-2477" ]
 until = "2018-03-01"
 
 ["audiofile-0.3.2"]
@@ -221,6 +222,18 @@ cve = [ "CVE-2017-6827", "CVE-2017-6828", "CVE-2017-6834" ]
 comment = "some issues not fixed upstream"
 issue_url = "https://fb.flyingcircus.io/f/cases/26909/"
 """
+
+
+@freezegun.freeze_time('2018-02-28')
+def test_dump_add_cve(whitelist):
+    whitelist.add_from(Filtered(Derive(name='libxslt-2.0'), {
+        V('CVE-2019-13118'),
+    }))
+    assert """\
+["libxslt-2.0"]
+cve = [ "CVE-2015-9019", "CVE-2017-2477", "CVE-2019-13118" ]
+until = "2018-03-01"
+""" in str(whitelist)
 
 
 def test_toml_missing_quote():
