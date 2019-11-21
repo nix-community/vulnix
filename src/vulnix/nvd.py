@@ -2,6 +2,7 @@ from BTrees import OOBTree
 from datetime import datetime, date, timedelta
 from persistent import Persistent
 from .vulnerability import Vulnerability
+import glob
 import gzip
 import json
 import logging
@@ -34,9 +35,8 @@ class NVD(object):
         """Keeps database connection open while in this context."""
         _log.debug('Opening database in %s', self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
-        storage = ZODB.FileStorage.FileStorage(
-            p.join(self.cache_dir, 'Data.fs'))
-        self._db = ZODB.DB(storage)
+        self._db = ZODB.DB(ZODB.FileStorage.FileStorage(
+            p.join(self.cache_dir, 'Data.fs')))
         self._connection = self._db.open()
         self._root = self._connection.root()
         try:
@@ -45,23 +45,12 @@ class NVD(object):
             self._root.setdefault('meta', Meta())
             if 'archives' in self._root:
                 del self._root['archives']
-                _log.warn('Pre-1.9.0 database found -- Rebuilding DB')
-            try:
-                # quick check if Vulnerability objects are loadable
-                self._root['advisory'].values()[0].nodes[0]
-            except IndexError:
-                pass
-        except TypeError:
-            self.reinit_db()
+                _log.warn('Pre-1.9.0 database found - rebuilding')
+                self.reinit()
+        except (TypeError, EOFError):
+            _log.warn('Incompatible objects found in database - rebuilding DB')
+            self.reinit()
         return self
-
-    def reinit_db(self):
-        """Rebuild DB from scratch."""
-        _log.warn('Incompatible objects found in database - rebuilding DB '
-                  'from scratch')
-        self._root['advisory'] = OOBTree.OOBTree()
-        self._root['by_product'] = OOBTree.OOBTree()
-        self._root['meta'] = Meta()
 
     def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
         if exc_type is None:
@@ -74,6 +63,22 @@ class NVD(object):
         self._connection.close()
         self._connection = None
         self._db = None
+
+    def reinit(self):
+        """Remove old DB and rebuild it from scratch."""
+        self._root = None
+        transaction.abort()
+        self._connection.close()
+        self._db = None
+        for f in glob.glob(p.join(self.cache_dir, "Data.fs*")):
+            os.unlink(f)
+        self._db = ZODB.DB(ZODB.FileStorage.FileStorage(
+            p.join(self.cache_dir, 'Data.fs')))
+        self._connection = self._db.open()
+        self._root = self._connection.root()
+        self._root['advisory'] = OOBTree.OOBTree()
+        self._root['by_product'] = OOBTree.OOBTree()
+        self._root['meta'] = Meta()
 
     @property
     def meta(self):
@@ -88,7 +93,7 @@ class NVD(object):
         checked.
         """
         last_update = self.meta.last_update
-        if last_update > datetime.now() - timedelta(hours=1):
+        if last_update > datetime.now() - timedelta(hours=2):
             return []
         # the "modified" feed is sufficient if used frequently enough
         if last_update > datetime.now() - timedelta(days=7):
@@ -179,13 +184,16 @@ class Archive:
             return False
 
     def parse(self, nvd_json):
+        added = 0
         raw = json.loads(nvd_json)
         for item in raw['CVE_Items']:
             try:
                 vuln = Vulnerability.parse(item)
                 self.advisories[vuln.cve_id] = vuln
+                added += 1
             except ValueError:
                 _log.debug('Failed to parse NVD item: %s', item)
+        _log.debug("Added %s vulnerabilities", added)
 
     def items(self):
         return self.advisories.items()
