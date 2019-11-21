@@ -5,7 +5,7 @@ Changes
 1.9.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix reliability problem when migrating from old databases (#58).
 
 
 1.9.2 (2019-11-16)

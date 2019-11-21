@@ -67,7 +67,7 @@ def run(nvd, store):
         vulns = derivation.check(nvd)
         if vulns:
             affected[derivation] = vulns
-    _log.debug("unfiltered affected: %r", affected)
+    _log.debug("Unfiltered affected: %r", affected)
     return affected
 
 
