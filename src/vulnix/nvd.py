@@ -43,8 +43,9 @@ class NVD(object):
             self._root.setdefault('advisory', OOBTree.OOBTree())
             self._root.setdefault('by_product', OOBTree.OOBTree())
             self._root.setdefault('meta', Meta())
+            # may trigger exceptions if the database is inconsistent
+            list(self._root['by_product'].keys())
             if 'archives' in self._root:
-                del self._root['archives']
                 _log.warn('Pre-1.9.0 database found - rebuilding')
                 self.reinit()
         except (TypeError, EOFError):
