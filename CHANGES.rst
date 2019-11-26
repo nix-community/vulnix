@@ -5,6 +5,10 @@ Changes
 1.9.3 (unreleased)
 ------------------
 
+- Print CVSS scores by default.
+
+- Print CVSS scores by default
+
 - Fix reliability problem when migrating from old databases (#58).
 
 

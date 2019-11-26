@@ -138,7 +138,7 @@ def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
             with Timer('Scan vulnerabilities'):
                 filtered_items = whitelist.filter(run(nvd, store))
 
-            rc = output(filtered_items, json, show_whitelisted, verbose)
+            rc = output(filtered_items, json, show_whitelisted)
             if write_whitelist:
                 for i in filtered_items:
                     whitelist.add_from(i)

@@ -78,29 +78,7 @@ def wl_items(items):
 
 
 def test_output_text(wl_items, capsys):
-    output_text(wl_items)
-    assert capsys.readouterr().out == """\
-2 derivations with active advisories
-1 derivations left out due to whitelisting
-
-------------------------------------------------------------------------
-foo-1
-
-CVE-2018-0005
-
-------------------------------------------------------------------------
-test-0.2
-
-CVE-2018-0001
-CVE-2018-0002
-CVE-2018-0003
-
-use --show-whitelisted to see derivations with only whitelisted CVEs
-"""
-
-
-def test_output_text_verbose(wl_items, capsys):
-    output_text(wl_items, show_whitelisted=True, verbose=True)
+    output_text(wl_items, show_whitelisted=True)
     assert capsys.readouterr().out == """\
 2 derivations with active advisories
 

@@ -53,29 +53,24 @@ class Filtered:
             self.masked |= self.report
             self.report = set()
 
-    def print(self, verbose=0, show_masked=False):
+    def print(self, show_masked=False):
         if not self.report and not show_masked:
             return
-        _fmt = fmt_vuln if verbose else lambda v: v.cve_id
-        _key = vuln_sort_key if verbose else lambda v: v
         d = self.derivation
         wl = not self.report
 
         click.secho('\n{}'.format('-' * 72), dim=wl)
         click.secho('{}\n'.format(d.name), fg='yellow', bold=True, dim=wl)
-        if verbose and d.store_path:
+        if d.store_path:
             click.secho(d.store_path, fg='magenta', dim=wl)
 
-        if verbose:
-            click.secho('{:50} {}'.format('CVE', 'CVSSv3'), dim=wl)
-        for v in sorted(self.report, key=_key):
-            click.echo(_fmt(v))
+        click.secho('{:50} {}'.format('CVE', 'CVSSv3'), dim=wl)
+        for v in sorted(self.report, key=vuln_sort_key):
+            click.echo(fmt_vuln(v))
         if show_masked:
-            for v in sorted(self.masked, key=_key):
-                click.secho("{}  [whitelisted]".format(_fmt(v)), dim=True)
+            for v in sorted(self.masked, key=vuln_sort_key):
+                click.secho("{}  [whitelisted]".format(fmt_vuln(v)), dim=True)
 
-        if not verbose:
-            return
         issues = functools.reduce(
             set.union, (r.issue_url for r in self.rules), set())
         if issues:
@@ -89,7 +84,7 @@ class Filtered:
                     click.secho('* ' + comment, fg='blue', dim=wl)
 
 
-def output_text(vulns, show_whitelisted=False, verbose=False):
+def output_text(vulns, show_whitelisted=False):
     report = [v for v in vulns if v.report]
     wl = [v for v in vulns if not v.report]
 
@@ -108,10 +103,10 @@ def output_text(vulns, show_whitelisted=False, verbose=False):
             len(wl)), fg='blue')
 
     for i in sorted(report, key=attrgetter('derivation')):
-        i.print(verbose, show_whitelisted)
+        i.print(show_whitelisted)
     if show_whitelisted:
         for i in sorted(wl, key=attrgetter('derivation')):
-            i.print(verbose, show_whitelisted)
+            i.print(show_whitelisted)
     if wl and not show_whitelisted:
         click.secho('\nuse --show-whitelisted to see derivations with only '
                     'whitelisted CVEs', fg='blue')
@@ -136,11 +131,11 @@ def output_json(items, show_whitelisted=False):
     print(json.dumps(out, indent=1))
 
 
-def output(items, json=False, show_whitelisted=False, verbose=False):
+def output(items, json=False, show_whitelisted=False):
     if json:
         output_json(items, show_whitelisted)
     else:
-        output_text(items, show_whitelisted, verbose)
+        output_text(items, show_whitelisted)
     if any(i.report for i in items):
         return 2
     if show_whitelisted and any(i.masked for i in items):
