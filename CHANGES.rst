@@ -2,12 +2,10 @@ Changes
 =======
 
 
-1.9.3 (unreleased)
+1.9.3 (2019-11-26)
 ------------------
 
 - Print CVSS scores by default.
-
-- Print CVSS scores by default
 
 - Fix reliability problem when migrating from old databases (#58).
 
