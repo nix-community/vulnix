@@ -176,7 +176,7 @@ class Whitelist:
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
     YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
-    SECTION_FORMAT = re.compile(r'^[a-z0-9_.*-]+$')
+    SECTION_FORMAT = re.compile(r'^[a-zA-Z0-9_.*-]+$')
 
     @classmethod
     def load(cls, fobj):
