@@ -5,7 +5,7 @@ Changes
 1.9.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix "invalid package selector" bug.
 
 
 1.9.3 (2019-11-26)

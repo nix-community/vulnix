@@ -13,16 +13,20 @@ Example output::
   2 derivations with active advisories
 
   ------------------------------------------------------------------------
-  libxslt-1.1.29
+  binutils-2.31.1
 
-  CVE-2017-5029
+  /nix/store/zc1lbkaf9l9hlsp1jdiq3si56nsglymh-binutils-2.31.1.drv
+  CVE                                                CVSSv3
+  https://nvd.nist.gov/vuln/detail/CVE-2018-1000876  7.8
+  https://nvd.nist.gov/vuln/detail/CVE-2018-20657    7.5
+  https://nvd.nist.gov/vuln/detail/CVE-2018-20712    6.5
 
   ------------------------------------------------------------------------
-  pcre-8.40
+  libssh2-1.9.0
 
-  CVE-2017-7245
-  CVE-2017-7244
-  [...]
+  /nix/store/mfpfclry68r4sv4mcc9hb88z0lb9jk1c-libssh2-1.9.0.drv
+  CVE                                                CVSSv3
+  https://nvd.nist.gov/vuln/detail/CVE-2019-17498    8.1
 
 
 Theory of operation
