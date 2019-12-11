@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.9.4 (unreleased)
+1.9.4 (2019-12-11)
 ------------------
 
 - Fix "invalid package selector" bug.
