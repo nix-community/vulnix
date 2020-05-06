@@ -14,8 +14,8 @@ derivations are reported together with matching CVE identifiers.
 
 The last argument specifies where to start the search and can be either:
 
-* A derivation file (e.g., _/nix/store/0123456789-program-1.0.drv_).
-* A file in the Nix store for which a deriver is known.
+* A derivation (e.g., _/nix/store/0123456789-program-1.0.drv_).
+* An output file in the Nix store for which a deriver is known.
 * A link into the Nix store (e.g. _result_).
 
 Prior to scanning, parts of the NIST NVD database are fetched and parsed.  This
@@ -34,6 +34,11 @@ should not be reported.
 * `-G`, `--gc-roots`:
   Scans all active garbage collection roots. This option is of limited use since
   the scan will include all old system generations.
+
+* `-f`, `--from-file`=<FILE>:
+  Scans derivations read from a file. Expects one derivation path
+  like _/nix/store/*.drv_ per line.  Useful together with `-R`/`--no-requisites`,
+  which means that exactly the specified derivations will be scanned.
 
 * `-w`, `--whitelist`=<FILE> | <URL>:
   Loads a whitelist from the specified local path or URL. See

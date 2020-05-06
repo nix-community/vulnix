@@ -77,6 +77,8 @@ def run(nvd, store):
               help='Scan the current system.')
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones).')
+@click.option('-f', '--from-file', type=click.File(mode='r'),
+              help='Read derivaions from file')
 @click.argument('path', nargs=-1, type=click.Path(exists=True))
 # modify operation
 @click.option('-w', '--whitelist', multiple=True, callback=open_resources,
@@ -107,14 +109,14 @@ def run(nvd, store):
               help='(obsolete; kept for compatibility reasons)')
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
-def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
-         whitelist, write_whitelist, version, json, show_whitelisted,
-         default_whitelist, notfixed):
+def main(verbose, gc_roots, system, from_file, path, mirror, cache_dir,
+         requisites, whitelist, write_whitelist, version, json,
+         show_whitelisted, default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
 
-    if not (gc_roots or system or path):
+    if not (gc_roots or system or path or from_file):
         howto()
         sys.exit(3)
 
@@ -123,6 +125,9 @@ def main(verbose, gc_roots, system, path, mirror, cache_dir, requisites,
     paths = list(path)
     if system:
         paths.append(CURRENT_SYSTEM)
+    if from_file:
+        for drv in from_file.readlines():
+            paths.append(drv.strip())
 
     try:
         with Timer('Load whitelists'):
