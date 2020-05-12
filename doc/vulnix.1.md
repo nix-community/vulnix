@@ -58,7 +58,7 @@ should not be reported.
 
 * `-m`, `--mirror`=<URL>:
   Fetches NIST NVD updates from <URL>. Defaults to
-  _https://static.nvd.nist.gov/feeds/xml/cve/_.
+  _https://nvd.nist.gov/feeds/json/cve/1.1/_.
 
 * `-j`, `--json`:
   Outputs affected package versions as JSON document. See [JSON output] below.
