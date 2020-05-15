@@ -41,7 +41,7 @@ def destructure(env):
 
 
 IGNORE_EXT = {
-    '.tar.gz', '.tar.bz2', '.tar.xz', 'tar.lz', '.zip', '.gem',
+    '.tar.gz', '.tar.bz2', '.tar.xz', '.tar.lz', '.tgz', '.zip', '.gem',
     '.patch', '.patch.gz', '.patch.xz', '.diff',
 }
 
