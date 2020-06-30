@@ -27,11 +27,11 @@ class Timer:
 
     def __enter__(self):
         _log.debug('>>> %s', self.section)
-        self.start = time.clock()
+        self.start = time.clock_gettime(time.CLOCK_MONOTONIC)
         return self
 
     def __exit__(self, *exc):
-        self.end = time.clock()
+        self.end = time.clock_gettime(time.CLOCK_MONOTONIC)
         self.interval = self.end - self.start
         _log.debug('<<< %s %.2fs', self.section, self.interval)
         return False  # re-raise
