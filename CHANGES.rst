@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.9.5 (unreleased)
+1.9.5 (2020-06-30)
 ------------------
 
 - Add `-f` option which reads a list of derivations directly from a file.
