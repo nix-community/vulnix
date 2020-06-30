@@ -5,7 +5,7 @@
 
 # uses build in upstream nixpkgs
 (pkgs.callPackage "${nixpkgs}/pkgs/tools/security/vulnix" {
-  pythonPackages = pkgs.python3Packages;
+  python3Packages = pkgs.python37Packages;
 }).overrideAttrs (
   old: rec {
     src = lib.cleanSource ./.;
