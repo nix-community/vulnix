@@ -5,7 +5,13 @@ Changes
 1.9.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add `-f` option which reads a list of derivations directly from a file.
+
+- Exclude .tgz derivations by default.
+
+- Change default mirror for NIST feeds.
+
+- Python 3.8 compatbility.
 
 
 1.9.4 (2019-12-11)
