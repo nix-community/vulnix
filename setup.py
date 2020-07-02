@@ -48,7 +48,7 @@ setup(
     author_email='mail@flyingcircus.io',
     license='BSD-3-Clause',
     url='https://github.com/flyingcircusio/vulnix',
-    keywords='security',
+    keywords='security,nixos,nixpkgs,cve,nvd',
     classifiers="""\
 Development Status :: 5 - Production/Stable
 Environment :: Console

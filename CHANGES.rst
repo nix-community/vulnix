@@ -5,7 +5,9 @@ Changes
 1.9.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix flake8 check (#64).
+
+- Packaging: Improve keywords.
 
 
 1.9.5 (2020-06-30)
@@ -15,7 +17,7 @@ Changes
 
 - Exclude .tgz derivations by default.
 
-- Change default mirror for NIST feeds.
+- Change default mirror for NIST feeds (#61).
 
 - Python 3.8 compatbility.
 
