@@ -5,7 +5,8 @@ Changes
 1.9.7 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Extend `-f`/`--file` input. It now also accepts JSON input containing package
+  names and applied patches.
 
 
 1.9.6 (2020-07-02)

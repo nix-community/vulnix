@@ -52,9 +52,9 @@ class Derive(object):
 
     store_path = None
 
-    def __init__(self, _output=None, _inputDrvs=None, _inputSrcs=None,
-                 _system=None, builder=None, _args=None,
-                 envVars={}, derivations=None, name=None, patches=None):
+    def __init__(self, _outputs=None, _inputDrvs=None, _inputSrcs=None,
+                 _system=None, _builder=None, _args=None,
+                 envVars={}, _derivations=None, name=None, patches=None):
         """Create a derivation from a .drv file.
 
         The derivation files are just accidentally Python-syntax, but

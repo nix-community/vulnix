@@ -1,6 +1,7 @@
-from .derivation import load, SkipDrv
+from .derivation import load, SkipDrv, Derive
 from .utils import call
 import os.path as p
+import json
 import logging
 
 _log = logging.getLogger(__name__)
@@ -50,3 +51,12 @@ class Store(object):
         except SkipDrv:
             return
         self.derivations.add(drv_obj)
+
+    def load_pkgs_json(self, json_fobj):
+        for pkg in json.load(json_fobj).values():
+            try:
+                self.derivations.add(Derive(
+                    name=pkg['name'], patches=pkg['patches']))
+            except SkipDrv:
+                _log.debug("skipping: {}", pkg)
+                continue

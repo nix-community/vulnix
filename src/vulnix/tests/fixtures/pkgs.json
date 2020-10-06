@@ -1,0 +1,21 @@
+{
+  "acpitool": {
+    "name": "acpitool-0.5.1",
+    "patches": [
+      "ac_adapter.patch",
+      "battery.patch",
+      "kernel3.patch",
+      "wakeup.patch",
+      "0001-Do-not-assume-fixed-line-lengths-for-proc-acpi-wakeu.patch",
+      "typos.patch"
+    ]
+  },
+  "aespipe": {
+    "name": "aespipe-2.4f",
+    "patches": []
+  },
+  "boolector": {
+    "name": "boolector-3.0.0",
+    "patches": ["CVE-2019-7560.patch"]
+  }
+}

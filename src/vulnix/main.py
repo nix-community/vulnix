@@ -50,9 +50,8 @@ def init_logging(verbose):
         logging.basicConfig(level=logging.WARNING)
 
 
-def populate_store(gc_roots, paths, requisites=True):
+def populate_store(store, gc_roots, paths, requisites=True):
     """Load derivations from nix store depending on cmdline invocation."""
-    store = Store(requisites)
     if gc_roots:
         store.add_gc_roots()
     for path in paths:
@@ -78,7 +77,7 @@ def run(nvd, store):
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones).')
 @click.option('-f', '--from-file', type=click.File(mode='r'),
-              help='Read derivaions from file')
+              help='Read derivations from file')
 @click.argument('path', nargs=-1, type=click.Path(exists=True))
 # modify operation
 @click.option('-w', '--whitelist', multiple=True, callback=open_resources,
@@ -125,9 +124,6 @@ def main(verbose, gc_roots, system, from_file, path, mirror, cache_dir,
     paths = list(path)
     if system:
         paths.append(CURRENT_SYSTEM)
-    if from_file:
-        for drv in from_file.readlines():
-            paths.append(drv.strip())
 
     try:
         with Timer('Load whitelists'):
@@ -136,7 +132,16 @@ def main(verbose, gc_roots, system, from_file, path, mirror, cache_dir,
             for wl in wh_sources:
                 whitelist.merge(Whitelist.load(wl))
         with Timer('Load derivations'):
-            store = populate_store(gc_roots, paths, requisites)
+            store = Store(requisites)
+            if from_file:
+                if from_file.name.endswith('.json'):
+                    _log.debug("loading packages.json")
+                    store.load_pkgs_json(from_file)
+                else:
+                    for drv in from_file.readlines():
+                        paths.append(drv.strip())
+            if paths:
+                populate_store(store, gc_roots, paths, requisites)
         with NVD(mirror, cache_dir) as nvd:
             with Timer('Update NVD data'):
                 nvd.update()
@@ -155,5 +160,5 @@ def main(verbose, gc_roots, system, from_file, path, mirror, cache_dir,
     # This needs to happen outside the NVD context: otherwise ZODB will abort
     # the transaction and we will keep updating over and over.
     except RuntimeError as e:
-        _log.critical(e)
+        _log.exception(e)
         sys.exit(2)
