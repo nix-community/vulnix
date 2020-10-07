@@ -79,7 +79,7 @@ class Derive(object):
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplementedError()
-        return self.name == other.name
+        return self.name == other.name and self.patches == other.patches
 
     def __hash__(self):
         return hash(self.name)

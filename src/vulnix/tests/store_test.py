@@ -14,15 +14,7 @@ def test_load_json(json):
     s = Store(requisites=False)
     s.load_pkgs_json(json)
     assert s.derivations == set([
-        Derive(name="acpitool-0.5.1", patches=[
-            "ac_adapter.patch",
-            "battery.patch",
-            "kernel3.patch",
-            "wakeup.patch",
-            "0001-Do-not-assume-fixed-line-lengths-for-proc-acpi-wakeu.patch",
-            "typos.patch"
-        ]),
+        Derive(name="acpitool-0.5.1", patches="ac.patch battery.patch"),
         Derive(name="aespipe-2.4f"),
-        Derive(name="boolector-3.0.0", patches=[
-            "CVE-2019-7560.patch"
-        ])])
+        Derive(name="boolector-3.0.0", patches="CVE-2019-7560.patch")
+    ])

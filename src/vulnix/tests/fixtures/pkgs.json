@@ -2,12 +2,8 @@
   "acpitool": {
     "name": "acpitool-0.5.1",
     "patches": [
-      "ac_adapter.patch",
-      "battery.patch",
-      "kernel3.patch",
-      "wakeup.patch",
-      "0001-Do-not-assume-fixed-line-lengths-for-proc-acpi-wakeu.patch",
-      "typos.patch"
+      "ac.patch",
+      "battery.patch"
     ]
   },
   "aespipe": {

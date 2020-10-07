@@ -56,7 +56,7 @@ class Store(object):
         for pkg in json.load(json_fobj).values():
             try:
                 self.derivations.add(Derive(
-                    name=pkg['name'], patches=pkg['patches']))
+                    name=pkg['name'], patches=' '.join(pkg['patches'])))
             except SkipDrv:
                 _log.debug("skipping: {}", pkg)
                 continue
