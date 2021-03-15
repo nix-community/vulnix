@@ -16,5 +16,6 @@ def test_load_json(json):
     assert s.derivations == set([
         Derive(name="acpitool-0.5.1", patches="ac.patch battery.patch"),
         Derive(name="aespipe-2.4f"),
-        Derive(name="boolector-3.0.0", patches="CVE-2019-7560.patch")
+        Derive(name="boolector-3.0.0",
+               patches="CVE-2019-7560.patch CVE-2019-7559")
     ])

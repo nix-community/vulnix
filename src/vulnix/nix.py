@@ -55,8 +55,11 @@ class Store(object):
     def load_pkgs_json(self, json_fobj):
         for pkg in json.load(json_fobj).values():
             try:
+                patches = pkg['patches']
+                if 'known_vulnerabilities' in pkg:
+                    patches.extend(pkg['known_vulnerabilities'])
                 self.derivations.add(Derive(
-                    name=pkg['name'], patches=' '.join(pkg['patches'])))
+                    name=pkg['name'], patches=' '.join(patches)))
             except SkipDrv:
                 _log.debug("skipping: {}", pkg)
                 continue

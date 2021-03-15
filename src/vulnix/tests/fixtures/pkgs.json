@@ -12,6 +12,7 @@
   },
   "boolector": {
     "name": "boolector-3.0.0",
-    "patches": ["CVE-2019-7560.patch"]
+    "patches": ["CVE-2019-7560.patch"],
+    "known_vulnerabilities": ["CVE-2019-7559"]
   }
 }
