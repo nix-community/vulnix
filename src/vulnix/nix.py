@@ -52,7 +52,12 @@ class Store(object):
         deriver = call(['nix-store', '-qd', path]).strip()
         _log.debug('deriver: %s', deriver)
         if deriver and deriver != 'unknown-deriver':
-            return deriver
+            if p.exists(deriver):
+                return deriver
+            else:
+                raise RuntimeError(
+                    'Deriver `{}` for path `{}` does not exist'.format(
+                        deriver, path))
         raise RuntimeError(
             'Cannot determine deriver. Is this really a path into the '
             'nix store?', path)
