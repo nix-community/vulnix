@@ -46,6 +46,9 @@ class Store(object):
                               '--profile', profile]).splitlines():
                 self.add_path(line.split()[1])
 
+    def _call_nix(self, args):
+        return call(['nix'] + args)
+
     def _find_deriver(self, path):
         if path.endswith('.drv'):
             return path
@@ -57,7 +60,7 @@ class Store(object):
             return qpi_deriver
         # Deriver from QueryValidDerivers
         qvd_deriver = list(json.loads(
-            call(['nix', 'show-derivation', path])).keys())[0]
+            self._call_nix(['show-derivation', path])).keys())[0]
         _log.debug('qvd_deriver: %s', qvd_deriver)
         if qvd_deriver and p.exists(qvd_deriver):
             return qvd_deriver
