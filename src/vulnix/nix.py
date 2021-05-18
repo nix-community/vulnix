@@ -12,6 +12,7 @@ class Store(object):
     def __init__(self, requisites=True):
         self.requisites = requisites
         self.derivations = set()
+        self.experimental_flag_needed = None
 
     def add_gc_roots(self):
         """Add derivations found for all live GC roots.
@@ -47,7 +48,11 @@ class Store(object):
                 self.add_path(line.split()[1])
 
     def _call_nix(self, args):
-        if '--experimental-features' in call(['nix', '--help']):
+        if self.experimental_flag_needed is None:
+            self.experimental_flag_needed = (
+                '--experimental-features' in call(['nix', '--help']))
+
+        if self.experimental_flag_needed:
             return call(['nix',
                          '--experimental-features',
                          'nix-command'] + args)
