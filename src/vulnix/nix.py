@@ -46,21 +46,24 @@ class Store(object):
                               '--profile', profile]).splitlines():
                 self.add_path(line.split()[1])
 
+    def _find_deriver(self, path):
+        if path.endswith('.drv'):
+            return path
+        deriver = call(['nix-store', '-qd', path]).strip()
+        _log.debug('deriver: %s', deriver)
+        if deriver and deriver != 'unknown-deriver':
+            return deriver
+        raise RuntimeError(
+            'Cannot determine deriver. Is this really a path into the '
+            'nix store?', path)
+
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):
             raise RuntimeError('path `{}` does not exist - cannot load '
                                'derivations referenced from it'.format(path))
         _log.debug('Loading derivations referenced by "%s"', path)
-        if path.endswith('.drv'):
-            deriver = path
-        else:
-            deriver = call(['nix-store', '-qd', path]).strip()
-            _log.debug('deriver: %s', deriver)
-            if not deriver or deriver == 'unknown-deriver':
-                raise RuntimeError(
-                    'Cannot determine deriver. Is this really a path into the '
-                    'nix store?', path)
+        deriver = self._find_deriver(path)
         if self.requisites:
             for candidate in call(['nix-store', '-qR', deriver]).splitlines():
                 self.update(candidate)
