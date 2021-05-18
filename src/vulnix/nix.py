@@ -47,6 +47,10 @@ class Store(object):
                 self.add_path(line.split()[1])
 
     def _call_nix(self, args):
+        if '--experimental-features' in call(['nix', '--help']):
+            return call(['nix',
+                         '--experimental-features',
+                         'nix-command'] + args)
         return call(['nix'] + args)
 
     def _find_deriver(self, path):
