@@ -46,6 +46,15 @@ class Store(object):
                               '--profile', profile]).splitlines():
                 self.add_path(line.split()[1])
 
+    def add_memory_roots(self):
+        """Add derivations found in currently-running processes."""
+        _log.debug('loading derivations from currently-running processes')
+        for line in call(['nix-store', '--gc', '--print-roots']).splitlines():
+            source, path = line.split(' -> ', 1)
+            if (source.startswith('/proc/') or source.startswith('{temp:')
+                    or source == '{lsof}' or source == '{censored}'):
+                self.add_path(path)
+
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):
