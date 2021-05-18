@@ -49,15 +49,15 @@ class Store(object):
     def _find_deriver(self, path):
         if path.endswith('.drv'):
             return path
-        deriver = call(['nix-store', '-qd', path]).strip()
-        _log.debug('deriver: %s', deriver)
-        if deriver and deriver != 'unknown-deriver':
-            if p.exists(deriver):
-                return deriver
+        qpi_deriver = call(['nix-store', '-qd', path]).strip()
+        _log.debug('qpi_deriver: %s', qpi_deriver)
+        if qpi_deriver and qpi_deriver != 'unknown-deriver':
+            if p.exists(qpi_deriver):
+                return qpi_deriver
             else:
                 raise RuntimeError(
                     'Deriver `{}` for path `{}` does not exist'.format(
-                        deriver, path))
+                        qpi_deriver, path))
         raise RuntimeError(
             'Cannot determine deriver. Is this really a path into the '
             'nix store?', path)
