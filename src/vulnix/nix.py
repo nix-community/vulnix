@@ -49,15 +49,27 @@ class Store(object):
     def _find_deriver(self, path):
         if path.endswith('.drv'):
             return path
+        # Deriver from QueryPathInfo
         qpi_deriver = call(['nix-store', '-qd', path]).strip()
         _log.debug('qpi_deriver: %s', qpi_deriver)
+        if qpi_deriver and qpi_deriver != 'unknown-deriver' and p.exists(
+                qpi_deriver):
+            return qpi_deriver
+        # Deriver from QueryValidDerivers
+        qvd_deriver = list(json.loads(
+            call(['nix', 'show-derivation', path])).keys())[0]
+        _log.debug('qvd_deriver: %s', qvd_deriver)
+        if qvd_deriver and p.exists(qvd_deriver):
+            return qvd_deriver
+
+        error = ""
         if qpi_deriver and qpi_deriver != 'unknown-deriver':
-            if p.exists(qpi_deriver):
-                return qpi_deriver
-            else:
-                raise RuntimeError(
-                    'Deriver `{}` for path `{}` does not exist'.format(
-                        qpi_deriver, path))
+            error += 'Deriver `{}` does not exist.  '.format(qpi_deriver)
+        if qvd_deriver and qvd_deriver != qpi_deriver:
+            error += 'Deriver `{}` does not exist.  '.format(qvd_deriver)
+        if error:
+            raise RuntimeError(
+                error + "Couldn't find deriver for path `{}`".format(path))
         raise RuntimeError(
             'Cannot determine deriver. Is this really a path into the '
             'nix store?', path)
