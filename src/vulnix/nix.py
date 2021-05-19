@@ -22,6 +22,12 @@ class Store(object):
         for d in call(['nix-store', '--gc', '--print-live']).splitlines():
             self.update(d)
 
+    def add_profile(self, profile):
+        """Add derivations found in this nix profile."""
+        for line in call(['nix-env', '-q', '--out-path',
+                          '--profile', profile]).splitlines():
+            self.add_path(line.split()[1])
+
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):

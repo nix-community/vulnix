@@ -35,6 +35,10 @@ should not be reported.
   Scans all active garbage collection roots. This option is of limited use since
   the scan will include all old system generations.
 
+* `-p`, `--profile`=<PATH>:
+  Scan a nix profile (eg: /nix/var/nix/profiles/per-user/$USER/profile,
+  ~/.nix-profile).  These are typically created with `nix-env -i`.
+
 * `-f`, `--from-file`=<FILE>:
   Scans derivations read from a file. Expects one derivation path
   like _/nix/store/*.drv_ per line.  Useful together with `-R`/`--no-requisites`,
