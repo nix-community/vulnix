@@ -2,6 +2,7 @@ from BTrees import OOBTree
 from datetime import datetime, date, timedelta
 from persistent import Persistent
 from .vulnerability import Vulnerability
+import filelock
 import glob
 import gzip
 import json
@@ -35,6 +36,8 @@ class NVD(object):
         """Keeps database connection open while in this context."""
         _log.debug('Opening database in %s', self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
+        self._lock = filelock.FileLock(p.join(self.cache_dir, 'lock'))
+        self._lock.acquire()
         self._db = ZODB.DB(ZODB.FileStorage.FileStorage(
             p.join(self.cache_dir, 'Data.fs')))
         self._connection = self._db.open()
@@ -63,6 +66,7 @@ class NVD(object):
             transaction.abort()
         self._connection.close()
         self._db.close()
+        self._lock.release()
         self._connection = None
         self._db = None
 

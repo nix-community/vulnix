@@ -23,6 +23,7 @@ setup(
     install_requires=[
         'click>=6.7',
         'colorama>=0.3',
+        'filelock>3',
         'pyyaml>=5,<6',
         'requests>=2.18',
         'toml>=0.9',

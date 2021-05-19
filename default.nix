@@ -11,5 +11,8 @@
     src = lib.cleanSource ./.;
     version = lib.removeSuffix "\n" (builtins.readFile ./VERSION);
     name = "vulnix-${version}";
+
+    # Until upstream adds filelock dependency:
+    propagatedBuildInputs = old.propagatedBuildInputs ++ [ pkgs.python37Packages.filelock ];
   }
 )
