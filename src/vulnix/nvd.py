@@ -62,6 +62,7 @@ class NVD(object):
         else:
             transaction.abort()
         self._connection.close()
+        self._db.close()
         self._connection = None
         self._db = None
 
