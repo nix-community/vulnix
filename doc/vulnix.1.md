@@ -37,7 +37,9 @@ should not be reported.
 
 * `-p`, `--profile`=<PATH>:
   Scan a nix profile (eg: /nix/var/nix/profiles/per-user/$USER/profile,
-  ~/.nix-profile).  These are typically created with `nix-env -i`.
+  ~/.nix-profile).  These are typically created with `nix-env -i` or
+  `nix profile install` (but not `nix build --profile`, which creates normal
+  store paths that don't need this special handling).
 
 * `-f`, `--from-file`=<FILE>:
   Scans derivations read from a file. Expects one derivation path
