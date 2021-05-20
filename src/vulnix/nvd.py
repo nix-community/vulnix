@@ -37,7 +37,11 @@ class NVD(object):
         _log.debug('Opening database in %s', self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
         self._lock = filelock.FileLock(p.join(self.cache_dir, 'lock'))
-        self._lock.acquire()
+        try:
+            self._lock.acquire(timeout=1)
+        except filelock.Timeout:
+            _log.warn('Waiting for NVD lock...')
+            self._lock.acquire()
         self._db = ZODB.DB(ZODB.FileStorage.FileStorage(
             p.join(self.cache_dir, 'Data.fs')))
         self._connection = self._db.open()
