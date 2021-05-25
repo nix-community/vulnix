@@ -88,10 +88,10 @@ class NVD(object):
     def relevant_archives(self):
         """Returns list of NVD archives to check.
 
-        If there was an update within the last hour, noting is done. If
-        the last update was recent enough to be covered by the
-        'modified' feed, only that is checked. Else, all feeds are
-        checked.
+        If there was an update within the last two hours, nothing is
+        done. If the last update was recent enough to be covered by
+        the 'modified' feed, only that is checked. Else, all feeds
+        are checked.
         """
         last_update = self.meta.last_update
         if last_update > datetime.now() - timedelta(hours=2):
