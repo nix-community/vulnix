@@ -144,7 +144,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
                 else:
                     for drv in from_file.readlines():
                         paths.append(drv.strip())
-            if paths:
+            else:
                 populate_store(store, gc_roots, profile,  paths, requisites)
         with NVD(mirror, cache_dir) as nvd:
             with Timer('Update NVD data'):

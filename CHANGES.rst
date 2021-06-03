@@ -7,8 +7,12 @@ Changes
 
 - Extend `-f`/`--file` input. It now also accepts JSON input containing package
   names and applied patches.
+
 - Wait rather than fail on concurrent invocations (#60).
-- Ignore NVD entries without cpe23Uri (#68)
+
+- Ignore NVD entries without cpe23Uri (#68).
+
+- Add `--profile` option to scan user environments (#72).
 
 
 1.9.6 (2020-07-02)

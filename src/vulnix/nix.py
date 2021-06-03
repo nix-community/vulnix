@@ -18,7 +18,7 @@ class Store(object):
 
         Note that this usually includes old system versions.
         """
-        _log.debug('loading all live derivations')
+        _log.debug('Loading all live derivations')
         for d in call(['nix-store', '--gc', '--print-live']).splitlines():
             self.update(d)
 
@@ -26,6 +26,8 @@ class Store(object):
         """Add derivations found in this nix profile."""
         json_manifest_path = p.join(profile, 'manifest.json')
         if p.exists(json_manifest_path):
+            _log.debug('Loading derivations from {}'.format(
+                json_manifest_path))
             with open(json_manifest_path, 'r') as f:
                 json_manifest = json.load(f)
             if json_manifest['version'] > 1:
@@ -37,17 +39,19 @@ class Store(object):
                 if element['active']:
                     for path in element['storePaths']:
                         self.add_path(path)
-            return
-        for line in call(['nix-env', '-q', '--out-path',
-                          '--profile', profile]).splitlines():
-            self.add_path(line.split()[1])
+        else:
+            _log.debug('Loading derivations from user profile {}'.format(
+                profile))
+            for line in call(['nix-env', '-q', '--out-path',
+                              '--profile', profile]).splitlines():
+                self.add_path(line.split()[1])
 
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):
             raise RuntimeError('path `{}` does not exist - cannot load '
                                'derivations referenced from it'.format(path))
-        _log.debug('loading derivations referenced by "%s"', path)
+        _log.debug('Loading derivations referenced by "%s"', path)
         if path.endswith('.drv'):
             deriver = path
         else:
