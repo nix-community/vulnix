@@ -22,6 +22,26 @@ class Store(object):
         for d in call(['nix-store', '--gc', '--print-live']).splitlines():
             self.update(d)
 
+    def add_profile(self, profile):
+        """Add derivations found in this nix profile."""
+        json_manifest_path = p.join(profile, 'manifest.json')
+        if p.exists(json_manifest_path):
+            with open(json_manifest_path, 'r') as f:
+                json_manifest = json.load(f)
+            if json_manifest['version'] > 1:
+                raise RuntimeError(
+                    ('Profile manifest.json version {} ' +
+                     'not yet supported').format(
+                        json_manifest['version']))
+            for element in json_manifest['elements']:
+                if element['active']:
+                    for path in element['storePaths']:
+                        self.add_path(path)
+            return
+        for line in call(['nix-env', '-q', '--out-path',
+                          '--profile', profile]).splitlines():
+            self.add_path(line.split()[1])
+
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):

@@ -50,10 +50,12 @@ def init_logging(verbose):
         logging.basicConfig(level=logging.WARNING)
 
 
-def populate_store(store, gc_roots, paths, requisites=True):
+def populate_store(store, gc_roots, profiles, paths, requisites=True):
     """Load derivations from nix store depending on cmdline invocation."""
     if gc_roots:
         store.add_gc_roots()
+    for profile in profiles:
+        store.add_profile(profile)
     for path in paths:
         store.add_path(path)
     return store
@@ -76,6 +78,8 @@ def run(nvd, store):
               help='Scan the current system.')
 @click.option('-G', '--gc-roots', is_flag=True,
               help='Scan all active GC roots (including old ones).')
+@click.option('-p', '--profile', type=click.Path(exists=True),
+              multiple=True, help='Scan this profile (eg: ~/.nix-profile)')
 @click.option('-f', '--from-file', type=click.File(mode='r'),
               help='Read derivations from file')
 @click.argument('path', nargs=-1, type=click.Path(exists=True))
@@ -108,14 +112,14 @@ def run(nvd, store):
               help='(obsolete; kept for compatibility reasons)')
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
-def main(verbose, gc_roots, system, from_file, path, mirror, cache_dir,
-         requisites, whitelist, write_whitelist, version, json,
+def main(verbose, gc_roots, system, from_file, profile, path, mirror,
+         cache_dir, requisites, whitelist, write_whitelist, version, json,
          show_whitelisted, default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
 
-    if not (gc_roots or system or path or from_file):
+    if not (gc_roots or system or profile or path or from_file):
         howto()
         sys.exit(3)
 
@@ -141,7 +145,7 @@ def main(verbose, gc_roots, system, from_file, path, mirror, cache_dir,
                     for drv in from_file.readlines():
                         paths.append(drv.strip())
             if paths:
-                populate_store(store, gc_roots, paths, requisites)
+                populate_store(store, gc_roots, profile,  paths, requisites)
         with NVD(mirror, cache_dir) as nvd:
             with Timer('Update NVD data'):
                 nvd.update()
