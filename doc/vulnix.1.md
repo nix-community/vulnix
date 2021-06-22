@@ -31,6 +31,9 @@ should not be reported.
   Scans the current system defined as transitive closure of
   _/run/current-system_.
 
+* `-M`, `--memory`:
+  Scans currently-running processes.
+
 * `-G`, `--gc-roots`:
   Scans all active garbage collection roots. This option is of limited use since
   the scan will include all old system generations.
