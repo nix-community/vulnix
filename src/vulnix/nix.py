@@ -12,6 +12,7 @@ class Store(object):
     def __init__(self, requisites=True):
         self.requisites = requisites
         self.derivations = set()
+        self.experimental_flag_needed = None
 
     def add_gc_roots(self):
         """Add derivations found for all live GC roots.
@@ -46,21 +47,52 @@ class Store(object):
                               '--profile', profile]).splitlines():
                 self.add_path(line.split()[1])
 
+    def _call_nix(self, args):
+        if self.experimental_flag_needed is None:
+            self.experimental_flag_needed = (
+                '--experimental-features' in call(['nix', '--help']))
+
+        if self.experimental_flag_needed:
+            return call(['nix',
+                         '--experimental-features',
+                         'nix-command'] + args)
+        return call(['nix'] + args)
+
+    def _find_deriver(self, path):
+        if path.endswith('.drv'):
+            return path
+        # Deriver from QueryPathInfo
+        qpi_deriver = call(['nix-store', '-qd', path]).strip()
+        _log.debug('qpi_deriver: %s', qpi_deriver)
+        if qpi_deriver and qpi_deriver != 'unknown-deriver' and p.exists(
+                qpi_deriver):
+            return qpi_deriver
+        # Deriver from QueryValidDerivers
+        qvd_deriver = list(json.loads(
+            self._call_nix(['show-derivation', path])).keys())[0]
+        _log.debug('qvd_deriver: %s', qvd_deriver)
+        if qvd_deriver and p.exists(qvd_deriver):
+            return qvd_deriver
+
+        error = ""
+        if qpi_deriver and qpi_deriver != 'unknown-deriver':
+            error += 'Deriver `{}` does not exist.  '.format(qpi_deriver)
+        if qvd_deriver and qvd_deriver != qpi_deriver:
+            error += 'Deriver `{}` does not exist.  '.format(qvd_deriver)
+        if error:
+            raise RuntimeError(
+                error + "Couldn't find deriver for path `{}`".format(path))
+        raise RuntimeError(
+            'Cannot determine deriver. Is this really a path into the '
+            'nix store?', path)
+
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):
             raise RuntimeError('path `{}` does not exist - cannot load '
                                'derivations referenced from it'.format(path))
         _log.debug('Loading derivations referenced by "%s"', path)
-        if path.endswith('.drv'):
-            deriver = path
-        else:
-            deriver = call(['nix-store', '-qd', path]).strip()
-            _log.debug('deriver: %s', deriver)
-            if not deriver or deriver == 'unknown-deriver':
-                raise RuntimeError(
-                    'Cannot determine deriver. Is this really a path into the '
-                    'nix store?', path)
+        deriver = self._find_deriver(path)
         if self.requisites:
             for candidate in call(['nix-store', '-qR', deriver]).splitlines():
                 self.update(candidate)
