@@ -121,7 +121,8 @@ def test_output_json(wl_items, capsys):
          'pname': 'foo',
          'version': '1',
          'whitelisted': ['CVE-2018-0004'],
-         'cvssv3_basescore': {}},
+         'cvssv3_basescore': {},
+         'description': {}},
         {'affected_by': ['CVE-2018-0001', 'CVE-2018-0002', 'CVE-2018-0003'],
          'derivation': '/nix/store/zsawgflc1fq77ijjzb1369zi6kxnc36j-test-0.2',
          'name': 'test-0.2',
@@ -130,7 +131,8 @@ def test_output_json(wl_items, capsys):
          'whitelisted': [],
          'cvssv3_basescore': {
              'CVE-2018-0003': 9.8,
-         }},
+         },
+         'description': {}},
     ]
 
 
