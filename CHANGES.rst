@@ -2,8 +2,8 @@ Changes
 =======
 
 
-1.9.7 (unreleased)
-------------------
+1.10.0 (unreleased)
+-------------------
 
 - Extend `-f`/`--file` input. It now also accepts JSON input containing package
   names and applied patches.
@@ -13,6 +13,13 @@ Changes
 - Ignore NVD entries without cpe23Uri (#68).
 
 - Add `--profile` option to scan user environments (#72).
+
+- Wait for lock on concurrent invocations instead of failing (#73).
+
+- Improved tactics to find derivers (#74).
+
+- Correctly handle the case when both an explicit version and version ranges are
+  given in a NVD expression (#77).
 
 
 1.9.6 (2020-07-02)
