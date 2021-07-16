@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.10.0 (unreleased)
+1.10.0 (2021-07-16)
 -------------------
 
 - Extend `-f`/`--file` input. It now also accepts JSON input containing package
