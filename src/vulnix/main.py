@@ -104,6 +104,8 @@ def run(nvd, store):
 @click.option('-j', '--json/--no-json', help='JSON vs. human readable output.')
 @click.option('-s', '--show-whitelisted', is_flag=True,
               help='Shows whitelisted items as well')
+@click.option('-D', '--show-description', is_flag=True,
+              help='Show descriptions of vulnerabilities')
 @click.option('-v', '--verbose', count=True,
               help='Increase output verbosity (up to 2 times).')
 @click.option('-V', '--version', is_flag=True,
@@ -114,7 +116,7 @@ def run(nvd, store):
               help='(obsolete; kept for compatibility reasons)')
 def main(verbose, gc_roots, system, from_file, profile, path, mirror,
          cache_dir, requisites, whitelist, write_whitelist, version, json,
-         show_whitelisted, default_whitelist, notfixed):
+         show_whitelisted, show_description, default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
@@ -152,7 +154,12 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
             with Timer('Scan vulnerabilities'):
                 filtered_items = whitelist.filter(run(nvd, store))
 
-            rc = output(filtered_items, json, show_whitelisted)
+            rc = output(
+                filtered_items,
+                json,
+                show_whitelisted,
+                show_description,
+            )
             if write_whitelist:
                 for i in filtered_items:
                     whitelist.add_from(i)

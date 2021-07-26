@@ -3,11 +3,17 @@ from vulnix.nvd import NVD
 from vulnix.whitelist import Whitelist
 import hashlib
 import http.server
+import json
 import os
 import os.path as p
 import pkg_resources
 import pytest
 import threading
+
+
+def load(cve):
+    return json.loads(pkg_resources.resource_string(
+        'vulnix', 'tests/fixtures/{}.json'.format(cve)))
 
 
 @pytest.fixture
@@ -50,7 +56,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(content)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def http_server():
     httpd = http.server.HTTPServer(("127.0.0.1", 0), RequestHandler)
     port = httpd.socket.getsockname()[1]
@@ -60,7 +66,7 @@ def http_server():
     yield mirror_url
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def nvd(tmpdir, http_server):
     nvd = NVD(mirror=http_server, cache_dir=str(tmpdir))
     nvd.available_archives = ['modified']

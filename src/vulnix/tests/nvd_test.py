@@ -1,11 +1,5 @@
 from vulnix.vulnerability import Vulnerability, Node
-import json
-import pkg_resources
-
-
-def load(cve):
-    return json.loads(pkg_resources.resource_string(
-        'vulnix', 'tests/fixtures/{}.json'.format(cve)))
+from conftest import load
 
 
 def test_update(nvd):

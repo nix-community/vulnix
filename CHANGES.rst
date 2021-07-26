@@ -5,7 +5,7 @@ Changes
 1.10.1 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Expose CVE descriptions in both plain text and JSON output (#78).
 
 
 1.10.0 (2021-07-16)

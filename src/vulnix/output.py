@@ -4,10 +4,14 @@ import functools
 import json
 
 
-def fmt_vuln(v):
+def fmt_vuln(v, show_description=False):
     out = 'https://nvd.nist.gov/vuln/detail/{:17}'.format(v.cve_id)
-    if v.cvssv3:
-        out += ' {}'.format(v.cvssv3)
+    out += ' {:<8} '.format(v.cvssv3 or "")
+    if show_description:
+        # Show the description in a different color as they can run over the
+        # line length, and this makes distinguishing them from the next entry
+        # easy.
+        out += click.style(v.description or "", fg="cyan")
     return out.rstrip()
 
 
@@ -53,7 +57,7 @@ class Filtered:
             self.masked |= self.report
             self.report = set()
 
-    def print(self, show_masked=False):
+    def print(self, show_masked=False, show_description=False):
         if not self.report and not show_masked:
             return
         d = self.derivation
@@ -64,12 +68,22 @@ class Filtered:
         if d.store_path:
             click.secho(d.store_path, fg='magenta', dim=wl)
 
-        click.secho('{:50} {}'.format('CVE', 'CVSSv3'), dim=wl)
+        click.secho(
+            '{:50} {:<8} {}'.format(
+                'CVE',
+                'CVSSv3',
+                'Description' if show_description else ''
+            ).rstrip(),
+            dim=wl
+        )
         for v in sorted(self.report, key=vuln_sort_key):
-            click.echo(fmt_vuln(v))
+            click.echo(fmt_vuln(v, show_description))
         if show_masked:
             for v in sorted(self.masked, key=vuln_sort_key):
-                click.secho("{}  [whitelisted]".format(fmt_vuln(v)), dim=True)
+                click.secho("{}  [whitelisted]".format(fmt_vuln(
+                    v,
+                    show_description
+                )), dim=True)
 
         issues = functools.reduce(
             set.union, (r.issue_url for r in self.rules), set())
@@ -84,7 +98,7 @@ class Filtered:
                     click.secho('* ' + comment, fg='blue', dim=wl)
 
 
-def output_text(vulns, show_whitelisted=False):
+def output_text(vulns, show_whitelisted=False, show_description=False):
     report = [v for v in vulns if v.report]
     wl = [v for v in vulns if not v.report]
 
@@ -103,10 +117,10 @@ def output_text(vulns, show_whitelisted=False):
             len(wl)), fg='blue')
 
     for i in sorted(report, key=attrgetter('derivation')):
-        i.print(show_whitelisted)
+        i.print(show_whitelisted, show_description)
     if show_whitelisted:
         for i in sorted(wl, key=attrgetter('derivation')):
-            i.print(show_whitelisted)
+            i.print(show_whitelisted, show_description)
     if wl and not show_whitelisted:
         click.secho('\nuse --show-whitelisted to see derivations with only '
                     'whitelisted CVEs', fg='blue')
@@ -125,17 +139,25 @@ def output_json(items, show_whitelisted=False):
             'derivation': d.store_path,
             'affected_by': sorted(v.cve_id for v in i.report),
             'whitelisted': sorted(v.cve_id for v in i.masked),
-            'cvssv3_basescore':
-                {v.cve_id: v.cvssv3 for v in (i.report | i.masked) if v.cvssv3}
+            'cvssv3_basescore': {
+                v.cve_id: v.cvssv3
+                for v in (i.report | i.masked)
+                if v.cvssv3
+            },
+            'description': {
+                v.cve_id: v.description
+                for v in (i.report | i.masked)
+                if v.description
+            },
         })
     print(json.dumps(out, indent=1))
 
 
-def output(items, json=False, show_whitelisted=False):
+def output(items, json=False, show_whitelisted=False, show_description=False):
     if json:
         output_json(items, show_whitelisted)
     else:
-        output_text(items, show_whitelisted)
+        output_text(items, show_whitelisted, show_description)
     if any(i.report for i in items):
         return 2
     if show_whitelisted and any(i.masked for i in items):
