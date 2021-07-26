@@ -8,8 +8,9 @@ def fmt_vuln(v, show_description=False):
     out = 'https://nvd.nist.gov/vuln/detail/{:17}'.format(v.cve_id)
     out += ' {:<8} '.format(v.cvssv3 or "")
     if show_description:
-        # Show the description in a different color as they can run over the line length,
-        # and this makes distinguishing them from the next entry easy
+        # Show the description in a different color as they can run over the
+        # line length, and this makes distinguishing them from the next entry
+        # easy.
         out += click.style(v.description or "", fg="cyan")
     return out.rstrip()
 

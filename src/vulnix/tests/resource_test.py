@@ -9,7 +9,7 @@ import signal
 local = pkg_resources.resource_filename('vulnix', 'tests/fixtures/')
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def http_server():
     """Spawns a HTTP server in a separate process, serving test fixtures.
 

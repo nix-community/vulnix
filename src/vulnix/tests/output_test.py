@@ -1,6 +1,8 @@
-from vulnix.vulnerability import Vulnerability
+from click import unstyle
+from conftest import load
 from vulnix.derivation import Derive
-from vulnix.output import Filtered, output, output_text, output_json
+from vulnix.output import Filtered, output, output_text, output_json, fmt_vuln
+from vulnix.vulnerability import Vulnerability
 from vulnix.whitelist import WhitelistRule
 import datetime
 import json
@@ -146,3 +148,33 @@ def test_exitcode(items, capsys):
     assert output(items) == 0
     assert output(items, show_whitelisted=True) == 1
     capsys.readouterr()  # swallow stdout/stderr: it doesn't matter here
+
+
+def test_description():
+    v = Vulnerability.parse(load('CVE-2010-0748'))
+    assert unstyle(fmt_vuln(v, show_description=True)) == (
+        'https://nvd.nist.gov/vuln/detail/CVE-2010-0748              '
+        'Transmission before 1.92 allows an attacker to cause a denial of '
+        'service (crash) or possibly have other unspecified impact via a '
+        'large number of tr arguments in a magnet link.')
+
+
+def test_description_json(capsys):
+    d = Derive(name='test-0.2')
+    v = Vulnerability.parse(load('CVE-2010-0748'))
+    output_json([Filtered(d, {v})])
+    assert json.loads(capsys.readouterr().out) == [
+        {'affected_by': ['CVE-2010-0748'],
+            'cvssv3_basescore': {},
+            'derivation': None,
+            'description': {
+                'CVE-2010-0748': 'Transmission before 1.92 allows an '
+                                 'attacker to cause a denial of service '
+                                 '(crash) or possibly have other unspecified '
+                                 'impact via a large number of tr arguments '
+                                 'in a magnet link.'},
+            'name': 'test-0.2',
+            'pname': 'test',
+            'version': '0.2',
+            'whitelisted': []}
+    ]
