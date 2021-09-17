@@ -9,9 +9,9 @@ _log = logging.getLogger(__name__)
 
 class Store(object):
 
-    def __init__(self, requisites=True, runtime=False):
+    def __init__(self, requisites=True, closure=False):
         self.requisites = requisites
-        self.runtime = runtime
+        self.closure = closure
         self.derivations = set()
         self.experimental_flag_needed = None
 
@@ -106,7 +106,7 @@ class Store(object):
                                'derivations referenced from it'.format(path))
         _log.debug('Loading derivations referenced by "%s"', path)
 
-        if self.runtime:
+        if self.closure:
             for output in self._find_outputs(path):
                 for candidate in map(
                     # Nix 2.4 also returns `p.get('deriver')`

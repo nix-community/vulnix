@@ -96,9 +96,9 @@ def run(nvd, store):
 @click.option('-r/-R', '--requisites/--no-requisites', default=True,
               help='Yes: determine transitive closure. No: examine just the '
               'passed derivations (default: yes).')
-@click.option('--runtime', is_flag=True,
-              help='Examine only runtime dependencies (default: no). '
-              'Implies --no-requisites.')
+@click.option('--closure', is_flag=True,
+              help='Examine the closure of an output path '
+              '(runtime dependencies). Implies --no-requisites.')
 @click.option('-m', '--mirror',
               help='Mirror to fetch NVD archives from. Default: {}.'.format(
                   DEFAULT_MIRROR),
@@ -118,14 +118,14 @@ def run(nvd, store):
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
 def main(verbose, gc_roots, system, from_file, profile, path, mirror,
-         cache_dir, requisites, runtime, whitelist, write_whitelist,
+         cache_dir, requisites, closure, whitelist, write_whitelist,
          version, json, show_whitelisted, show_description,
          default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
 
-    if (runtime):
+    if (closure):
         requisites = False
 
     if not (gc_roots or system or profile or path or from_file):
@@ -145,7 +145,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
             for wl in wh_sources:
                 whitelist.merge(Whitelist.load(wl))
         with Timer('Load derivations'):
-            store = Store(requisites, runtime)
+            store = Store(requisites, closure)
             if from_file:
                 if from_file.name.endswith('.json'):
                     _log.debug("loading packages.json")
