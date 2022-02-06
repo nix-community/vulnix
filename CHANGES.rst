@@ -7,6 +7,8 @@ Changes
 
 - Expose CVE descriptions in both plain text and JSON output (#78).
 
+- Fix compatibility issue due to pyyaml 6.0 in nixpkgs-unstable (#83).
+
 
 1.10.0 (2021-07-16)
 -------------------
