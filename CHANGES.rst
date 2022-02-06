@@ -2,7 +2,7 @@ Changes
 =======
 
 
-1.10.1 (unreleased)
+1.10.1 (2022-02-06)
 -------------------
 
 - Expose CVE descriptions in both plain text and JSON output (#78).
