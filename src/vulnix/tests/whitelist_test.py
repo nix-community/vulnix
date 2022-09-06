@@ -263,24 +263,6 @@ def test_toml_malformed_url():
         Whitelist.load(io.StringIO('["pkg"]\nissue_url = "foobar"'))
 
 
-def test_section_header_unexpected_space():
-    with pytest.raises(RuntimeError):
-        Whitelist.load(io.StringIO("""
-["ok-section-1.0"]
-
-[ "broken-section-1.1" ]
-comment = "whitespace confuses TOML parser"
-"""))
-
-
-def test_section_header_unexpected_space_2():
-    with pytest.raises(RuntimeError):
-        Whitelist.load(io.StringIO("""
-["broken-section 1.2"]
-comment = "incorrect whitespace between package and version"
-"""))
-
-
 def test_section_header_alphanumeric():
     Whitelist.load(io.StringIO("""
 [systemd-236]

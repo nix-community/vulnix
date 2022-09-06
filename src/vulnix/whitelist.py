@@ -167,7 +167,6 @@ class Whitelist:
 
     TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
     YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
-    SECTION_FORMAT = re.compile(r'^[a-zA-Z0-9_.*-]+$')
 
     @classmethod
     def load(cls, fobj):
@@ -203,8 +202,6 @@ class Whitelist:
 
         self = cls()
         for rule in gen:
-            if not self.SECTION_FORMAT.match(rule.name):
-                raise RuntimeError('invalid package selector', rule.name)
             self.insert(rule)
         return self
 
