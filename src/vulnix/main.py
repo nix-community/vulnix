@@ -114,9 +114,12 @@ def run(nvd, store):
               help='(obsolete; kept for compatibility reasons)')
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
+@click.option('-u', '--unused', is_flag=True,
+              help='Shows unused whitelist entries at the bottom')
 def main(verbose, gc_roots, system, from_file, profile, path, mirror,
          cache_dir, requisites, whitelist, write_whitelist, version, json,
-         show_whitelisted, show_description, default_whitelist, notfixed):
+         show_whitelisted, show_description, default_whitelist, notfixed,
+         unused):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
@@ -156,6 +159,8 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
 
             rc = output(
                 filtered_items,
+                whitelist,
+                unused,
                 json,
                 show_whitelisted,
                 show_description,
@@ -166,6 +171,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
                 write_whitelist.close()
                 with open(write_whitelist.name, 'w') as f:
                     f.write(str(whitelist))
+
         sys.exit(rc)
 
     # This needs to happen outside the NVD context: otherwise ZODB will abort

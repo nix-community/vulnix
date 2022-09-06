@@ -3,7 +3,7 @@ from conftest import load
 from vulnix.derivation import Derive
 from vulnix.output import Filtered, output, output_text, output_json, fmt_vuln
 from vulnix.vulnerability import Vulnerability
-from vulnix.whitelist import WhitelistRule
+from vulnix.whitelist import WhitelistRule, Whitelist
 import datetime
 import json
 import pytest
@@ -80,7 +80,7 @@ def wl_items(items):
 
 
 def test_output_text(wl_items, capsys):
-    output_text(wl_items, show_whitelisted=True)
+    output_text(wl_items, Whitelist(), show_whitelisted=True)
     assert capsys.readouterr().out == """\
 2 derivations with active advisories
 
@@ -115,7 +115,7 @@ Comment:
 
 
 def test_output_json(wl_items, capsys):
-    output_json(wl_items)
+    output_json(wl_items, Whitelist())
     assert json.loads(capsys.readouterr().out) == [
         {'affected_by': ['CVE-2018-0005'],
          'derivation': None,
@@ -139,14 +139,14 @@ def test_output_json(wl_items, capsys):
 
 
 def test_exitcode(items, capsys):
-    assert output([], json=True) == 0
+    assert output([], Whitelist(), json=True) == 0
     # something to report
-    assert output(items) == 2
+    assert output(items, Whitelist()) == 2
     # everything masked
     for i in items:
         i.add(WhitelistRule(name=i.derivation.pname))
-    assert output(items) == 0
-    assert output(items, show_whitelisted=True) == 1
+    assert output(items, Whitelist()) == 0
+    assert output(items, Whitelist(), show_whitelisted=True) == 1
     capsys.readouterr()  # swallow stdout/stderr: it doesn't matter here
 
 
@@ -162,7 +162,7 @@ def test_description():
 def test_description_json(capsys):
     d = Derive(name='test-0.2')
     v = Vulnerability.parse(load('CVE-2010-0748'))
-    output_json([Filtered(d, {v})])
+    output_json([Filtered(d, {v})], Whitelist())
     assert json.loads(capsys.readouterr().out) == [
         {'affected_by': ['CVE-2010-0748'],
             'cvssv3_basescore': {},
@@ -178,3 +178,55 @@ def test_description_json(capsys):
             'version': '0.2',
             'whitelisted': []}
     ]
+
+
+def test_output_text_whitelist_unused(capsys):
+    d = Derive(name='test-0.2')
+    v = Vulnerability.parse(load('CVE-2010-0748'))
+    w = Whitelist()
+    w.insert(WhitelistRule(name='libfoo-*'))
+    output([Filtered(d, {v})], w, show_unused_whitelist_items=True)
+    assert capsys.readouterr().out == """\
+1 derivations with active advisories
+
+------------------------------------------------------------------------
+test-0.2
+
+CVE                                                CVSSv3
+https://nvd.nist.gov/vuln/detail/CVE-2010-0748
+
+The following whitelisted items were unused:
+
+  ["libfoo-*"]
+  Comment: []
+  CVEs: []
+"""
+
+
+def test_output_json_whitelist_unused(capsys):
+    d = Derive(name='test-0.2')
+    v = Vulnerability.parse(load('CVE-2010-0748'))
+    w = Whitelist()
+    w.insert(WhitelistRule(name='libfoo-*'))
+    output_json([Filtered(d, {v})], w, show_unused_whitelist_items=True)
+    assert json.loads(capsys.readouterr().out) == {
+        'vulnerabilities': [
+            {'affected_by': ['CVE-2010-0748'],
+                'cvssv3_basescore': {},
+                'derivation': None,
+                'description': {
+                    'CVE-2010-0748': 'Transmission before 1.92 allows an '
+                                     'attacker to cause a denial of service '
+                                     '(crash) or possibly have other '
+                                     'unspecified '
+                                     'impact via a large number of tr '
+                                     'arguments in a magnet link.'},
+                'name': 'test-0.2',
+                'pname': 'test',
+                'version': '0.2',
+                'whitelisted': []}
+        ],
+        'unused_whitelist_rules': {
+            'libfoo-*': {'comment': [], 'cve': []}
+        }
+    }

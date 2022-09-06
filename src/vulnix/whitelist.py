@@ -68,6 +68,7 @@ class WhitelistRule:
     """
 
     name = None
+    used_counter = 0
 
     def __init__(self, **kw):
         self.name = kw.pop('name', None) or '*'
@@ -139,6 +140,7 @@ class WhitelistRule:
             return False
         if self.until and self.until <= datetime.date.today():
             return False
+        self.used_counter += 1
         return True
 
 
@@ -247,3 +249,6 @@ class Whitelist:
         self.update(WhitelistRule(
             name=n,
             cve={i.cve_id for i in filtered_item.report}))
+
+    def unused_rules(self):
+        return (x for x in self.entries.values() if x.used_counter == 0)

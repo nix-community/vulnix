@@ -98,7 +98,8 @@ class Filtered:
                     click.secho('* ' + comment, fg='blue', dim=wl)
 
 
-def output_text(vulns, show_whitelisted=False, show_description=False):
+def output_text(vulns, whitelist, show_unused_whitelist_items=False,
+                show_whitelisted=False, show_description=False):
     report = [v for v in vulns if v.report]
     wl = [v for v in vulns if not v.report]
 
@@ -125,8 +126,18 @@ def output_text(vulns, show_whitelisted=False, show_description=False):
         click.secho('\nuse --show-whitelisted to see derivations with only '
                     'whitelisted CVEs', fg='blue')
 
+    if show_unused_whitelist_items:
+        click.secho('\nThe following whitelisted items were unused:',
+                    fg='yellow')
+        for unused_rule in whitelist.unused_rules():
+            cve_list = ",".join(f'"{x}"' for x in unused_rule.cve)
+            click.secho(f'\n  ["{unused_rule.name}"]')
+            click.secho(f'  Comment: {unused_rule.comment}')
+            click.secho(f'  CVEs: [{cve_list}]')
 
-def output_json(items, show_whitelisted=False):
+
+def output_json(items, whitelist, show_unused_whitelist_items=False,
+                show_whitelisted=False):
     out = []
     for i in sorted(items, key=attrgetter('derivation')):
         if not i.report and not show_whitelisted:
@@ -150,14 +161,28 @@ def output_json(items, show_whitelisted=False):
                 if v.description
             },
         })
-    print(json.dumps(out, indent=1))
-
-
-def output(items, json=False, show_whitelisted=False, show_description=False):
-    if json:
-        output_json(items, show_whitelisted)
+    if not show_unused_whitelist_items:
+        print(json.dumps(out, indent=1))
     else:
-        output_text(items, show_whitelisted, show_description)
+        print(json.dumps({
+                'vulnerabilities': out,
+                'unused_whitelist_rules': {
+                    rule.name: {
+                        'comment': rule.comment,
+                        'cve': list(rule.cve),
+                    } for rule in whitelist.unused_rules()
+                }
+            }, indent=1))
+
+
+def output(items, whitelist, show_unused_whitelist_items=False,
+           json=False, show_whitelisted=False, show_description=False):
+    if json:
+        output_json(items, whitelist,
+                    show_unused_whitelist_items, show_whitelisted)
+    else:
+        output_text(items, whitelist, show_unused_whitelist_items,
+                    show_whitelisted, show_description)
     if any(i.report for i in items):
         return 2
     if show_whitelisted and any(i.masked for i in items):
