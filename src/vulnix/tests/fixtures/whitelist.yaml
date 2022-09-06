@@ -10,15 +10,12 @@
     name: unzip
     status: inprogress
 -
-    name: libxslt
-    version: '2.0'
+    name: libxslt-2.0
     until: 2018-03-01
 -
-    name: audiofile
-    version: '0.3.2'
+    name: audiofile-0.3.2
 -
-    name: audiofile
-    version: '0.3.6'
+    name: audiofile-0.3.6
     cve:
         - CVE-2017-6827
         - CVE-2017-6828

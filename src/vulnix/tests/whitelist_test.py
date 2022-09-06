@@ -50,20 +50,20 @@ def test_parse_until():
 
 
 def test_match_pname_version():
-    rule = WhitelistRule(pname='libxslt', version='2.0')
+    rule = WhitelistRule(name='libxslt-2.0')
     assert rule.covers(Derive(name='libxslt-2.0'))
     assert not rule.covers(Derive(name='libxslt-2.1'))
 
 
 def test_match_pname_only():
-    rule = WhitelistRule(pname='libxslt', version='*')
+    rule = WhitelistRule(name='libxslt-*')
     assert rule.covers(Derive(name='libxslt-2.0'))
     assert rule.covers(Derive(name='libxslt-2.1'))
     assert not rule.covers(Derive(name='libxml2-2.0'))
 
 
 def test_match_pname_version_cve():
-    rule = WhitelistRule(pname='cpio', version='2.12', cve=['CVE-2015-1197'])
+    rule = WhitelistRule(name='cpio-2.12', cve=['CVE-2015-1197'])
     assert rule.covers(Derive(name='cpio-2.12'), {V('CVE-2015-1197')})
     assert not rule.covers(Derive(name='cpio-2.12'), {V('CVE-2015-1198')})
 
@@ -80,8 +80,21 @@ def test_match_partial():
             Derive(name='cpio-2.12'), {V('CVE-2015-1197'), V('CVE-2015-1198')})
 
 
+def test_match_wildcard_version():
+    rule = WhitelistRule(name='libxslt-2.*')
+    assert rule.covers(Derive(name='libxslt-2.5'))
+    assert not rule.covers(Derive(name='libxslt-1.5'))
+
+
+def test_match_pname_wildcard():
+    rule = WhitelistRule(name='lib*-2.0')
+    assert rule.covers(Derive(name='libfoo-2.0'))
+    assert not rule.covers(Derive(name='libbar-1.0'))
+    assert not rule.covers(Derive(name='glibc-2.0'))
+
+
 def test_until(whitelist_toml):
-    rule = WhitelistRule(pname='libxslt', until='2018-04-12')
+    rule = WhitelistRule(name='libxslt-*', until='2018-04-12')
     d = Derive(name='libxslt-2.0')
     with freezegun.freeze_time('2018-04-11'):
         assert rule.covers(d)

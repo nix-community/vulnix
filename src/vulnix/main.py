@@ -173,3 +173,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
     except RuntimeError as e:
         _log.exception(e)
         sys.exit(2)
+
+
+if __name__ == '__main__':
+    main()

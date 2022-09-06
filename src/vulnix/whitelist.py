@@ -6,7 +6,8 @@ import toml
 import urllib.parse
 import yaml
 
-from vulnix.derivation import split_name
+from fnmatch import fnmatch
+
 from vulnix.output import Filtered
 
 _log = logging.getLogger(__name__)
@@ -31,14 +32,12 @@ def read_toml(content):
     for k, v in toml.loads(content, collections.OrderedDict).items():
         if len(v.values()) and isinstance(list(v.values())[0], dict):
             raise RuntimeError('malformed section header -- forgot quotes?', k)
-        pname, version = split_name(k)
-        yield WhitelistRule(pname=pname, version=version, **v)
+        yield WhitelistRule(name=k, **v)
 
 
 def read_yaml(content):
     for item in yaml.safe_load(content):
-        pname = item.pop('name', None)
-        yield WhitelistRule(pname=pname, **item)
+        yield WhitelistRule(name=item.pop('name', None), **item)
 
 
 def dump_multivalued(val):
@@ -53,8 +52,7 @@ class WhitelistRule:
     """Single whitelist entry.
 
     Supported fields:
-    - pname: package name or `*` for any package
-    - version: package version (only if pname is set)
+    - name: package name or wildcard in the format `{pname}-{version}`
     - cve: affected by CVEs (multi-valued, set)
     - until: this entry will be disabled after the given date (YYYY-MM-DD)
     - issue_url: bug/case ID URLs (multi-valued, set)
@@ -69,12 +67,10 @@ class WhitelistRule:
     which match both are whitelisted.
     """
 
-    pname = None
-    version = None
+    name = None
 
     def __init__(self, **kw):
-        for field in ['pname', 'version']:
-            self.__dict__[field] = kw.pop(field, None) or '*'
+        self.name = kw.pop('name', None) or '*'
         for field in ['cve', 'issue_url']:
             v = kw.pop(field, [])
             if isinstance(v, set):
@@ -83,8 +79,8 @@ class WhitelistRule:
                 self.__dict__[field] = set(v)
             else:
                 self.__dict__[field] = set([v])
-        if self.pname == '*' and not self.cve:
-            raise RuntimeError('either pname or CVE must be set', kw)
+        if self.name == '*' and not self.cve:
+            raise RuntimeError('either name or CVE must be set', kw)
         for url in self.issue_url:
             scheme, netloc, path = urllib.parse.urlparse(url)[0:3]
             if not scheme or not netloc or not path:
@@ -101,12 +97,6 @@ class WhitelistRule:
         kw.pop('status', '')  # compat
         if kw:
             _log.warning('Unrecognized whitelist keys: {}'.format(kw.keys()))
-
-    @property
-    def name(self):
-        if self.version == '*':
-            return self.pname
-        return '{}-{}'.format(self.pname, self.version)
 
     def dump(self):
         """Returns this entry as a ready-to-serialize dict.
@@ -126,7 +116,7 @@ class WhitelistRule:
         return res
 
     def update(self, other):
-        if self.pname != other.pname or self.version != other.version:
+        if self.name != other.name:
             raise RuntimeError(
                 'cannot merge rules for different packages', self, other)
         self.cve.update(other.cve)
@@ -141,9 +131,8 @@ class WhitelistRule:
 
         If so, a tuple (match type, whitelist item) is returned.
         """
-        if self.pname != '*' and self.pname != deriv.pname:
-            return False
-        if self.version != '*' and self.version != deriv.version:
+        full_slug = f"{deriv.pname}-{deriv.version}"
+        if not fnmatch(full_slug, self.name):
             return False
         if self.cve and vulns and \
                 self.cve & set(v.cve_id for v in vulns) == set():
@@ -212,8 +201,8 @@ class Whitelist:
 
         self = cls()
         for rule in gen:
-            if not self.SECTION_FORMAT.match(rule.pname):
-                raise RuntimeError('invalid package selector', rule.pname)
+            if not self.SECTION_FORMAT.match(rule.name):
+                raise RuntimeError('invalid package selector', rule.name)
             self.insert(rule)
         return self
 
@@ -227,25 +216,10 @@ class Whitelist:
                 res[k] = entry
         return res
 
-    def candidates(self, pname, version):
-        """Matching rules in order of decreasing specificity."""
-        try:
-            yield self.entries['{}-{}'.format(pname, version)]
-        except KeyError:
-            pass
-        try:
-            yield self.entries[pname]
-        except KeyError:
-            pass
-        try:
-            yield self.entries['*']
-        except KeyError:
-            pass
-
     def find(self, derivation, vulns):
         """Compiles all matching rules into a `Filtered` object."""
         f = Filtered(derivation, vulns)
-        for cand in self.candidates(derivation.pname, derivation.version):
+        for cand in self.entries.values():
             if cand.covers(derivation, vulns):
                 f.add(cand)
         return f
@@ -268,7 +242,8 @@ class Whitelist:
             self.update(rule)
 
     def add_from(self, filtered_item):
+        n = filtered_item.derivation.pname + \
+            f"-{filtered_item.derivation.version}"
         self.update(WhitelistRule(
-            pname=filtered_item.derivation.pname,
-            version=filtered_item.derivation.version,
+            name=n,
             cve={i.cve_id for i in filtered_item.report}))

@@ -53,19 +53,19 @@ def test_init(deriv):
 
 def test_add_unspecific_rule(deriv):
     f = Filtered(*deriv)
-    f.add(WhitelistRule(pname='test', version='1.2'))
+    f.add(WhitelistRule(name='test', version='1.2'))
     assert not f.report
 
 
 def test_add_rule_with_cves(filt):
-    filt.add(WhitelistRule(pname='test', version='1.2', cve={'CVE-2018-0001'}))
+    filt.add(WhitelistRule(name='test', version='1.2', cve={'CVE-2018-0001'}))
     assert filt.report == {V('CVE-2018-0002'), V('CVE-2018-0003')}
     assert filt.masked == {V('CVE-2018-0001')}
 
 
 def test_add_temporary_whitelist(filt):
     assert not filt.until
-    filt.add(WhitelistRule(pname='test', version='1.2', until='2018-03-05'))
+    filt.add(WhitelistRule(name='test', version='1.2', until='2018-03-05'))
     assert filt.until == datetime.date(2018, 3, 5)
 
 
@@ -75,7 +75,7 @@ def wl_items(items):
     items[1].add(WhitelistRule(
         cve={'CVE-2018-0004'}, issue_url='https://tracker/4'))
     # makes deriv2 disappear completely
-    items[2].add(WhitelistRule(pname='bar', comment='irrelevant'))
+    items[2].add(WhitelistRule(name='bar', comment='irrelevant'))
     return items
 
 
@@ -144,7 +144,7 @@ def test_exitcode(items, capsys):
     assert output(items) == 2
     # everything masked
     for i in items:
-        i.add(WhitelistRule(pname=i.derivation.pname))
+        i.add(WhitelistRule(name=i.derivation.pname))
     assert output(items) == 0
     assert output(items, show_whitelisted=True) == 1
     capsys.readouterr()  # swallow stdout/stderr: it doesn't matter here
