@@ -8,7 +8,9 @@ listed in the NVD.
 It implements a CLI utility to inspect the current status and a
 monitoring integration for Sensu.
 
-Example output::
+Example output
+
+.. code:: text
 
   2 derivations with active advisories
 
@@ -32,7 +34,7 @@ Example output::
 Theory of operation
 -------------------
 
-`vulnix` pulls all published CVEs from NIST_ and caches them locally. It
+``vulnix`` pulls all published CVEs from NIST_ and caches them locally. It
 matches name and version of all derivations referenced from the command line
 against known CVE entries. A *whitelist* is used to filter out unwanted results.
 
@@ -46,49 +48,59 @@ versions.
 System requirements
 -------------------
 
-- Depends on common Nix tools like `nix-store`. These are expected to be in
+- Depends on common Nix tools like ``nix-store``. These are expected to be in
   $PATH.
 - Depends on being able to interact with the Nix store database
   (/nix/var/nix/db). This means that it must either run as the same user that
-  owns the Nix store database or `nix-daemon` must be active.
-- Parses `*.drv` files directly. Tested with Nix >=1.10 and 2.x.
-- It refuses to work without some locale environment settings. Try `export
-  LANG=C.UTF-8` if you see encoding errors.
+  owns the Nix store database or ``nix-daemon`` must be active.
+- Parses ``*.drv`` files directly. Tested with Nix >=1.10 and 2.x.
+- It refuses to work without some locale environment settings. Try ``export
+  LANG=C.UTF-8`` if you see encoding errors.
 
 
 Usage Example
 =============
 
-- What vulnerabilities are listed for my current system::
+- What vulnerabilities are listed for my current system
 
-    vulnix --system
+.. code:: shell
 
-- Check `nix-build` output together with its transitive closure::
+  vulnix --system
 
-    vulnix result/
+- Check ``nix-build`` output together with its transitive closure
 
-- Check all passed derivations, but don't determine requisites::
+.. code:: shell
 
-    vulnix -R /nix/store/*.drv
+  vulnix result/
 
-- JSON output for machine post-processing::
+- Check all passed derivations, but don't determine requisites
 
-    vulnix --json /nix/store/my-derivation.drv
+.. code:: shell
 
-See `vulnix --help` for a list of all options.
+  vulnix -R /nix/store/*.drv
+
+- JSON output for machine post-processing
+
+.. code:: shell
+
+  vulnix --json /nix/store/my-derivation.drv
+
+See ``vulnix --help`` for a list of all options.
 
 
 Whitelisting
 ============
 
-`vulnix` output may contain false positives, unfixable packages or stuff which
+``vulnix`` output may contain false positives, unfixable packages or stuff which
 is known to be addressed. The *whitelist* feature allows to exclude packages
 matching certain criteria.
 
 Usage
 -----
 
-Load whitelists from either local files or HTTP servers::
+Load whitelists from either local files or HTTP servers
+
+.. code:: shell
 
   vulnix -w /path/to/whitelist.toml \
          -w https://example.org/published-whitelist.toml
@@ -102,17 +114,22 @@ headers, followed by further per-package options.
 Section headings - package selection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Exclude a package at a specific version::
+Exclude a package at a specific version
+
+.. code:: toml
 
   ["openjpeg-2.3.0"]
-  ...
 
 Exclude a package regardless of version (additional CVE filters may apply, see
-below)::
+below)
+
+.. code:: toml
 
   ["openjpeg"]
 
-Exclude all packages (see below for CVE filters, again)::
+Exclude all packages (see below for CVE filters, again)
+
+.. code:: toml
 
   ["*"]
 
@@ -139,7 +156,9 @@ Examples
 --------
 
 Create a ticket on your favourite issue tracker. Estimate the time to get the
-vulnerable package fixed. Create whitelist entry::
+vulnerable package fixed. Create whitelist entry:
+
+.. code:: toml
 
   ["ffmpeg-3.4.2"]
   cve = ["CVE-2018-6912", "CVE-2018-7557"]
@@ -154,25 +173,33 @@ another CVE gets published or the specified date is reached.
 CVE patch auto-detection
 ========================
 
-`vulnix` will inspect derivations for patches which supposedly fix specific
+``vulnix`` will inspect derivations for patches which supposedly fix specific
 CVEs. When a patch filename contains one or more CVE identifiers, these will not
-reported anymore. Example Nix code::
+reported anymore. Example Nix code:
 
-  patches = [ ./CVE-2018-6951.patch ];
+.. code:: nix
+
+  {
+    patches = [ ./CVE-2018-6951.patch ];
+  }
 
 Patches which fix multiple CVEs should name them all with a non-numeric
-separator, e.g. `CVE-2017-14159+CVE-2017-17740.patch`.
+separator, e.g. ``CVE-2017-14159+CVE-2017-17740.patch``.
 
-Auto-detection even works when patches are pulled via `fetchpatch` and friends
-as long as there is a CVE identifier in the name. Example::
+Auto-detection even works when patches are pulled via ``fetchpatch`` and friends
+as long as there is a CVE identifier in the name. Example:
 
-  patches = [
-    (fetchpatch {
-      name = "CVE-2018-9055.patch";
-      url = http://paste.opensuse.org/view/raw/330751ce;
-      sha256 = "0m798m6c4v9yyhql7x684j5kppcm6884n1rrb9ljz8p9aqq2jqnm";
-    })
-  ];
+.. code:: nix
+
+  {
+    patches = [
+      (fetchpatch {
+        name = "CVE-2018-9055.patch";
+        url = http://paste.opensuse.org/view/raw/330751ce;
+        sha256 = "0m798m6c4v9yyhql7x684j5kppcm6884n1rrb9ljz8p9aqq2jqnm";
+      })
+    ];
+  }
 
 
 .. _NIST: https://nvd.nist.gov/vuln/
