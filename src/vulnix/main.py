@@ -24,6 +24,7 @@ import sys
 
 import click
 
+from .kev import DEFAULT_KEV_MIRROR, KEV
 from .nix import Store
 from .nvd import DEFAULT_CACHE_DIR, DEFAULT_MIRROR, NVD
 from .output import output
@@ -141,6 +142,12 @@ def run(nvd, store):
     help=f"Mirror to fetch NVD archives from. Default: {DEFAULT_MIRROR}.",
     default=DEFAULT_MIRROR,
 )
+@click.option(
+    "-k",
+    "--kev-mirror",
+    help=f"Mirror to fetch KEV archives from. Default: {DEFAULT_KEV_MIRROR}.",
+    default=DEFAULT_KEV_MIRROR,
+)
 # output control
 @click.option("-j", "--json/--no-json", help="JSON vs. human readable output.")
 @click.option(
@@ -173,6 +180,7 @@ def main(
     profile,
     path,
     mirror,
+    kev_mirror,
     cache_dir,
     requisites,
     closure,
@@ -242,11 +250,15 @@ def main(
         with NVD(mirror, cache_dir) as nvd:
             with Timer("Update NVD data"):
                 nvd.update()
+            kev = KEV(kev_mirror, cache_dir)
+            with Timer("Update KEV data"):
+                kev.update()
             with Timer("Scan vulnerabilities"):
                 filtered_items = whitelist.filter(run(nvd, store))
 
             rc = output(
                 filtered_items,
+                kev,
                 json,
                 show_whitelisted,
                 show_description,

@@ -5,7 +5,11 @@ from operator import attrgetter
 import click
 
 
-def fmt_vuln(v, show_description=False):
+def fmt_vuln(v, kev, show_description=False):
+    cvssv3 = str(v.cvssv3 or "")
+    cvssv3 += "!" if kev.is_known_exploited(v.cve_id) else ""
+    cvssv3 += "!" if kev.is_past_due(v.cve_id) else ""
+
     out = f"https://nvd.nist.gov/vuln/detail/{v.cve_id:17} {v.cvssv3 or '':<8} "
     if show_description:
         # Show the description in a different color as they can run over the
@@ -57,7 +61,7 @@ class Filtered:
             self.masked |= self.report
             self.report = set()
 
-    def print(self, show_masked=False, show_description=False):
+    def print(self, kev, show_masked=False, show_description=False):
         if not self.report and not show_masked:
             return
         d = self.derivation
@@ -73,10 +77,12 @@ class Filtered:
             dim=wl,
         )
         for v in sorted(self.report, key=vuln_sort_key):
-            click.echo(fmt_vuln(v, show_description))
+            click.echo(fmt_vuln(v, kev, show_description))
         if show_masked:
             for v in sorted(self.masked, key=vuln_sort_key):
-                click.secho(f"{fmt_vuln(v, show_description)}  [whitelisted]", dim=True)
+                click.secho(
+                    f"{fmt_vuln(v, kev, show_description)}  [whitelisted]", dim=True
+                )
 
         issues = functools.reduce(set.union, (r.issue_url for r in self.rules), set())
         if issues:
@@ -90,7 +96,7 @@ class Filtered:
                     click.secho("* " + comment, fg="blue", dim=wl)
 
 
-def output_text(vulns, show_whitelisted=False, show_description=False):
+def output_text(vulns, kev, show_whitelisted=False, show_description=False):
     report = [v for v in vulns if v.report]
     wl = [v for v in vulns if not v.report]
 
@@ -109,10 +115,10 @@ def output_text(vulns, show_whitelisted=False, show_description=False):
         click.secho(f"{len(wl)} derivations left out due to whitelisting", fg="blue")
 
     for i in sorted(report, key=attrgetter("derivation")):
-        i.print(show_whitelisted, show_description)
+        i.print(kev, show_whitelisted, show_description)
     if show_whitelisted:
         for i in sorted(wl, key=attrgetter("derivation")):
-            i.print(show_whitelisted, show_description)
+            i.print(kev, show_whitelisted, show_description)
     if wl and not show_whitelisted:
         click.secho(
             "\nuse --show-whitelisted to see derivations with only whitelisted CVEs",
@@ -120,7 +126,7 @@ def output_text(vulns, show_whitelisted=False, show_description=False):
         )
 
 
-def output_json(items, show_whitelisted=False):
+def output_json(items, kev, show_whitelisted=False):
     out = []
     for i in sorted(items, key=attrgetter("derivation")):
         if not i.report and not show_whitelisted:
@@ -134,6 +140,14 @@ def output_json(items, show_whitelisted=False):
                 "derivation": d.store_path,
                 "affected_by": sorted(v.cve_id for v in i.report),
                 "whitelisted": sorted(v.cve_id for v in i.masked),
+                "known_exploited": sorted(
+                    v.cve_id for v in i.report if kev.is_known_exploited(v.cve_id)
+                ),
+                "known_exploited_due_date": {
+                    v.cve_id: kev.due_date(v.cve_id)
+                    for v in i.report
+                    if kev.is_known_exploited(v.cve_id)
+                },
                 "cvssv3_basescore": {
                     v.cve_id: v.cvssv3 for v in (i.report | i.masked) if v.cvssv3
                 },
@@ -147,11 +161,13 @@ def output_json(items, show_whitelisted=False):
     print(json.dumps(out, indent=1))
 
 
-def output(items, json_dump=False, show_whitelisted=False, show_description=False):
-    if json_dump:
-        output_json(items, show_whitelisted)
+def output(
+    items, kev, json_output=False, show_whitelisted=False, show_description=False
+):
+    if json_output:
+        output_json(items, kev, show_whitelisted)
     else:
-        output_text(items, show_whitelisted, show_description)
+        output_text(items, kev, show_whitelisted, show_description)
     if any(i.report for i in items):
         return 2
     if show_whitelisted and any(i.masked for i in items):
