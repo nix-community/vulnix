@@ -216,7 +216,7 @@ def test_output_text_fresh_kev(deriv2, capsys):
 bar-2
 
 CVE                                                CVSSv3
-https://nvd.nist.gov/vuln/detail/CVE-2018-0006     5.0
+https://nvd.nist.gov/vuln/detail/CVE-2018-0006     5.0!
 """
     )
 
@@ -233,7 +233,7 @@ def test_output_text_old_kev(deriv2, capsys):
 bar-2
 
 CVE                                                CVSSv3
-https://nvd.nist.gov/vuln/detail/CVE-2018-0006     5.0
+https://nvd.nist.gov/vuln/detail/CVE-2018-0006     5.0!!
 """
     )
 

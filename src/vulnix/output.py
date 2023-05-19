@@ -10,7 +10,7 @@ def fmt_vuln(v, kev, show_description=False):
     cvssv3 += "!" if kev.is_known_exploited(v.cve_id) else ""
     cvssv3 += "!" if kev.is_past_due(v.cve_id) else ""
 
-    out = f"https://nvd.nist.gov/vuln/detail/{v.cve_id:17} {v.cvssv3 or '':<8} "
+    out = f"https://nvd.nist.gov/vuln/detail/{v.cve_id:17} {cvssv3:<8} "
     if show_description:
         # Show the description in a different color as they can run over the
         # line length, and this makes distinguishing them from the next entry

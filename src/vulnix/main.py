@@ -24,7 +24,7 @@ import sys
 
 import click
 
-from .kev import DEFAULT_KEV_MIRROR, KEV
+from .kev import DEFAULT_KEV_MIRROR, KEV, FakeKEV
 from .nix import Store
 from .nvd import DEFAULT_CACHE_DIR, DEFAULT_MIRROR, NVD
 from .output import output
@@ -143,6 +143,11 @@ def run(nvd, store):
     default=DEFAULT_MIRROR,
 )
 @click.option(
+    "--kev/--no-kev",
+    default=False,
+    help="CISA Known Exploited Vulnerabilities support (default: no)",
+)
+@click.option(
     "-k",
     "--kev-mirror",
     help=f"Mirror to fetch KEV archives from. Default: {DEFAULT_KEV_MIRROR}.",
@@ -180,6 +185,7 @@ def main(
     profile,
     path,
     mirror,
+    kev,
     kev_mirror,
     cache_dir,
     requisites,
@@ -250,7 +256,7 @@ def main(
         with NVD(mirror, cache_dir) as nvd:
             with Timer("Update NVD data"):
                 nvd.update()
-            kev = KEV(kev_mirror, cache_dir)
+            kev = KEV(kev_mirror, cache_dir) if kev else FakeKEV({})
             with Timer("Update KEV data"):
                 kev.update()
             with Timer("Scan vulnerabilities"):
