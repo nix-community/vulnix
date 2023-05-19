@@ -20,7 +20,7 @@ See vulnix --help for a full list of options.
 
 from .nix import Store
 from .nvd import NVD, DEFAULT_MIRROR, DEFAULT_CACHE_DIR
-from .kev import KEV, DEFAULT_KEV_MIRROR
+from .kev import KEV, DEFAULT_KEV_MIRROR, FakeKEV
 from .resource import open_resources
 from .utils import Timer
 from .whitelist import Whitelist
@@ -101,6 +101,9 @@ def run(nvd, store):
               help='Mirror to fetch NVD archives from. Default: {}.'.format(
                   DEFAULT_MIRROR),
               default=DEFAULT_MIRROR)
+@click.option('--kev/--no-kev', default=True,
+              help='CISA Known Exploited Vulnerabilities support '
+              '(default: yes)')
 @click.option('-k', '--kev-mirror',
               help='Mirror to fetch KEV archives from. Default: {}.'.format(
                   DEFAULT_KEV_MIRROR),
@@ -120,7 +123,7 @@ def run(nvd, store):
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
 def main(verbose, gc_roots, system, from_file, profile, path, mirror,
-         kev_mirror, cache_dir, requisites, whitelist, write_whitelist,
+         kev, kev_mirror, cache_dir, requisites, whitelist, write_whitelist,
          version, json, show_whitelisted, show_description, default_whitelist,
          notfixed):
     if version:
@@ -157,7 +160,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
         with NVD(mirror, cache_dir) as nvd:
             with Timer('Update NVD data'):
                 nvd.update()
-            kev = KEV(kev_mirror, cache_dir)
+            kev = KEV(kev_mirror, cache_dir) if kev else FakeKEV({})
             with Timer('Update KEV data'):
                 kev.update()
             with Timer('Scan vulnerabilities'):

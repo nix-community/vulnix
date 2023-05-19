@@ -116,3 +116,6 @@ class FakeKEV(KEVInterface):
 
     def due_date(self, cve_id):
         return self.data[cve_id]
+
+    def update(self):
+        pass
