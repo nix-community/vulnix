@@ -4,7 +4,7 @@ import os
 import os.path as p
 import tempfile
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import requests
 
@@ -23,15 +23,16 @@ class KEVInterface(ABC):
         """Is due_date() in the past?"""
         return (
             self.is_known_exploited(cve_id)
-            and datetime.strptime(self.due_date(cve_id), "%Y-%m-%d") < datetime.now()
+            and datetime.strptime(self.due_date(cve_id), "%Y-%m-%d").date()
+            < date.today()
         )
 
     @abstractmethod
-    def is_known_exploited(self, cve_id):
+    def is_known_exploited(self, cve_id) -> bool:
         """Is this cve_id known to be under active exploitation?"""
 
     @abstractmethod
-    def due_date(self, cve_id):
+    def due_date(self, cve_id) -> str:
         """By what date does the KVE Catalog say this vulnerability must be mitigated?"""
 
 
@@ -82,8 +83,9 @@ class KEV(KEVInterface):
                 delete=False,
             ) as f:
                 f.write(r.content)
-                if "ETag" in r.headers:
+                if "ETag" in r.headers and hasattr(os, "setxattr"):
                     try:
+                        # pylint: disable-next=no-member
                         os.setxattr(
                             f.name, "user.ETag", r.headers["ETag"].encode("utf-8")
                         )
@@ -123,3 +125,6 @@ class FakeKEV(KEVInterface):
 
     def due_date(self, cve_id):
         return self.data[cve_id]
+
+    def update(self):
+        pass
