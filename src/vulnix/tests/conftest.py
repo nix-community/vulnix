@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from vulnix.kev import KEV
 from vulnix.nvd import NVD
 from vulnix.whitelist import Whitelist
 
@@ -68,3 +69,9 @@ def nvd(tmpdir, http_server):
     _nvd.available_archives = ["modified"]
     with _nvd:
         yield _nvd
+
+
+@pytest.fixture
+def kev(tmpdir, http_server):
+    mirror = f"{http_server}known_exploited_vulnerabilities.csv"
+    return KEV(mirror=mirror, cache_dir=str(tmpdir))
