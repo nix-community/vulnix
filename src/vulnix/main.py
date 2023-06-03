@@ -50,7 +50,7 @@ def init_logging(verbose):
         logging.basicConfig(level=logging.WARNING)
 
 
-def populate_store(store, gc_roots, profiles, paths, requisites=True):
+def populate_store(store, gc_roots, profiles, paths):
     """Load derivations from nix store depending on cmdline invocation."""
     if gc_roots:
         store.add_gc_roots()
@@ -96,6 +96,9 @@ def run(nvd, store):
 @click.option('-r/-R', '--requisites/--no-requisites', default=True,
               help='Yes: determine transitive closure. No: examine just the '
               'passed derivations (default: yes).')
+@click.option('-C', '--closure', is_flag=True,
+              help='Examine the closure of an output path '
+              '(runtime dependencies). Implies --no-requisites.')
 @click.option('-m', '--mirror',
               help='Mirror to fetch NVD archives from. Default: {}.'.format(
                   DEFAULT_MIRROR),
@@ -115,11 +118,15 @@ def run(nvd, store):
 @click.option('-F', '--notfixed', is_flag=True,
               help='(obsolete; kept for compatibility reasons)')
 def main(verbose, gc_roots, system, from_file, profile, path, mirror,
-         cache_dir, requisites, whitelist, write_whitelist, version, json,
-         show_whitelisted, show_description, default_whitelist, notfixed):
+         cache_dir, requisites, closure, whitelist, write_whitelist,
+         version, json, show_whitelisted, show_description,
+         default_whitelist, notfixed):
     if version:
         print('vulnix ' + pkg_resources.get_distribution('vulnix').version)
         sys.exit(0)
+
+    if (closure):
+        requisites = False
 
     if not (gc_roots or system or profile or path or from_file):
         howto()
@@ -138,7 +145,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
             for wl in wh_sources:
                 whitelist.merge(Whitelist.load(wl))
         with Timer('Load derivations'):
-            store = Store(requisites)
+            store = Store(requisites, closure)
             if from_file:
                 if from_file.name.endswith('.json'):
                     _log.debug("loading packages.json")
@@ -147,7 +154,7 @@ def main(verbose, gc_roots, system, from_file, profile, path, mirror,
                     for drv in from_file.readlines():
                         paths.append(drv.strip())
             else:
-                populate_store(store, gc_roots, profile,  paths, requisites)
+                populate_store(store, gc_roots, profile,  paths)
         with NVD(mirror, cache_dir) as nvd:
             with Timer('Update NVD data'):
                 nvd.update()

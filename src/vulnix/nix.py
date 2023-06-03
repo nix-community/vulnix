@@ -9,8 +9,9 @@ _log = logging.getLogger(__name__)
 
 class Store(object):
 
-    def __init__(self, requisites=True):
+    def __init__(self, requisites=True, closure=False):
         self.requisites = requisites
+        self.closure = closure
         self.derivations = set()
         self.experimental_flag_needed = None
 
@@ -58,11 +59,12 @@ class Store(object):
                          'nix-command'] + args)
         return call(['nix'] + args)
 
-    def _find_deriver(self, path):
+    def _find_deriver(self, path, qpi_deriver=None):
         if path.endswith('.drv'):
             return path
         # Deriver from QueryPathInfo
-        qpi_deriver = call(['nix-store', '-qd', path]).strip()
+        if qpi_deriver is None:
+            qpi_deriver = call(['nix-store', '-qd', path]).strip()
         _log.debug('qpi_deriver: %s', qpi_deriver)
         if qpi_deriver and qpi_deriver != 'unknown-deriver' and p.exists(
                 qpi_deriver):
@@ -86,18 +88,52 @@ class Store(object):
             'Cannot determine deriver. Is this really a path into the '
             'nix store?', path)
 
+    def _find_outputs(self, path):
+        if not path.endswith('.drv'):
+            return [path]
+
+        result = []
+        for drv in json.loads(
+            self._call_nix(['show-derivation', path])
+        ).values():
+            for output in drv.get('outputs').values():
+                result.append(output.get('path'))
+        return result
+
     def add_path(self, path):
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):
             raise RuntimeError('path `{}` does not exist - cannot load '
                                'derivations referenced from it'.format(path))
         _log.debug('Loading derivations referenced by "%s"', path)
-        deriver = self._find_deriver(path)
-        if self.requisites:
-            for candidate in call(['nix-store', '-qR', deriver]).splitlines():
-                self.update(candidate)
+
+        if self.closure:
+            for output in self._find_outputs(path):
+                for candidate in map(
+                    # We cannot use the `deriver` field directly because
+                    # like from `nix-store -qd` that path may not exist.
+                    # However, we know that if it is not present
+                    # the path has no deriver because it is a
+                    # derivation input source so we can skip it.
+                    lambda p: self._find_deriver(
+                                  p.get('path'),
+                                  qpi_deriver=p.get('deriver')
+                              ) if p.get('deriver') is not None else None,
+                    json.loads(
+                        self._call_nix(['path-info', '-r', '--json', output])
+                    )
+                ):
+                    if candidate is not None:
+                        self.update(candidate)
         else:
-            self.update(deriver)
+            deriver = self._find_deriver(path)
+            if self.requisites:
+                for candidate in call([
+                    'nix-store', '-qR', deriver
+                ]).splitlines():
+                    self.update(candidate)
+            else:
+                self.update(deriver)
 
     def update(self, drv_path):
         if not drv_path.endswith('.drv'):
