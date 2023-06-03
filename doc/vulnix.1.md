@@ -71,6 +71,17 @@ should not be reported.
   Fetches NIST NVD updates from <URL>. Defaults to
   _https://nvd.nist.gov/feeds/json/cve/1.1/_.
 
+* `--kev`, `--no-kev`:
+  Enable support for the CISA Known Exploited Vulnerabilities catalog.
+  Vulnerabilities known to be exploited in the wild are indicated with an
+  exclamation mark (!).  A second exclamation mark (!!) indicates a
+  known-exploited vulnerability past CISA's prescribed remediation date.
+  Defaults to `--kev`.
+
+* `-k`, `--kev-mirror`=<URL>:
+  Fetches CISA KEV updates from <URL>. Defaults to
+  _https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv_.
+
 * `-j`, `--json`:
   Outputs affected package versions as JSON document. See [JSON output] below.
 

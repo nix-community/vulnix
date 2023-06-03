@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from vulnix.kev import KEV
 from vulnix.nvd import NVD
 from vulnix.whitelist import Whitelist
 import hashlib
@@ -72,3 +73,10 @@ def nvd(tmpdir, http_server):
     nvd.available_archives = ['modified']
     with nvd:
         yield nvd
+
+
+@pytest.fixture
+def kev(tmpdir, http_server):
+    mirror = f"{http_server}known_exploited_vulnerabilities.csv"
+    kev = KEV(mirror=mirror, cache_dir=str(tmpdir))
+    return kev
