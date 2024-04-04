@@ -32,7 +32,7 @@ class Store(object):
                 json_manifest_path))
             with open(json_manifest_path, 'r') as f:
                 json_manifest = json.load(f)
-            if json_manifest['version'] > 1:
+            if json_manifest['version'] > 2:
                 raise RuntimeError(
                     ('Profile manifest.json version {} ' +
                      'not yet supported').format(
