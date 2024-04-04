@@ -5,7 +5,7 @@ Changes
 1.10.2 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Support profile manifest.json version 2
 
 
 1.10.1 (2022-02-06)
