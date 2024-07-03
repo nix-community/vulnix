@@ -56,7 +56,7 @@ class Store(object):
         if self.experimental_flag_needed:
             return call(['nix',
                          '--experimental-features',
-                         'nix-command'] + args)
+                         'nix-command flakes'] + args)
         return call(['nix'] + args)
 
     def _find_deriver(self, path, qpi_deriver=None):
