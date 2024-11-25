@@ -30,15 +30,22 @@ class Store(object):
         if p.exists(json_manifest_path):
             _log.debug('Loading derivations from {}'.format(
                 json_manifest_path))
-            with open(json_manifest_path, 'r') as f:
+            with open(json_manifest_path, 'r', encoding="utf-8") as f:
                 json_manifest = json.load(f)
-            if json_manifest['version'] > 1:
-                raise RuntimeError(
-                    ('Profile manifest.json version {} ' +
-                     'not yet supported').format(
-                        json_manifest['version']))
-            for element in json_manifest['elements']:
-                if element['active']:
+            elements = json_manifest['elements']
+            # nix profile elements in manifest.json can be in two
+            # different formats: https://github.com/NixOS/nix/pull/9656
+            if isinstance(elements, dict):
+                for name in elements:
+                    element = elements[name]
+                    if not element['active']:
+                        continue
+                    for path in element['storePaths']:
+                        self.add_path(path)
+            if isinstance(elements, list):
+                for element in elements:
+                    if not element['active']:
+                        continue
                     for path in element['storePaths']:
                         self.add_path(path)
         else:
