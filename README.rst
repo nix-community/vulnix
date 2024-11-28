@@ -1,7 +1,3 @@
-New maintainer needed! See https://github.com/flyingcircusio/vulnix/issues/87
-for details.
-
-
 Nix(OS) vulnerability scanner
 =============================
 
