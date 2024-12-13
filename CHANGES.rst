@@ -2,10 +2,20 @@ Changes
 =======
 
 
-1.10.2 (unreleased)
+1.10.2 (2024-12-13)
 -------------------
 
-- Nothing changed yet.
+- Fix nix profile scan (#103).
+
+- Fix runtime dependency scan (#101).
+
+- Fix default.nix after nixpkgs vulnix path changed (#102).
+
+- Enable flake support (#99).
+
+- Add '--closure' option to scan only the runtime dependencies (#80).
+
+- Start using github actions for CI (#90).
 
 
 1.10.1 (2022-02-06)
