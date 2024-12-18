@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 {
   imports = [
+    ./checks.nix
     ./devshell.nix
     ./packages.nix
     ./treefmt.nix
