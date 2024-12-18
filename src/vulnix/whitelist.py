@@ -2,8 +2,9 @@ import collections
 import datetime
 import logging
 import re
-import toml
 import urllib.parse
+
+import toml
 import yaml
 
 from vulnix.derivation import split_name
@@ -22,22 +23,22 @@ def check_section_header(content):
     m_end = RE_INV_SECT_END.search(content)
     if m_begin or m_end:
         raise RuntimeError(
-            'section header must start with \'["\' and end with \'"]\'',
-            m_begin, m_end)
+            "section header must start with '[\"' and end with '\"]'", m_begin, m_end
+        )
 
 
 def read_toml(content):
     check_section_header(content)
     for k, v in toml.loads(content, collections.OrderedDict).items():
         if len(v.values()) and isinstance(list(v.values())[0], dict):
-            raise RuntimeError('malformed section header -- forgot quotes?', k)
+            raise RuntimeError("malformed section header -- forgot quotes?", k)
         pname, version = split_name(k)
         yield WhitelistRule(pname=pname, version=version, **v)
 
 
 def read_yaml(content):
     for item in yaml.safe_load(content):
-        pname = item.pop('name', None)
+        pname = item.pop("name", None)
         yield WhitelistRule(pname=pname, **item)
 
 
@@ -73,9 +74,9 @@ class WhitelistRule:
     version = None
 
     def __init__(self, **kw):
-        for field in ['pname', 'version']:
-            self.__dict__[field] = kw.pop(field, None) or '*'
-        for field in ['cve', 'issue_url']:
+        for field in ["pname", "version"]:
+            self.__dict__[field] = kw.pop(field, None) or "*"
+        for field in ["cve", "issue_url"]:
             v = kw.pop(field, [])
             if isinstance(v, set):
                 self.__dict__[field] = v
@@ -83,30 +84,31 @@ class WhitelistRule:
                 self.__dict__[field] = set(v)
             else:
                 self.__dict__[field] = set([v])
-        if self.pname == '*' and not self.cve:
-            raise RuntimeError('either pname or CVE must be set', kw)
+        if self.pname == "*" and not self.cve:
+            raise RuntimeError("either pname or CVE must be set", kw)
         for url in self.issue_url:
             scheme, netloc, path = urllib.parse.urlparse(url)[0:3]
             if not scheme or not netloc or not path:
-                raise ValueError('issue must be a valid URL', url)
-        v = kw.pop('comment', [])
+                raise ValueError("issue must be a valid URL", url)
+        v = kw.pop("comment", [])
         self.comment = v if isinstance(v, list) else [v]
         self.until = None
-        if 'until' in kw:
-            if isinstance(kw['until'], (datetime.datetime, datetime.date)):
-                self.until = kw.pop('until')
+        if "until" in kw:
+            if isinstance(kw["until"], (datetime.datetime, datetime.date)):
+                self.until = kw.pop("until")
             else:
                 self.until = datetime.datetime.strptime(
-                    kw.pop('until'), '%Y-%m-%d').date()
-        kw.pop('status', '')  # compat
+                    kw.pop("until"), "%Y-%m-%d"
+                ).date()
+        kw.pop("status", "")  # compat
         if kw:
-            _log.warning('Unrecognized whitelist keys: {}'.format(kw.keys()))
+            _log.warning("Unrecognized whitelist keys: {}".format(kw.keys()))
 
     @property
     def name(self):
-        if self.version == '*':
+        if self.version == "*":
             return self.pname
-        return '{}-{}'.format(self.pname, self.version)
+        return "{}-{}".format(self.pname, self.version)
 
     def dump(self):
         """Returns this entry as a ready-to-serialize dict.
@@ -117,18 +119,17 @@ class WhitelistRule:
         if self.until and self.until <= datetime.date.today():
             return None
         res = collections.OrderedDict()
-        for field in ['cve', 'comment', 'issue_url']:
+        for field in ["cve", "comment", "issue_url"]:
             val = getattr(self, field)
             if val:
                 res[field] = dump_multivalued(val)
         if self.until:
-            res['until'] = str(self.until)
+            res["until"] = str(self.until)
         return res
 
     def update(self, other):
         if self.pname != other.pname or self.version != other.version:
-            raise RuntimeError(
-                'cannot merge rules for different packages', self, other)
+            raise RuntimeError("cannot merge rules for different packages", self, other)
         self.cve.update(other.cve)
         if other.until:
             if not self.until or (self.until and other.until > self.until):
@@ -141,12 +142,11 @@ class WhitelistRule:
 
         If so, a tuple (match type, whitelist item) is returned.
         """
-        if self.pname != '*' and self.pname != deriv.pname:
+        if self.pname != "*" and self.pname != deriv.pname:
             return False
-        if self.version != '*' and self.version != deriv.version:
+        if self.version != "*" and self.version != deriv.version:
             return False
-        if self.cve and vulns and \
-                self.cve & set(v.cve_id for v in vulns) == set():
+        if self.cve and vulns and self.cve & set(v.cve_id for v in vulns) == set():
             return False
         if self.until and self.until <= datetime.date.today():
             return False
@@ -172,11 +172,11 @@ class Whitelist:
 
     def __str__(self):
         """Formats whitelist as string. Used to dump it to a file."""
-        return toml.dumps(self.dump()).replace(',]\n', ' ]\n')
+        return toml.dumps(self.dump()).replace(",]\n", " ]\n")
 
-    TOML_SECTION_START = re.compile(r'^\[.*\]', re.MULTILINE)
-    YAML_SECTION_START = re.compile(r'^-', re.MULTILINE)
-    SECTION_FORMAT = re.compile(r'^[a-zA-Z0-9_.*-]+$')
+    TOML_SECTION_START = re.compile(r"^\[.*\]", re.MULTILINE)
+    YAML_SECTION_START = re.compile(r"^-", re.MULTILINE)
+    SECTION_FORMAT = re.compile(r"^[a-zA-Z0-9_.*-]+$")
 
     @classmethod
     def load(cls, fobj):
@@ -186,34 +186,34 @@ class Whitelist:
         """
         content = fobj.read()
         if isinstance(content, bytes):
-            content = content.decode('utf-8')
-        filename = ''
-        if hasattr(fobj, 'name') and fobj.name:
+            content = content.decode("utf-8")
+        filename = ""
+        if hasattr(fobj, "name") and fobj.name:
             filename = fobj.name
-        elif hasattr(fobj, 'geturl'):
+        elif hasattr(fobj, "geturl"):
             filename = fobj.geturl()
         try:
             return cls._parse_cfg(content, filename)
         except (toml.TomlDecodeError, IndexError) as e:
-            raise RuntimeError('failed to load `{}`: {}'.format(filename, e))
+            raise RuntimeError("failed to load `{}`: {}".format(filename, e))
 
     @classmethod
     def _parse_cfg(cls, content, filename):
-        if filename.endswith('.toml'):
+        if filename.endswith(".toml"):
             gen = read_toml(content)
-        elif filename.endswith('.yaml'):
+        elif filename.endswith(".yaml"):
             gen = read_yaml(content)
         elif cls.TOML_SECTION_START.search(content):
             gen = read_toml(content)
         elif cls.YAML_SECTION_START.search(content):
             gen = read_yaml(content)
         else:
-            raise RuntimeError('cannot detect whitelist format')
+            raise RuntimeError("cannot detect whitelist format")
 
         self = cls()
         for rule in gen:
             if not self.SECTION_FORMAT.match(rule.pname):
-                raise RuntimeError('invalid package selector', rule.pname)
+                raise RuntimeError("invalid package selector", rule.pname)
             self.insert(rule)
         return self
 
@@ -221,7 +221,7 @@ class Whitelist:
         """Serializes whitelist into dict."""
         res = collections.OrderedDict()
         for k, v in self.entries.items():
-            _log.debug('Creating WL entry for %s', k)
+            _log.debug("Creating WL entry for %s", k)
             entry = v.dump()
             if entry is not None:
                 res[k] = entry
@@ -230,7 +230,7 @@ class Whitelist:
     def candidates(self, pname, version):
         """Matching rules in order of decreasing specificity."""
         try:
-            yield self.entries['{}-{}'.format(pname, version)]
+            yield self.entries["{}-{}".format(pname, version)]
         except KeyError:
             pass
         try:
@@ -238,7 +238,7 @@ class Whitelist:
         except KeyError:
             pass
         try:
-            yield self.entries['*']
+            yield self.entries["*"]
         except KeyError:
             pass
 
@@ -268,7 +268,10 @@ class Whitelist:
             self.update(rule)
 
     def add_from(self, filtered_item):
-        self.update(WhitelistRule(
-            pname=filtered_item.derivation.pname,
-            version=filtered_item.derivation.version,
-            cve={i.cve_id for i in filtered_item.report}))
+        self.update(
+            WhitelistRule(
+                pname=filtered_item.derivation.pname,
+                version=filtered_item.derivation.version,
+                cve={i.cve_id for i in filtered_item.report},
+            )
+        )
