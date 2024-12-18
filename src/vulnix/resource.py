@@ -1,14 +1,14 @@
 import contextlib
 import logging
-import urllib
 import re
+import urllib
 
 _log = logging.getLogger(__name__)
 
 
 class Resource:
 
-    R_URL_LIKE = re.compile(r'^[a-z]+://')
+    R_URL_LIKE = re.compile(r"^[a-z]+://")
 
     def __init__(self, source, timeout=60):
         self.source = source
@@ -18,10 +18,9 @@ class Resource:
     @contextlib.contextmanager
     def open(self):
         if self.remote:
-            yield urllib.request.urlopen(
-                self.source, timeout=self.timeout)
+            yield urllib.request.urlopen(self.source, timeout=self.timeout)
         else:
-            yield open(self.source, 'rb')
+            yield open(self.source, "rb")
 
 
 def open_resources(_click_ctx=None, _click_param=None, sources=None):
@@ -38,4 +37,4 @@ def open_resources(_click_ctx=None, _click_param=None, sources=None):
                 with Resource(s).open() as f:
                     yield f
             except (EnvironmentError, urllib.error.URLError) as e:
-                _log.warning('failed to open %s: %s', s, e)
+                _log.warning("failed to open %s: %s", s, e)

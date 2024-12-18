@@ -1,50 +1,51 @@
 """Scans a Nix store for derivations that are affected by vulnerabilities."""
 
-from setuptools import setup, find_packages
 import os.path
+
+from setuptools import find_packages, setup
 
 
 def project_path(*names):
     return os.path.join(os.path.dirname(__file__), *names)
 
 
-with open(project_path('VERSION')) as f:
+with open(project_path("VERSION")) as f:
     version = f.read().strip()
 
 long_description = []
 
-for rst in ['README.rst', 'HACKING.rst', 'CHANGES.rst']:
+for rst in ["README.rst", "HACKING.rst", "CHANGES.rst"]:
     with open(project_path(rst)) as f:
         long_description.append(f.read())
 
 setup(
-    name='vulnix',
+    name="vulnix",
     version=version,
     install_requires=[
-        'click>=6.7',
-        'pyyaml>=5',
-        'requests>=2.18',
-        'toml>=0.9',
-        'ZODB>=5.4',
-        'zodbpickle>=2',
+        "click>=6.7",
+        "pyyaml>=5",
+        "requests>=2.18",
+        "toml>=0.9",
+        "ZODB>=5.4",
+        "zodbpickle>=2",
     ],
     extras_require={
-        'test': [
-            'freezegun>0.3',
-            'pytest>=3.2',
-            'pytest-cov>=2.7',
-            'setuptools_scm>=1.15',
+        "test": [
+            "freezegun>0.3",
+            "pytest>=3.2",
+            "pytest-cov>=2.7",
+            "setuptools_scm>=1.15",
         ],
     },
     entry_points="""
         [console_scripts]
             vulnix = vulnix.main:main
     """,
-    author='Flying Circus Internet Operations GmbH',
-    author_email='mail@flyingcircus.io',
-    license='BSD-3-Clause',
-    url='https://github.com/flyingcircusio/vulnix',
-    keywords='security,nixos,nixpkgs,cve,nvd',
+    author="Flying Circus Internet Operations GmbH",
+    author_email="mail@flyingcircus.io",
+    license="BSD-3-Clause",
+    url="https://github.com/flyingcircusio/vulnix",
+    keywords="security,nixos,nixpkgs,cve,nvd",
     classifiers="""\
 Development Status :: 5 - Production/Stable
 Environment :: Console
@@ -58,11 +59,15 @@ Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Topic :: System :: Systems Administration
-"""[:-1].split('\n'),
+"""[
+        :-1
+    ].split(
+        "\n"
+    ),
     description=__doc__.strip(),
-    long_description='\n\n'.join(long_description),
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    long_description="\n\n".join(long_description),
+    packages=find_packages("src"),
+    package_dir={"": "src"},
     include_package_data=True,
-    zip_safe=False
+    zip_safe=False,
 )
