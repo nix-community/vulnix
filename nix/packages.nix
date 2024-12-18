@@ -41,7 +41,6 @@
 
         propagatedBuildInputs = with pp; [
           click
-          colorama
           pyyaml
           requests
           setuptools

@@ -22,8 +22,7 @@ setup(
     version=version,
     install_requires=[
         'click>=6.7',
-        'colorama>=0.3',
-        'pyyaml>=5,<7',
+        'pyyaml>=5',
         'requests>=2.18',
         'toml>=0.9',
         'ZODB>=5.4',
@@ -35,8 +34,6 @@ setup(
             'pytest>=3.2',
             'pytest-cov>=2.7',
             'pytest-flake8',
-            'pytest-runner>=2.11,<3dev',
-            'pytest-timeout>=1.2',
             'setuptools_scm>=1.15',
         ],
     },
