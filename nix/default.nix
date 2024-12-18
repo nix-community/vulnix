@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 {
   imports = [
+    ./devshell.nix
     ./packages.nix
   ];
 }
