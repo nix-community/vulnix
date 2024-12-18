@@ -20,11 +20,6 @@
 
         pythonImportsCheck = ["vulnix"];
 
-        postPatch = ''
-          substituteInPlace setup.cfg \
-            --replace "--flake8" ""
-        '';
-
         outputs = [
           "out"
           "doc"
