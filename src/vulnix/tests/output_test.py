@@ -13,8 +13,8 @@ from vulnix.whitelist import WhitelistRule
 V = Vulnerability
 
 
-@pytest.fixture
-def deriv():
+@pytest.fixture(name="deriv")
+def fixture_deriv():
     d = Derive(name="test-0.2")
     d.store_path = "/nix/store/zsawgflc1fq77ijjzb1369zi6kxnc36j-test-0.2"
     return (
@@ -27,23 +27,23 @@ def deriv():
     )
 
 
-@pytest.fixture
-def deriv1():
+@pytest.fixture(name="deriv1")
+def fixture_deriv1():
     return (Derive(name="foo-1"), {V("CVE-2018-0004"), V("CVE-2018-0005")})
 
 
-@pytest.fixture
-def deriv2():
+@pytest.fixture(name="deriv2")
+def fixture_deriv2():
     return (Derive(name="bar-2"), {V("CVE-2018-0006", cvssv3=5.0)})
 
 
-@pytest.fixture
-def filt(deriv):
+@pytest.fixture(name="filt")
+def fixture_filt(deriv):
     return Filtered(*deriv)
 
 
-@pytest.fixture
-def items(deriv, deriv1, deriv2):
+@pytest.fixture(name="items")
+def fixture_items(deriv, deriv1, deriv2):
     return [Filtered(*deriv), Filtered(*deriv1), Filtered(*deriv2)]
 
 
@@ -71,8 +71,8 @@ def test_add_temporary_whitelist(filt):
     assert filt.until == datetime.date(2018, 3, 5)
 
 
-@pytest.fixture
-def wl_items(items):
+@pytest.fixture(name="wl_items")
+def fixture_wl_items(items):
     # makes deriv1 list only one CVE
     items[1].add(WhitelistRule(cve={"CVE-2018-0004"}, issue_url="https://tracker/4"))
     # makes deriv2 disappear completely
@@ -147,7 +147,7 @@ def test_output_json(wl_items, capsys):
 
 
 def test_exitcode(items, capsys):
-    assert output([], json=True) == 0
+    assert output([], json_dump=True) == 0
     # something to report
     assert output(items) == 2
     # everything masked

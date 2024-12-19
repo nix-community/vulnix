@@ -81,7 +81,7 @@ def test_match_partial():
     assert rule.covers(Derive(name="cpio-2.12"), {V("CVE-2015-1197"), V("CVE-2015-1198")})
 
 
-def test_until(whitelist_toml):
+def test_until():
     rule = WhitelistRule(pname="libxslt", until="2018-04-12")
     d = Derive(name="libxslt-2.0")
     with freezegun.freeze_time("2018-04-11"):

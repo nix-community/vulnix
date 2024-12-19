@@ -23,6 +23,9 @@ def call(cmd):
 class Timer:
 
     def __init__(self, section):
+        self.start = None
+        self.end = None
+        self.interval = None
         self.section = section
 
     def __enter__(self):
@@ -39,6 +42,7 @@ class Timer:
 
 def components_lt(left, right):
     """Port from nix/src/libexpr/names.cc"""
+    # pylint: disable=too-many-return-statements
     try:
         lnum = int(left)
     except ValueError:

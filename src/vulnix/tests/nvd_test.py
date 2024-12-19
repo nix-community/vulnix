@@ -4,6 +4,7 @@ from vulnix.vulnerability import Node, Vulnerability
 
 
 def test_update(nvd):
+    # pylint: disable=protected-access
     nvd.update()
     assert len(nvd._root["advisory"]) == 835
     cve = nvd.by_id("CVE-2010-0748")

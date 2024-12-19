@@ -1,3 +1,5 @@
+# pylint: disable=invalid-name, eval-used
+
 import functools
 import json
 import logging
@@ -11,6 +13,7 @@ _log = logging.getLogger(__name__)
 class SkipDrv(RuntimeError):
     """This derivation cannot be treated as package."""
 
+    # pylint: disable=unnecessary-pass
     pass
 
 
@@ -30,7 +33,7 @@ def split_name(fullname):
 
 
 def load(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         d_obj = eval(f.read(), {"__builtins__": {}, "Derive": Derive}, {})
     _log.debug("Loading drv %s", d_obj.name)
     d_obj.store_path = path
@@ -58,7 +61,7 @@ IGNORE_EXT = {
 
 
 @functools.total_ordering
-class Derive(object):
+class Derive:
     """Nix derivation as found as .drv files in the Nix store."""
 
     store_path = None
@@ -71,7 +74,7 @@ class Derive(object):
         _system=None,
         _builder=None,
         _args=None,
-        envVars={},
+        envVars=None,
         _derivations=None,
         name=None,
         patches=None,
@@ -81,6 +84,8 @@ class Derive(object):
         The derivation files are just accidentally Python-syntax, but
         hey! :-)
         """
+        if envVars is None:
+            envVars = {}
         envVars = dict(envVars)
         self.name = name or envVars.get("name")
         if not self.name:
@@ -95,10 +100,10 @@ class Derive(object):
         self.patches = patches or envVars.get("patches", "")
 
     def __repr__(self):
-        return "<Derive({})>".format(repr(self.name))
+        return f"<Derive({repr(self.name)})>"
 
     def __eq__(self, other):
-        if type(self) != type(other):
+        if not isinstance(other, self.__class__):
             return NotImplementedError()
         return self.name == other.name and self.patches == other.patches
 

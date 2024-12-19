@@ -8,7 +8,7 @@ from .utils import call
 _log = logging.getLogger(__name__)
 
 
-class Store(object):
+class Store:
 
     def __init__(self, requisites=True, closure=False):
         self.requisites = requisites
@@ -29,7 +29,7 @@ class Store(object):
         """Add derivations found in this nix profile."""
         json_manifest_path = p.join(profile, "manifest.json")
         if p.exists(json_manifest_path):
-            _log.debug("Loading derivations from {}".format(json_manifest_path))
+            _log.debug("Loading derivations from %s", json_manifest_path)
             with open(json_manifest_path, "r", encoding="utf-8") as f:
                 json_manifest = json.load(f)
             elements = json_manifest["elements"]
@@ -49,7 +49,7 @@ class Store(object):
                     for path in element["storePaths"]:
                         self.add_path(path)
         else:
-            _log.debug("Loading derivations from user profile {}".format(profile))
+            _log.debug("Loading derivations from user profile %s", profile)
             for line in call(
                 ["nix-env", "-q", "--out-path", "--profile", profile]
             ).splitlines():
@@ -86,13 +86,13 @@ class Store(object):
 
         error = ""
         if qpi_deriver and qpi_deriver != "unknown-deriver":
-            error += "Deriver `{}` does not exist.  ".format(qpi_deriver)
+            error += f"Deriver `{qpi_deriver}` does not exist.  "
         if qvd_deriver and qvd_deriver != qpi_deriver:
-            error += "Deriver `{}` does not exist.  ".format(qvd_deriver)
+            error += f"Deriver `{qvd_deriver}` does not exist.  "
         if error:
-            raise RuntimeError(error + "Couldn't find deriver for path `{}`".format(path))
+            raise RuntimeError(error + f"Couldn't find deriver for path `{path}`")
         raise RuntimeError(
-            "Cannot determine deriver. Is this really a path into the " "nix store?", path
+            "Cannot determine deriver. Is this really a path into the nix store?", path
         )
 
     def _find_outputs(self, path):
@@ -106,11 +106,12 @@ class Store(object):
         return result
 
     def add_path(self, path):
+        # pylint: disable=too-many-branches
         """Add the closure of all derivations referenced by a store path."""
         if not p.exists(path):
             raise RuntimeError(
-                "path `{}` does not exist - cannot load "
-                "derivations referenced from it".format(path)
+                f"path `{path}` does not exist - cannot load "
+                "derivations referenced from it"
             )
         _log.debug('Loading derivations referenced by "%s"', path)
 
@@ -159,5 +160,5 @@ class Store(object):
                     patches.extend(pkg["known_vulnerabilities"])
                 self.derivations.add(Derive(name=pkg["name"], patches=" ".join(patches)))
             except SkipDrv:
-                _log.debug("skipping: {}", pkg)
+                _log.debug("skipping: %s", pkg)
                 continue
