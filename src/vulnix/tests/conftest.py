@@ -15,7 +15,7 @@ from vulnix.whitelist import Whitelist
 
 def load(cve):
     return json.loads(
-        pkg_resources.resource_string("vulnix", "tests/fixtures/{}.json".format(cve))
+        pkg_resources.resource_string("vulnix", f"tests/fixtures/{cve}.json")
     )
 
 
@@ -46,9 +46,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             with open(fn, "rb") as f:
                 stat = os.fstat(f.fileno())
                 content = f.read()
-        except OSError:
-            self.send_error(HTTPStatus.NOT_FOUND)
-        except IOError:
+        except (IOError, OSError):
             self.send_error(HTTPStatus.INTERNAL_SERVER_ERROR)
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", self.guess_type(fn))
@@ -58,11 +56,11 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(content)
 
 
-@pytest.fixture
-def http_server():
+@pytest.fixture(name="http_server")
+def fixture_http_server():
     httpd = http.server.HTTPServer(("127.0.0.1", 0), RequestHandler)
     port = httpd.socket.getsockname()[1]
-    mirror_url = "http://127.0.0.1:{}/".format(port)
+    mirror_url = f"http://127.0.0.1:{port}/"
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()
     yield mirror_url
@@ -70,7 +68,7 @@ def http_server():
 
 @pytest.fixture
 def nvd(tmpdir, http_server):
-    nvd = NVD(mirror=http_server, cache_dir=str(tmpdir))
-    nvd.available_archives = ["modified"]
-    with nvd:
-        yield nvd
+    _nvd = NVD(mirror=http_server, cache_dir=str(tmpdir))
+    _nvd.available_archives = ["modified"]
+    with _nvd:
+        yield _nvd

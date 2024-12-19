@@ -1,3 +1,5 @@
+# pylint: disable=too-few-public-methods,contextmanager-generator-missing-cleanup
+
 import contextlib
 import logging
 import re

@@ -1,3 +1,5 @@
+# pylint: disable=no-member
+
 import collections
 import datetime
 import logging
@@ -102,13 +104,13 @@ class WhitelistRule:
                 ).date()
         kw.pop("status", "")  # compat
         if kw:
-            _log.warning("Unrecognized whitelist keys: {}".format(kw.keys()))
+            _log.warning("Unrecognized whitelist keys: %s", kw.keys)
 
     @property
     def name(self):
         if self.version == "*":
             return self.pname
-        return "{}-{}".format(self.pname, self.version)
+        return f"{self.pname}-{self.version}"
 
     def dump(self):
         """Returns this entry as a ready-to-serialize dict.
@@ -137,14 +139,16 @@ class WhitelistRule:
         self.issue_url.update(other.issue_url)
         self.comment.extend(other.comment)
 
-    def covers(self, deriv, vulns=set()):
+    def covers(self, deriv, vulns=None):
         """Is the given derivation covered by this whitelist item?
 
         If so, a tuple (match type, whitelist item) is returned.
         """
-        if self.pname != "*" and self.pname != deriv.pname:
+        if vulns is None:
+            vulns = set()
+        if self.pname not in ("*", deriv.pname):
             return False
-        if self.version != "*" and self.version != deriv.version:
+        if self.version not in ("*", deriv.version):
             return False
         if self.cve and vulns and self.cve & set(v.cve_id for v in vulns) == set():
             return False
@@ -195,7 +199,7 @@ class Whitelist:
         try:
             return cls._parse_cfg(content, filename)
         except (toml.TomlDecodeError, IndexError) as e:
-            raise RuntimeError("failed to load `{}`: {}".format(filename, e))
+            raise RuntimeError(f"failed to load `{filename}`: {e}") from e
 
     @classmethod
     def _parse_cfg(cls, content, filename):
@@ -230,7 +234,7 @@ class Whitelist:
     def candidates(self, pname, version):
         """Matching rules in order of decreasing specificity."""
         try:
-            yield self.entries["{}-{}".format(pname, version)]
+            yield self.entries[f"{pname}-{version}"]
         except KeyError:
             pass
         try:

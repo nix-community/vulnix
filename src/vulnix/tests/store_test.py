@@ -5,8 +5,8 @@ from vulnix.derivation import Derive
 from vulnix.nix import Store
 
 
-@pytest.fixture
-def json():
+@pytest.fixture(name="json")
+def fixture_json():
     return pkg_resources.resource_stream("vulnix", "tests/fixtures/pkgs.json")
 
 

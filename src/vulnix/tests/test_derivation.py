@@ -12,7 +12,7 @@ V = Vulnerability
 
 def drv(fixture):
     return load(
-        pkg_resources.resource_filename("vulnix", "tests/fixtures/{}.drv".format(fixture))
+        pkg_resources.resource_filename("vulnix", f"tests/fixtures/{fixture}.drv")
     )
 
 
@@ -26,11 +26,9 @@ def test_should_not_load_arbitrary_code():
     with tempfile.NamedTemporaryFile(prefix="security_breach") as b:
         with tempfile.NamedTemporaryFile(prefix="evil_eval", mode="w") as f:
             print(
-                """
-Derive(envVars={{'name': str((lambda: open('{}', 'w').write('shellcode'))())}})
-""".format(
-                    b.name
-                ),
+                f"""
+Derive(envVars={{'name': str((lambda: open('{b.name}', 'w').write('shellcode'))())}})
+""",
                 file=f,
             )
             f.flush()
@@ -110,11 +108,11 @@ def test_ordering():
     assert Derive(name="python-2.7.14") == Derive(name="python-2.7.14")
     assert Derive(name="python-2.7.14") != Derive(name="python-2.7.13")
     assert Derive(name="coreutils-8.29") < Derive(name="patch-2.7.6")
-    assert not Derive(name="python-2.7.5") < Derive(name="patch-2.7.6")
+    assert Derive(name="python-2.7.5") >= Derive(name="patch-2.7.6")
     assert Derive(name="python-2.7.6") > Derive(name="patch-2.7.6")
     assert Derive(name="python-2.7.14") > Derive(name="python-2.7.13")
-    assert not Derive(name="patch-2.7.14") > Derive(name="python-2.7.13")
-    assert not Derive(name="python-2.7.13") > Derive(name="python-2.7.14")
+    assert Derive(name="patch-2.7.14") <= Derive(name="python-2.7.13")
+    assert Derive(name="python-2.7.13") <= Derive(name="python-2.7.14")
     assert Derive(name="openssl-1.0.1d") < Derive(name="openssl-1.0.1e")
 
 

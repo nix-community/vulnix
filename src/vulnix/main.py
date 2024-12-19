@@ -112,8 +112,7 @@ def run(nvd, store):
     "--cache-dir",
     type=click.Path(file_okay=False),
     default=DEFAULT_CACHE_DIR,
-    help="Cache directory to store parsed archive data. "
-    "Default: {}".format(DEFAULT_CACHE_DIR),
+    help=f"Cache directory to store parsed archive data. Default: {DEFAULT_CACHE_DIR}",
 )
 @click.option(
     "-r/-R",
@@ -132,7 +131,7 @@ def run(nvd, store):
 @click.option(
     "-m",
     "--mirror",
-    help="Mirror to fetch NVD archives from. Default: {}.".format(DEFAULT_MIRROR),
+    help=f"Mirror to fetch NVD archives from. Default: {DEFAULT_MIRROR}.",
     default=DEFAULT_MIRROR,
 )
 # output control
@@ -175,6 +174,8 @@ def main(
     default_whitelist,
     notfixed,
 ):
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
+    # pylint: disable=too-many-locals,too-many-branches
     if version:
         print("vulnix " + pkg_resources.get_distribution("vulnix").version)
         sys.exit(0)
@@ -225,7 +226,7 @@ def main(
                 for i in filtered_items:
                     whitelist.add_from(i)
                 write_whitelist.close()
-                with open(write_whitelist.name, "w") as f:
+                with open(write_whitelist.name, "w", encoding="utf-8") as f:
                     f.write(str(whitelist))
         sys.exit(rc)
 

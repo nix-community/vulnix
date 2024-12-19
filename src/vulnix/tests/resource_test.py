@@ -11,8 +11,8 @@ from vulnix.resource import Resource, open_resources
 local = pkg_resources.resource_filename("vulnix", "tests/fixtures/")
 
 
-@pytest.fixture
-def http_server():
+@pytest.fixture(name="http_server")
+def fixture_http_server():
     """Spawns a HTTP server in a separate process, serving test fixtures.
 
     Yields base URL of the HTTP server (e.g., http://localhost:1234/)
@@ -27,23 +27,25 @@ def http_server():
         httpd.serve_forever()
         return  # never reached
     os.chdir(oldcwd)
-    yield "http://localhost:{}/".format(port)
+    yield f"http://localhost:{port}/"
     os.kill(child, signal.SIGTERM)
     os.wait()
 
 
 def test_open_local():
     fn = local + "whitelist.toml"
-    with Resource(fn).open() as f:
-        assert f.read() == open(fn, "rb").read()
+    with Resource(fn).open() as f, open(fn, "rb") as w:
+        assert f.read() == w.read()
 
 
 def test_open_remote(http_server):
+    # pylint: disable=consider-using-with
     with Resource(http_server + "whitelist.toml").open() as f:
         assert f.read() == open(local + "whitelist.toml", "rb").read()
 
 
 def test_multiple_resources(http_server):
+    # pylint: disable=consider-using-with
     expected = open(local + "cpio-2.12.drv", "rb").read()
     gen = open_resources(
         sources=[

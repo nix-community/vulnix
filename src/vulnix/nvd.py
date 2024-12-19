@@ -11,6 +11,7 @@ import requests
 import transaction
 import ZODB
 import ZODB.FileStorage
+# pylint: disable=no-name-in-module
 from BTrees import OOBTree
 from persistent import Persistent
 
@@ -22,20 +23,25 @@ DEFAULT_CACHE_DIR = "~/.cache/vulnix"
 _log = logging.getLogger(__name__)
 
 
-class NVD(object):
+class NVD:
     """Access to the National Vulnerability Database.
 
     https://nvd.nist.gov/
     """
 
     def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
+        self._lock = None
+        self._db = None
+        self._connection = None
+        self._root = None
         self.mirror = mirror.rstrip("/") + "/"
         self.cache_dir = p.expanduser(cache_dir)
         current = date.today().year
-        self.available_archives = [y for y in range(current - 5, current + 1)]
+        self.available_archives = list(range(current - 5, current + 1))
 
     def lock(self):
-        self._lock = open(p.join(self.cache_dir, "lock"), "a")
+        # pylint: disable=consider-using-with
+        self._lock = open(p.join(self.cache_dir, "lock"), "a", encoding="utf-8")
         try:
             fcntl.lockf(self._lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
@@ -59,10 +65,10 @@ class NVD(object):
             # may trigger exceptions if the database is inconsistent
             list(self._root["by_product"].keys())
             if "archives" in self._root:
-                _log.warn("Pre-1.9.0 database found - rebuilding")
+                _log.warning("Pre-1.9.0 database found - rebuilding")
                 self.reinit()
         except (TypeError, EOFError):
-            _log.warn("Incompatible objects found in database - rebuilding DB")
+            _log.warning("Incompatible objects found in database - rebuilding DB")
             self.reinit()
         return self
 
@@ -173,7 +179,7 @@ class Archive:
         `name` consists of a year or "modified".
         """
         self.name = name
-        self.download_uri = "nvdcve-1.1-{}.json.gz".format(name)
+        self.download_uri = f"nvdcve-1.1-{name}.json.gz"
         self.advisories = {}
 
     def download(self, mirror, meta):
@@ -186,16 +192,15 @@ class Archive:
         """
         url = mirror + self.download_uri
         _log.info("Loading %s", url)
-        r = requests.get(url, headers=meta.headers_for(url))
+        r = requests.get(url, headers=meta.headers_for(url), timeout=10)
         r.raise_for_status()
         if r.status_code == 200:
             _log.debug('Loading JSON feed "%s"', self.name)
             self.parse(gzip.decompress(r.content))
             meta.update_headers_for(url, r.headers)
             return True
-        else:
-            _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
-            return False
+        _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
+        return False
 
     def parse(self, nvd_json):
         added = 0

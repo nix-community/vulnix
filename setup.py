@@ -9,13 +9,13 @@ def project_path(*names):
     return os.path.join(os.path.dirname(__file__), *names)
 
 
-with open(project_path("VERSION")) as f:
+with open(project_path("VERSION"), encoding="utf-8") as f:
     version = f.read().strip()
 
 long_description = []
 
 for rst in ["README.rst", "HACKING.rst", "CHANGES.rst"]:
-    with open(project_path(rst)) as f:
+    with open(project_path(rst), encoding="utf-8") as f:
         long_description.append(f.read())
 
 setup(
