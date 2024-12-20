@@ -1,4 +1,4 @@
-name: Nix build
+name: Vulnix CI
 
 on:
   [push, pull_request]
@@ -21,3 +21,5 @@ jobs:
     - uses: actions/checkout@v4
     - name: Nix build
       run: nix-build --show-trace
+    - name: Nix flake check
+      run: nix flake check -L
