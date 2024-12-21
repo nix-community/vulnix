@@ -37,7 +37,6 @@ def whitelist():
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
-
     def do_GET(self):
         """Serve a GET request from the fixtures directory"""
         fn = p.join(p.dirname(__file__), "fixtures", self.path[1:])
