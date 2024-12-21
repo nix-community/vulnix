@@ -9,7 +9,6 @@ _log = logging.getLogger(__name__)
 
 
 class Resource:
-
     R_URL_LIKE = re.compile(r"^[a-z]+://")
 
     def __init__(self, source, timeout=60):

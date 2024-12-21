@@ -9,7 +9,6 @@ _log = logging.getLogger(__name__)
 
 
 class Store:
-
     def __init__(self, requisites=True, closure=False):
         self.requisites = requisites
         self.closure = closure
@@ -77,9 +76,9 @@ class Store:
         if qpi_deriver and qpi_deriver != "unknown-deriver" and p.exists(qpi_deriver):
             return qpi_deriver
         # Deriver from QueryValidDerivers
-        qvd_deriver = list(json.loads(self._call_nix(["show-derivation", path])).keys())[
-            0
-        ]
+        qvd_deriver = list(
+            json.loads(self._call_nix(["show-derivation", path])).keys()
+        )[0]
         _log.debug("qvd_deriver: %s", qvd_deriver)
         if qvd_deriver and p.exists(qvd_deriver):
             return qvd_deriver
@@ -158,7 +157,9 @@ class Store:
                 patches = pkg["patches"]
                 if "known_vulnerabilities" in pkg:
                     patches.extend(pkg["known_vulnerabilities"])
-                self.derivations.add(Derive(name=pkg["name"], patches=" ".join(patches)))
+                self.derivations.add(
+                    Derive(name=pkg["name"], patches=" ".join(patches))
+                )
             except SkipDrv:
                 _log.debug("skipping: %s", pkg)
                 continue
