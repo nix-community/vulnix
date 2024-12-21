@@ -78,7 +78,9 @@ def test_match_cve_only():
 
 def test_match_partial():
     rule = WhitelistRule(cve=["CVE-2015-1197", "CVE-2016-2037"])
-    assert rule.covers(Derive(name="cpio-2.12"), {V("CVE-2015-1197"), V("CVE-2015-1198")})
+    assert rule.covers(
+        Derive(name="cpio-2.12"), {V("CVE-2015-1197"), V("CVE-2015-1198")}
+    )
 
 
 def test_until():
@@ -256,9 +258,7 @@ def test_dump_add_cve(whitelist):
 ["libxslt-2.0"]
 cve = [ "CVE-2015-9019", "CVE-2017-2477", "CVE-2019-13118" ]
 until = "2018-03-01"
-""" in str(
-        whitelist
-    )
+""" in str(whitelist)
 
 
 def test_toml_missing_quote():

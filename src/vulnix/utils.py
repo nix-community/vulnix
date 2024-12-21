@@ -21,7 +21,6 @@ def call(cmd):
 
 
 class Timer:
-
     def __init__(self, section):
         self.start = None
         self.end = None

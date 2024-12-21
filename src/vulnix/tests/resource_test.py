@@ -19,7 +19,9 @@ def fixture_http_server():
     """
     oldcwd = os.getcwd()
     os.chdir(pkg_resources.resource_filename("vulnix", "tests/fixtures"))
-    httpd = http.server.HTTPServer(("localhost", 0), http.server.SimpleHTTPRequestHandler)
+    httpd = http.server.HTTPServer(
+        ("localhost", 0), http.server.SimpleHTTPRequestHandler
+    )
     port = httpd.server_port
     child = os.fork()
     if child == 0:

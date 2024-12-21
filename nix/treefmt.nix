@@ -17,9 +17,9 @@
         config = {
           package = pkgs.treefmt;
           inherit (config.flake-root) projectRootFile;
-          settings.formatter.black.options = [ "--line-length=90" ];
           programs = {
-            black.enable = true; # lints python https://github.com/psf/black
+            ruff-check.enable = true; # lints python https://github.com/astral-sh/ruff
+            ruff-format.enable = true; # format python https://github.com/astral-sh/ruff
             isort.enable = true; # sort python imports https://github.com/PyCQA/isort
             deadnix.enable = true; # removes dead nix code https://github.com/astro/deadnix
             nixfmt.enable = true; # nix formatter https://github.com/NixOS/nixfmt

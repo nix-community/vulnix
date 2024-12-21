@@ -11,6 +11,7 @@
       devShells.default = pkgs.mkShell rec {
         name = "vulnix-devshell";
         packages = with self'.packages; [
+          pkgs.ruff # for running ruff manually in devshell
           pkgs.python3.pkgs.pylint # for running pylint manually in devshell
           vulnix.propagatedBuildInputs
           vulnix.nativeBuildInputs

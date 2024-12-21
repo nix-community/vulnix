@@ -59,11 +59,7 @@ Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Topic :: System :: Systems Administration
-"""[
-        :-1
-    ].split(
-        "\n"
-    ),
+"""[:-1].split("\n"),
     description=__doc__.strip(),
     long_description="\n\n".join(long_description),
     packages=find_packages("src"),

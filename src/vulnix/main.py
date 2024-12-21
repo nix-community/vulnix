@@ -140,7 +140,10 @@ def run(nvd, store):
     "-s", "--show-whitelisted", is_flag=True, help="Shows whitelisted items as well"
 )
 @click.option(
-    "-D", "--show-description", is_flag=True, help="Show descriptions of vulnerabilities"
+    "-D",
+    "--show-description",
+    is_flag=True,
+    help="Show descriptions of vulnerabilities",
 )
 @click.option(
     "-v", "--verbose", count=True, help="Increase output verbosity (up to 2 times)."
