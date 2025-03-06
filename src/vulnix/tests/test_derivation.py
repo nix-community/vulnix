@@ -56,6 +56,14 @@ def test_split_name_noversion():
     with pytest.raises(SkipDrv):
         Derive(envVars={"name": "hook"})
 
+def test_read_version_from_environment_variables():
+    d1 = drv("xercesc-3.2.3")
+    assert d1.name == "xercesc"
+    assert d1.version == "3.2.3"
+
+    d2 = Derive(envVars={"name": "test", "version": "1.2.3"})
+    assert d2.version == "1.2.3"
+
 
 def test_guess_cves_from_direct_patches_bzip2():
     deriv = drv("bzip2-1.0.6.0.1")

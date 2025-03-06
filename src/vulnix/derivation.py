@@ -95,6 +95,9 @@ class Derive:
                 raise SkipDrv()
 
         self.pname, self.version = split_name(self.name)
+        if self.version is None and "version" in envVars:
+            self.version = envVars["version"]
+
         if not self.version:
             raise SkipDrv()
         self.patches = patches or envVars.get("patches", "")
