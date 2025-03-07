@@ -56,6 +56,7 @@ def test_split_name_noversion():
     with pytest.raises(SkipDrv):
         Derive(envVars={"name": "hook"})
 
+
 def test_read_version_from_environment_variables():
     d1 = drv("xercesc-3.2.3")
     assert d1.name == "xercesc"
