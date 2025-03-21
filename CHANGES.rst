@@ -1,10 +1,16 @@
 Changes
 =======
 
-1.11.0 (unreleased)
+1.11.0 (2025-03-21)
 -------------------
 
-- Package vulnix as flake
+- Package vulnix as flake (#106)
+
+- Start using linters and code-formatters: isort, nixfmt, dadnix, statix (#106), pylint (#107), ruff (#109)
+
+- Support getting version from derivation's environment variables (#111)
+
+- Apply github actions security best practices (#113)
 
 
 1.10.2 (2024-12-13)
