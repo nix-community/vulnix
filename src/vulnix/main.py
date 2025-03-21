@@ -99,7 +99,7 @@ def run(nvd, store):
     "--whitelist",
     multiple=True,
     callback=open_resources,
-    help="Load whitelist from file or URL (may be given multiple " "times).",
+    help="Load whitelist from file or URL (may be given multiple times).",
 )
 @click.option(
     "-W",
