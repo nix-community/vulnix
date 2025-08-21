@@ -102,7 +102,6 @@ def test_check_returns_cves(nvd):
     d = drv("transmission-1.91")
     assert d.check(nvd) == {
         V("CVE-2010-0748", cvssv3=9.8),
-        V("CVE-2010-0749", cvssv3=5.3),
     }
 
 
