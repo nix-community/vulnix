@@ -13,7 +13,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: cachix/install-nix-action@fc6e360bedc9ee72d75e701397f0bb30dce77568 # v31
+    - uses: cachix/install-nix-action@56a7bb7b56d9a92d4fd1bc05758de7eea4a370a8 # v31
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
