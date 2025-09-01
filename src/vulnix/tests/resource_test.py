@@ -1,14 +1,14 @@
 import http.server
 import os
 import signal
+from pathlib import Path
 
-import pkg_resources
 import pytest
 
 from vulnix.resource import Resource, open_resources
 
-# local file prefix to the fixtures directory
-local = pkg_resources.resource_filename("vulnix", "tests/fixtures/")
+# fixtures directory
+fixtures_path = Path(os.path.dirname(os.path.realpath(__file__))) / "fixtures"
 
 
 @pytest.fixture(name="http_server")
@@ -18,7 +18,7 @@ def fixture_http_server():
     Yields base URL of the HTTP server (e.g., http://localhost:1234/)
     """
     oldcwd = os.getcwd()
-    os.chdir(pkg_resources.resource_filename("vulnix", "tests/fixtures"))
+    os.chdir(fixtures_path)
     httpd = http.server.HTTPServer(
         ("localhost", 0), http.server.SimpleHTTPRequestHandler
     )
@@ -35,24 +35,24 @@ def fixture_http_server():
 
 
 def test_open_local():
-    fn = local + "whitelist.toml"
-    with Resource(fn).open() as f, open(fn, "rb") as w:
-        assert f.read() == w.read()
+    fn = fixtures_path / "whitelist.toml"
+    with Resource(fn.as_posix()).open() as f:
+        assert f.read() == fn.read_bytes()
 
 
 def test_open_remote(http_server):
     # pylint: disable=consider-using-with
-    with Resource(http_server + "whitelist.toml").open() as f:
-        assert f.read() == open(local + "whitelist.toml", "rb").read()
+    with Resource(http_server + "/whitelist.toml").open() as f:
+        assert f.read() == (fixtures_path / "whitelist.toml").read_bytes()
 
 
 def test_multiple_resources(http_server):
     # pylint: disable=consider-using-with
-    expected = open(local + "cpio-2.12.drv", "rb").read()
+    expected = (fixtures_path / "cpio-2.12.drv").read_bytes()
     gen = open_resources(
         sources=[
-            local + "cpio-2.12.drv",
-            local + "no-such-file",
+            (fixtures_path / "cpio-2.12.drv").as_posix(),
+            (fixtures_path / "no-such-file").as_posix(),
             http_server + "cpio-2.12.drv",
             http_server + "file-not-found",
         ]

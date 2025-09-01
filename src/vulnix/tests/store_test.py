@@ -1,4 +1,6 @@
-import pkg_resources
+import os
+from pathlib import Path
+
 import pytest
 
 from vulnix.derivation import Derive
@@ -7,7 +9,8 @@ from vulnix.nix import Store
 
 @pytest.fixture(name="json")
 def fixture_json():
-    return pkg_resources.resource_stream("vulnix", "tests/fixtures/pkgs.json")
+    fixtures_path = Path(os.path.dirname(os.path.realpath(__file__))) / "fixtures"
+    return (fixtures_path / "pkgs.json").open()
 
 
 def test_load_json(json):

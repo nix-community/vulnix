@@ -17,11 +17,11 @@ Invoke after nix-build:  vulnix ./result
 See vulnix --help for a full list of options.
 """
 
+import importlib.metadata
 import logging
 import sys
 
 import click
-import pkg_resources
 
 from .nix import Store
 from .nvd import DEFAULT_CACHE_DIR, DEFAULT_MIRROR, NVD
@@ -180,7 +180,12 @@ def main(
     # pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
     # pylint: disable=too-many-locals,too-many-branches
     if version:
-        print("vulnix " + pkg_resources.get_distribution("vulnix").version)
+        versionstr = "0.0.0-unknown"
+        try:
+            versionstr = importlib.metadata.version("vulnix")
+        except importlib.metadata.PackageNotFoundError:
+            pass
+        print("vulnix " + versionstr)
         sys.exit(0)
 
     if closure:

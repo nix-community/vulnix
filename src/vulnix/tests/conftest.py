@@ -2,44 +2,41 @@ import hashlib
 import http.server
 import json
 import os
-import os.path as p
 import threading
 from http import HTTPStatus
+from pathlib import Path
 
-import pkg_resources
 import pytest
 
 from vulnix.nvd import NVD
 from vulnix.whitelist import Whitelist
 
+fixtures_path = Path(os.path.dirname(os.path.realpath(__file__))) / "fixtures"
+
 
 def load(cve):
-    return json.loads(
-        pkg_resources.resource_string("vulnix", f"tests/fixtures/{cve}.json")
-    )
+    return json.loads((fixtures_path / f"{cve}.json").read_text())
 
 
 @pytest.fixture
 def whitelist_toml():
-    return pkg_resources.resource_stream("vulnix", "tests/fixtures/whitelist.toml")
+    return (fixtures_path / "whitelist.toml").open()
 
 
 @pytest.fixture
 def whitelist_yaml():
-    return pkg_resources.resource_stream("vulnix", "tests/fixtures/whitelist.yaml")
+    return (fixtures_path / "whitelist.yaml").open()
 
 
 @pytest.fixture
 def whitelist():
-    return Whitelist.load(
-        pkg_resources.resource_stream("vulnix", "tests/fixtures/whitelist.toml")
-    )
+    return Whitelist.load((fixtures_path / "whitelist.toml").open())
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         """Serve a GET request from the fixtures directory"""
-        fn = p.join(p.dirname(__file__), "fixtures", self.path[1:])
+        fn = os.path.join(os.path.dirname(__file__), "fixtures", self.path[1:])
         print("path=", fn)
         try:
             with open(fn, "rb") as f:
