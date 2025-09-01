@@ -1,7 +1,7 @@
 import os
 import tempfile
+from pathlib import Path
 
-import pkg_resources
 import pytest
 
 from vulnix.derivation import Derive, SkipDrv, load, split_name
@@ -11,9 +11,8 @@ V = Vulnerability
 
 
 def drv(fixture):
-    return load(
-        pkg_resources.resource_filename("vulnix", f"tests/fixtures/{fixture}.drv")
-    )
+    fixtures_path = Path(os.path.dirname(os.path.realpath(__file__))) / "fixtures"
+    return load((fixtures_path / f"{fixture}.drv").as_posix())
 
 
 def test_load_drv_explicit_version():
