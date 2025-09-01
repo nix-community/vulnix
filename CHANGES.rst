@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.12.1 (2025-09-01)
+-------------------
+
+- Stop using deprecated python pkg_resources module (#132)
+
+
 1.12.0 (2025-08-22)
 -------------------
 
