@@ -3,7 +3,6 @@
 {
   imports = [
     ./checks.nix
-    ./devshell.nix
     ./packages.nix
     ./treefmt.nix
   ];
