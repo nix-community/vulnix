@@ -15,7 +15,7 @@ fixtures_path = Path(os.path.dirname(os.path.realpath(__file__))) / "fixtures"
 
 
 def load(cve):
-    return json.loads((fixtures_path / f"{cve}.json").read_text())
+    return json.loads((fixtures_path / f"{cve}.json").read_text())["cve"]
 
 
 @pytest.fixture

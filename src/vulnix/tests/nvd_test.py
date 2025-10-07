@@ -6,7 +6,7 @@ from vulnix.vulnerability import Node, Vulnerability
 def test_update(nvd):
     # pylint: disable=protected-access
     nvd.update()
-    assert len(nvd._root["advisory"]) == 26
+    assert len(nvd._root["advisory"]) == 3
     cve = nvd.by_id("CVE-2010-0748")
     assert cve == Vulnerability.parse(load("CVE-2010-0748"))
     assert cve == nvd.by_product("transmission")[0]

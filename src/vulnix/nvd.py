@@ -1,8 +1,8 @@
 import fcntl
 import glob
+import gzip
 import json
 import logging
-import lzma
 import os
 import os.path as p
 from datetime import date, datetime, timedelta
@@ -18,9 +18,7 @@ from persistent import Persistent
 
 from .vulnerability import Vulnerability
 
-DEFAULT_MIRROR = (
-    "https://github.com/fkie-cad/nvd-json-data-feeds/releases/latest/download/"
-)
+DEFAULT_MIRROR = "https://nvd.nist.gov/feeds/json/cve/2.0/"
 DEFAULT_CACHE_DIR = "~/.cache/vulnix"
 
 _log = logging.getLogger(__name__)
@@ -182,7 +180,7 @@ class Archive:
         `name` consists of a year or "modified".
         """
         self.name = name
-        self.download_uri = f"CVE-{name}.json.xz"
+        self.download_uri = f"nvdcve-2.0-{name}.json.gz"
         self.advisories = {}
 
     def download(self, mirror, meta):
@@ -199,7 +197,7 @@ class Archive:
         r.raise_for_status()
         if r.status_code == 200:
             _log.debug('Loading JSON feed "%s"', self.name)
-            self.parse(lzma.decompress(r.content).decode("utf-8"))
+            self.parse(gzip.decompress(r.content).decode("utf-8"))
             meta.update_headers_for(url, r.headers)
             return True
         _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
@@ -208,9 +206,9 @@ class Archive:
     def parse(self, nvd_json):
         added = 0
         raw = json.loads(nvd_json)
-        for item in raw["cve_items"]:
+        for item in raw["vulnerabilities"]:
             try:
-                vuln = Vulnerability.parse(item)
+                vuln = Vulnerability.parse(item["cve"])
                 self.advisories[vuln.cve_id] = vuln
                 added += 1
             except ValueError:
