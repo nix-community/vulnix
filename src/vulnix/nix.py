@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path as p
+import subprocess
 
 from .derivation import Derive, SkipDrv, load
 from .utils import call
@@ -24,6 +25,7 @@ class Store:
         for d in call(["nix-store", "--gc", "--print-live"]).splitlines():
             self.update(d)
 
+    # pylint: disable=too-many-branches
     def add_profile(self, profile):
         """Add derivations found in this nix profile."""
         json_manifest_path = p.join(profile, "manifest.json")
@@ -40,7 +42,20 @@ class Store:
                     if not element["active"]:
                         continue
                     for path in element["storePaths"]:
-                        self.add_path(path)
+                        try:
+                            self.add_path(path)
+                        except subprocess.CalledProcessError:
+                            attr_path = element["attrPath"]
+                            if not attr_path or not element["url"]:
+                                raise
+                            _log.warning(
+                                "Re-evaluating derivation for %s via %s#%s",
+                                name,
+                                element["url"],
+                                attr_path,
+                            )
+                            self._call_nix(["eval", element["url"] + "#" + attr_path])
+                            self.add_path(path)
             if isinstance(elements, list):
                 for element in elements:
                     if not element["active"]:
