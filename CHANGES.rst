@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.12.3 (2026-02-17)
+-------------------
+
+- Unset `PYTHONPATH` in the wrapped `vulnix` binary to avoid import failures in mixed Python environments.
+
+
 1.12.2 (2025-10-13)
 -------------------
 
