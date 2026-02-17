@@ -43,7 +43,10 @@
           ];
           nativeCheckInputs = check_inputs;
           propagatedBuildInputs = build_inputs;
-          makeWrapperArgs = [ "--prefix PATH : ${lib.makeBinPath prefix_path}" ];
+          makeWrapperArgs = [
+            "--unset PYTHONPATH"
+            "--prefix PATH : ${lib.makeBinPath prefix_path}"
+          ];
           postBuild = "make -C doc";
           checkPhase = "pytest src/vulnix";
           postInstall = ''
