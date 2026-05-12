@@ -1,6 +1,16 @@
 Changes
 =======
 
+1.12.4 (2026-05-13)
+-------------------
+
+- Handle missing derivers in closure scans.
+
+- Use `nix derivation show` instead of the deprecated `nix show-derivation`.
+
+- Reduce log and stderr noise when optional closure paths have no deriver.
+
+
 1.12.3 (2026-02-17)
 -------------------
 
