@@ -7,6 +7,11 @@ from .derivation import Derive, SkipDrv, load
 from .utils import call
 
 _log = logging.getLogger(__name__)
+STORE_DIR = "/nix/store"
+
+
+class DeriverLookupError(RuntimeError):
+    """A store path has no loadable derivation metadata."""
 
 
 class Store:
@@ -44,7 +49,7 @@ class Store:
                     for path in element["storePaths"]:
                         try:
                             self.add_path(path)
-                        except subprocess.CalledProcessError:
+                        except (subprocess.CalledProcessError, DeriverLookupError):
                             attr_path = element["attrPath"]
                             if not attr_path or not element["url"]:
                                 raise
@@ -79,8 +84,50 @@ class Store:
             return call(["nix", "--experimental-features", "nix-command flakes"] + args)
         return call(["nix"] + args)
 
+    @staticmethod
+    def _absolute_store_path(path):
+        if not path or not isinstance(path, str) or path.startswith("/"):
+            return path
+        return p.join(STORE_DIR, path)
+
+    @staticmethod
+    def _canonical_output_path(path):
+        if not path or not isinstance(path, str):
+            return path
+        if not path.startswith(STORE_DIR + "/"):
+            path = p.realpath(path)
+        if not path.startswith(STORE_DIR + "/"):
+            return path
+        return p.join(STORE_DIR, path[len(STORE_DIR) + 1 :].split("/", 1)[0])
+
+    def _normalize_derivations(self, derivations):
+        normalized = {}
+        for drv_path, drv in derivations.items():
+            drv_path = self._absolute_store_path(drv_path)
+            outputs = drv.get("outputs", {})
+            for output in outputs.values():
+                output["path"] = self._absolute_store_path(output.get("path"))
+            normalized[drv_path] = drv
+        return normalized
+
+    def _show_derivations(self, path):
+        """Return derivation metadata from all supported Nix JSON shapes."""
+        try:
+            data = json.loads(self._call_nix(["show-derivation", path]))
+        except subprocess.CalledProcessError as error:
+            raise DeriverLookupError(
+                f"Cannot determine deriver for path `{path}`"
+            ) from error
+        if isinstance(data, dict) and isinstance(data.get("derivations"), dict):
+            data = data["derivations"]
+        if isinstance(data, dict):
+            return self._normalize_derivations(data)
+        raise DeriverLookupError(
+            f"Unexpected `nix show-derivation` JSON for path `{path}`"
+        )
+
     def _find_deriver(self, path, qpi_deriver="undef"):
-        if not path or not qpi_deriver:
+        if not path:
             return None
         if path.endswith(".drv"):
             return path
@@ -91,9 +138,8 @@ class Store:
         if qpi_deriver and qpi_deriver != "unknown-deriver" and p.exists(qpi_deriver):
             return qpi_deriver
         # Deriver from QueryValidDerivers
-        qvd_deriver = list(
-            json.loads(self._call_nix(["show-derivation", path])).keys()
-        )[0]
+        qvd_derivations = self._show_derivations(path)
+        qvd_deriver = next(iter(qvd_derivations), None)
         _log.debug("qvd_deriver: %s", qvd_deriver)
         if qvd_deriver and p.exists(qvd_deriver):
             return qvd_deriver
@@ -104,8 +150,8 @@ class Store:
         if qvd_deriver and qvd_deriver != qpi_deriver:
             error += f"Deriver `{qvd_deriver}` does not exist.  "
         if error:
-            raise RuntimeError(error + f"Couldn't find deriver for path `{path}`")
-        raise RuntimeError(
+            raise DeriverLookupError(error + f"Couldn't find deriver for path `{path}`")
+        raise DeriverLookupError(
             "Cannot determine deriver. Is this really a path into the nix store?", path
         )
 
@@ -114,10 +160,20 @@ class Store:
             return [path]
 
         result = []
-        for drv in json.loads(self._call_nix(["show-derivation", path])).values():
+        for drv in self._show_derivations(path).values():
             for output in drv.get("outputs").values():
                 result.append(output.get("path"))
         return result
+
+    def _update_closure_candidate(self, outpath, info, required=False):
+        try:
+            candidate = self._find_deriver(outpath, qpi_deriver=info.get("deriver"))
+        except DeriverLookupError as error:
+            if required:
+                raise
+            _log.warning("Skipping closure path without deriver: %s", error)
+            return
+        self.update(candidate)
 
     def add_path(self, path):
         # pylint: disable=too-many-branches
@@ -131,6 +187,7 @@ class Store:
 
         if self.closure:
             for output in self._find_outputs(path):
+                root_output = self._canonical_output_path(output)
                 data = json.loads(self._call_nix(["path-info", "-r", "--json", output]))
                 if not data:
                     continue
@@ -138,15 +195,15 @@ class Store:
                 # output format: https://github.com/NixOS/nix/pull/9242
                 if isinstance(data, dict):
                     for outpath, info in data.items():
-                        drv = info.get("deriver")
-                        candidate = self._find_deriver(outpath, qpi_deriver=drv)
-                        self.update(candidate)
+                        self._update_closure_candidate(
+                            outpath, info, required=outpath == root_output
+                        )
                 elif isinstance(data, list):
                     for info in data:
                         outpath = info.get("path")
-                        drv = info.get("deriver")
-                        candidate = self._find_deriver(outpath, qpi_deriver=drv)
-                        self.update(candidate)
+                        self._update_closure_candidate(
+                            outpath, info, required=outpath == root_output
+                        )
                 else:
                     _log.warning("path-info for '%s' returned unexpected json", output)
         else:
