@@ -8,14 +8,15 @@ import time
 _log = logging.getLogger(__name__)
 
 
-def call(cmd):
-    """Executes `cmd` and swallow stderr iff returncode is 0."""
+def call(cmd, log_stderr=True):
+    """Executes `cmd` and optionally emit stderr when it fails."""
     with tempfile.TemporaryFile(prefix="stderr") as capture:
         try:
             output = subprocess.check_output(cmd, stderr=capture)
         except subprocess.CalledProcessError:
-            capture.seek(0)
-            sys.stderr.write(capture.read().decode("ascii", errors="replace"))
+            if log_stderr:
+                capture.seek(0)
+                sys.stderr.write(capture.read().decode("ascii", errors="replace"))
             raise
     return output.decode()
 

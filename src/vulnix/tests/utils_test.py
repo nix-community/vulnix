@@ -1,4 +1,8 @@
-from vulnix.utils import compare_versions, haskeys, split_components
+import subprocess
+
+import pytest
+
+from vulnix.utils import call, compare_versions, haskeys, split_components
 
 
 def test_compare_versions():
@@ -30,3 +34,29 @@ def test_haskeys():
     assert not haskeys({"foo": 1}, "foo", "bar")
     assert haskeys({"foo": {"bar": 1}}, "foo", "bar")
     assert not haskeys({"foo": {"bar": 1}}, "foo", "baz")
+
+
+def test_call_emits_failed_command_stderr(monkeypatch, capsys):
+    def fake_check_output(cmd, stderr):
+        stderr.write(b"nix failed")
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr("vulnix.utils.subprocess.check_output", fake_check_output)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        call(["nix"])
+
+    assert capsys.readouterr().err == "nix failed"
+
+
+def test_call_can_suppress_failed_command_stderr(monkeypatch, capsys):
+    def fake_check_output(cmd, stderr):
+        stderr.write(b"nix failed")
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr("vulnix.utils.subprocess.check_output", fake_check_output)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        call(["nix"], log_stderr=False)
+
+    assert capsys.readouterr().err == ""

@@ -84,7 +84,7 @@ def test_add_profile_reevaluates_wrapped_deriver_lookup_errors(monkeypatch, tmp_
     nix_calls = []
     reevaluated = False
 
-    def fake_call_nix(args):
+    def fake_call_nix(args, **_kwargs):
         nonlocal reevaluated
         nix_calls.append(args)
         if args[:1] == ["eval"]:
@@ -136,7 +136,7 @@ def test_add_profile_reevaluates_missing_root_deriver_in_closure(monkeypatch, tm
     nix_calls = []
     reevaluated = False
 
-    def fake_call_nix(args):
+    def fake_call_nix(args, **_kwargs):
         nonlocal reevaluated
         nix_calls.append(args)
         if args[:1] == ["eval"]:
@@ -179,7 +179,7 @@ def test_add_profile_reevaluates_missing_root_deriver_in_closure(monkeypatch, tm
 def test_closure_requires_canonical_root_output_deriver(monkeypatch):
     s = Store(requisites=False, closure=True)
 
-    def fake_call_nix(args):
+    def fake_call_nix(args, **_kwargs):
         if args[:3] == ["path-info", "-r", "--json"]:
             return jsonlib.dumps(
                 [
@@ -209,7 +209,7 @@ def test_closure_requires_root_output_deriver_when_path_info_has_null_deriver(
 ):
     s = Store(requisites=False, closure=True)
 
-    def fake_call_nix(args):
+    def fake_call_nix(args, **_kwargs):
         if args[:3] == ["path-info", "-r", "--json"]:
             return jsonlib.dumps(
                 [
@@ -249,7 +249,7 @@ def test_closure_skips_outputs_without_loadable_derivers(monkeypatch, caplog):
     s = Store(requisites=False, closure=True)
     updated = []
 
-    def fake_call_nix(args):
+    def fake_call_nix(args, log_stderr=True):
         if args[:3] == ["path-info", "-r", "--json"]:
             return jsonlib.dumps(
                 [
@@ -264,6 +264,7 @@ def test_closure_skips_outputs_without_loadable_derivers(monkeypatch, caplog):
                 ]
             )
         if args[:2] == ["derivation", "show"]:
+            assert log_stderr is False
             return jsonlib.dumps(
                 {
                     "version": 3,
@@ -279,8 +280,14 @@ def test_closure_skips_outputs_without_loadable_derivers(monkeypatch, caplog):
         lambda path: path in {"/nix/store/target", "/nix/store/good.drv"},
     )
 
-    with caplog.at_level(logging.WARNING, logger="vulnix.nix"):
+    with caplog.at_level(logging.DEBUG, logger="vulnix.nix"):
         s.add_path("/nix/store/target")
 
     assert updated == ["/nix/store/good.drv"]
-    assert "Skipping closure path without deriver" in caplog.text
+    skipped = [
+        record
+        for record in caplog.records
+        if "Skipping closure path without deriver" in record.message
+    ]
+    assert skipped
+    assert all(record.levelno == logging.DEBUG for record in skipped)

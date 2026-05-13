@@ -74,15 +74,18 @@ class Store:
             ).splitlines():
                 self.add_path(line.split()[1])
 
-    def _call_nix(self, args):
+    def _call_nix(self, args, log_stderr=True):
         if self.experimental_flag_needed is None:
             self.experimental_flag_needed = "--experimental-features" in call(
                 ["nix", "--help"]
             )
 
         if self.experimental_flag_needed:
-            return call(["nix", "--experimental-features", "nix-command flakes"] + args)
-        return call(["nix"] + args)
+            return call(
+                ["nix", "--experimental-features", "nix-command flakes"] + args,
+                log_stderr=log_stderr,
+            )
+        return call(["nix"] + args, log_stderr=log_stderr)
 
     @staticmethod
     def _absolute_store_path(path):
@@ -110,10 +113,14 @@ class Store:
             normalized[drv_path] = drv
         return normalized
 
-    def _show_derivations(self, path):
+    def _show_derivations(self, path, log_stderr=True):
         """Return derivation metadata from all supported Nix JSON shapes."""
         try:
-            data = json.loads(self._call_nix(["derivation", "show", path]))
+            args = ["derivation", "show", path]
+            if log_stderr:
+                data = json.loads(self._call_nix(args))
+            else:
+                data = json.loads(self._call_nix(args, log_stderr=False))
         except subprocess.CalledProcessError as error:
             raise DeriverLookupError(
                 f"Cannot determine deriver for path `{path}`"
@@ -126,7 +133,7 @@ class Store:
             f"Unexpected `nix derivation show` JSON for path `{path}`"
         )
 
-    def _find_deriver(self, path, qpi_deriver="undef"):
+    def _find_deriver(self, path, qpi_deriver="undef", log_stderr=True):
         if not path:
             return None
         if path.endswith(".drv"):
@@ -138,7 +145,7 @@ class Store:
         if qpi_deriver and qpi_deriver != "unknown-deriver" and p.exists(qpi_deriver):
             return qpi_deriver
         # Deriver from QueryValidDerivers
-        qvd_derivations = self._show_derivations(path)
+        qvd_derivations = self._show_derivations(path, log_stderr=log_stderr)
         qvd_deriver = next(iter(qvd_derivations), None)
         _log.debug("qvd_deriver: %s", qvd_deriver)
         if qvd_deriver and p.exists(qvd_deriver):
@@ -167,11 +174,15 @@ class Store:
 
     def _update_closure_candidate(self, outpath, info, required=False):
         try:
-            candidate = self._find_deriver(outpath, qpi_deriver=info.get("deriver"))
+            candidate = self._find_deriver(
+                outpath,
+                qpi_deriver=info.get("deriver"),
+                log_stderr=required,
+            )
         except DeriverLookupError as error:
             if required:
                 raise
-            _log.warning("Skipping closure path without deriver: %s", error)
+            _log.debug("Skipping closure path without deriver: %s", error)
             return
         self.update(candidate)
 
