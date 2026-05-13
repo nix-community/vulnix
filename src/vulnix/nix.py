@@ -113,7 +113,7 @@ class Store:
     def _show_derivations(self, path):
         """Return derivation metadata from all supported Nix JSON shapes."""
         try:
-            data = json.loads(self._call_nix(["show-derivation", path]))
+            data = json.loads(self._call_nix(["derivation", "show", path]))
         except subprocess.CalledProcessError as error:
             raise DeriverLookupError(
                 f"Cannot determine deriver for path `{path}`"
@@ -123,7 +123,7 @@ class Store:
         if isinstance(data, dict):
             return self._normalize_derivations(data)
         raise DeriverLookupError(
-            f"Unexpected `nix show-derivation` JSON for path `{path}`"
+            f"Unexpected `nix derivation show` JSON for path `{path}`"
         )
 
     def _find_deriver(self, path, qpi_deriver="undef"):

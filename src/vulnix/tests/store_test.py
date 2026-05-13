@@ -90,7 +90,7 @@ def test_add_profile_reevaluates_wrapped_deriver_lookup_errors(monkeypatch, tmp_
         if args[:1] == ["eval"]:
             reevaluated = True
             return ""
-        if args[:1] == ["show-derivation"]:
+        if args[:2] == ["derivation", "show"]:
             raise subprocess.CalledProcessError(1, args)
         raise AssertionError(f"unexpected nix command: {args}")
 
@@ -108,7 +108,7 @@ def test_add_profile_reevaluates_wrapped_deriver_lookup_errors(monkeypatch, tmp_
     s.add_profile(str(tmp_path))
 
     assert nix_calls == [
-        ["show-derivation", "/nix/store/pkg-out"],
+        ["derivation", "show", "/nix/store/pkg-out"],
         ["eval", "github:example/repo#packages.x86_64-linux.pkg"],
     ]
     assert updated == ["/nix/store/missing.drv"]
@@ -151,7 +151,7 @@ def test_add_profile_reevaluates_missing_root_deriver_in_closure(monkeypatch, tm
                     },
                 ]
             )
-        if args[:1] == ["show-derivation"]:
+        if args[:2] == ["derivation", "show"]:
             raise subprocess.CalledProcessError(1, args)
         raise AssertionError(f"unexpected nix command: {args}")
 
@@ -169,7 +169,7 @@ def test_add_profile_reevaluates_missing_root_deriver_in_closure(monkeypatch, tm
 
     assert nix_calls == [
         ["path-info", "-r", "--json", "/nix/store/pkg-out"],
-        ["show-derivation", "/nix/store/pkg-out"],
+        ["derivation", "show", "/nix/store/pkg-out"],
         ["eval", "github:example/repo#packages.x86_64-linux.pkg"],
         ["path-info", "-r", "--json", "/nix/store/pkg-out"],
     ]
@@ -189,7 +189,7 @@ def test_closure_requires_canonical_root_output_deriver(monkeypatch):
                     },
                 ]
             )
-        if args[:1] == ["show-derivation"]:
+        if args[:2] == ["derivation", "show"]:
             raise subprocess.CalledProcessError(1, args)
         raise AssertionError(f"unexpected nix command: {args}")
 
@@ -219,7 +219,7 @@ def test_closure_requires_root_output_deriver_when_path_info_has_null_deriver(
                     },
                 ]
             )
-        if args[:1] == ["show-derivation"]:
+        if args[:2] == ["derivation", "show"]:
             raise subprocess.CalledProcessError(1, args)
         raise AssertionError(f"unexpected nix command: {args}")
 
@@ -263,7 +263,7 @@ def test_closure_skips_outputs_without_loadable_derivers(monkeypatch, caplog):
                     },
                 ]
             )
-        if args[:1] == ["show-derivation"]:
+        if args[:2] == ["derivation", "show"]:
             return jsonlib.dumps(
                 {
                     "version": 3,
