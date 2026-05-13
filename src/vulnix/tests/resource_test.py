@@ -41,13 +41,11 @@ def test_open_local():
 
 
 def test_open_remote(http_server):
-    # pylint: disable=consider-using-with
     with Resource(http_server + "/whitelist.toml").open() as f:
         assert f.read() == (fixtures_path / "whitelist.toml").read_bytes()
 
 
 def test_multiple_resources(http_server):
-    # pylint: disable=consider-using-with
     expected = (fixtures_path / "cpio-2.12.drv").read_bytes()
     gen = open_resources(
         sources=[
