@@ -23,7 +23,7 @@
             isort.enable = true; # sort python imports https://github.com/PyCQA/isort
             deadnix.enable = true; # removes dead nix code https://github.com/astro/deadnix
             nixfmt.enable = true; # nix formatter https://github.com/NixOS/nixfmt
-            nixfmt.package = pkgs.nixfmt-rfc-style; # rfc-166 formatting conform version
+            nixfmt.package = pkgs.nixfmt; # rfc-166 formatting conform version
             statix.enable = true; # prevents use of nix anti-patterns https://github.com/nerdypepper/statix
           };
         };
