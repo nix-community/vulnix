@@ -27,6 +27,12 @@ should not be reported.
 
 ## OPTIONS
 
+* `-g`, `--guest`=<PATH>:
+  Scan a foreign Nix installation rooted at <PATH>. Paths passed as positional
+  arguments or with `--profile` must be absolute paths as seen inside the guest,
+  such as _/nix/store/..._ or _/nix/var/nix/profiles/default_; they are not host
+  paths. `--system` and `--gc-roots` likewise inspect the guest installation.
+
 * `-S`, `--system`:
   Scans the current system defined as transitive closure of
   _/run/current-system_.

@@ -19,6 +19,7 @@ See vulnix --help for a full list of options.
 
 import importlib.metadata
 import logging
+import os.path as p
 import sys
 
 import click
@@ -75,6 +76,12 @@ def run(nvd, store):
 
 @click.command("vulnix")
 # what to scan
+@click.option(
+    "-g",
+    "--guest",
+    type=click.Path(exists=True, file_okay=False),
+    help="Guest sysroot path that contains nix store.",
+)
 @click.option("-S", "--system", is_flag=True, help="Scan the current system.")
 @click.option(
     "-G",
@@ -85,14 +92,14 @@ def run(nvd, store):
 @click.option(
     "-p",
     "--profile",
-    type=click.Path(exists=True),
+    type=click.Path(),  # might be a guest path
     multiple=True,
     help="Scan this profile (eg: ~/.nix-profile)",
 )
 @click.option(
     "-f", "--from-file", type=click.File(mode="r"), help="Read derivations from file"
 )
-@click.argument("path", nargs=-1, type=click.Path(exists=True))
+@click.argument("path", nargs=-1, type=click.Path())
 # modify operation
 @click.option(
     "-w",
@@ -159,6 +166,7 @@ def run(nvd, store):
 )
 def main(
     verbose,
+    guest,
     gc_roots,
     system,
     from_file,
@@ -178,7 +186,20 @@ def main(
     notfixed,
 ):
     # pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
-    # pylint: disable=too-many-locals,too-many-branches
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    if guest is None:
+        for path_arg in path:
+            if not p.exists(path_arg):
+                raise click.BadParameter(
+                    f"Path '{path_arg}' does not exist.", param_hint="'[PATH]...'"
+                )
+        for profile_arg in profile:
+            if not p.exists(profile_arg):
+                raise click.BadParameter(
+                    f"Path '{profile_arg}' does not exist.",
+                    param_hint="'-p' / '--profile'",
+                )
+
     if version:
         versionstr = "0.0.0-unknown"
         try:
@@ -208,7 +229,7 @@ def main(
             for wl in wh_sources:
                 whitelist.merge(Whitelist.load(wl))
         with Timer("Load derivations"):
-            store = Store(requisites, closure)
+            store = Store(requisites, closure, guest)
             if from_file:
                 if from_file.name.endswith(".json"):
                     _log.debug("loading packages.json")
