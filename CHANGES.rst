@@ -1,6 +1,16 @@
 Changes
 =======
 
+1.12.5 (2026-07-31)
+-------------------
+
+- Add `--guest` for scanning a foreign Nix installation rooted at a guest
+  sysroot.
+
+- Fix CPE matching for dotted numeric versions with trailing zero components,
+  such as treating `153.0` and `153.0.0` as equivalent.
+
+
 1.12.4 (2026-05-13)
 -------------------
 
