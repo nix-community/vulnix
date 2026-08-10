@@ -36,6 +36,13 @@ Derive(envVars={{'name': str((lambda: open('{b.name}', 'w').write('shellcode'))(
             assert os.path.getsize(b.name) == 0
 
 
+def test_load_drv_with_non_utf8_bytes():
+    # .drv files can legitimately contain non-UTF-8 bytes (e.g. embedded
+    # builder script content), and load() must not choke on them.
+    d = drv("non-utf8-1")
+    assert d.name == "non-utf8-1"
+
+
 def test_split_name():
     assert split_name("network-2.6.3.2-r1.cabal") == ("network", "2.6.3.2-r1.cabal")
     assert split_name("python2.7-pytest-runner-2.6.2.drv") == (

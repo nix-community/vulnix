@@ -33,7 +33,13 @@ def split_name(fullname):
 
 
 def load(path):
-    with open(path, encoding="utf-8") as f:
+    # .drv files can legitimately contain non-UTF-8 bytes (e.g. embedded
+    # builder script content, arbitrary env var values). errors="replace"
+    # keeps those from aborting the eval below: "surrogateescape" would
+    # decode cleanly here, but the resulting lone surrogates can't be
+    # re-encoded by eval()'s own UTF-8 pass, which just trades this
+    # UnicodeDecodeError for an equally fatal UnicodeEncodeError.
+    with open(path, encoding="utf-8", errors="replace") as f:
         d_obj = eval(f.read(), {"__builtins__": {}, "Derive": Derive}, {})
     _log.debug("Loading drv %s", d_obj.name)
     d_obj.store_path = path
