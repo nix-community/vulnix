@@ -1,8 +1,36 @@
+import os
 import subprocess
+from unittest.mock import patch
 
 import pytest
 
-from vulnix.utils import call, compare_versions, haskeys, split_components
+from vulnix.utils import (
+    call,
+    compare_versions,
+    default_cache_dir,
+    haskeys,
+    split_components,
+)
+
+
+def test_default_cache_dir_unset():
+    with patch.dict(os.environ, {}, clear=True):
+        assert default_cache_dir() == "~/.cache/vulnix"
+
+
+def test_default_cache_dir_empty():
+    with patch.dict(os.environ, {"XDG_CACHE_HOME": ""}):
+        assert default_cache_dir() == "~/.cache/vulnix"
+
+
+def test_default_cache_dir_relative():
+    with patch.dict(os.environ, {"XDG_CACHE_HOME": "relative-cache"}):
+        assert default_cache_dir() == "~/.cache/vulnix"
+
+
+def test_default_cache_dir_absolute():
+    with patch.dict(os.environ, {"XDG_CACHE_HOME": "/tmp/xdgtest"}):
+        assert default_cache_dir() == "/tmp/xdgtest/vulnix"
 
 
 def test_compare_versions():

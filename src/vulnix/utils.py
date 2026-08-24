@@ -1,11 +1,20 @@
 import itertools
 import logging
+import os
 import subprocess
 import sys
 import tempfile
 import time
 
 _log = logging.getLogger(__name__)
+
+
+def default_cache_dir():
+    """Returns the default cache directory for vulnix."""
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg and os.path.isabs(xdg):
+        return os.path.join(xdg, "vulnix")
+    return "~/.cache/vulnix"
 
 
 def call(cmd, log_stderr=True):

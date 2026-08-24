@@ -71,7 +71,8 @@ should not be reported.
 
 * `-c`, `--cache-dir`=<DIRECTORY>:
   Puts cached NVD entries into <DIRECTORY>. The directory will be created if it
-  does not exist. Defaults to _~/.cache/vulnix_.
+  does not exist. Defaults to _$XDG_CACHE_HOME/vulnix_ if `XDG_CACHE_HOME` is set
+  to an absolute path, else _~/.cache/vulnix_.
 
 * `-m`, `--mirror`=<URL>:
   Fetches NIST NVD updates from <URL>. Defaults to
@@ -126,8 +127,14 @@ not given.
 
 The following environment variables affect `vulnix`:
 
+* XDG_CACHE_HOME:
+  Determines the default cache directory as _$XDG_CACHE_HOME/vulnix_,
+  per the XDG Base Directory Specification. Unset, empty or relative
+  values are ignored and _~/.cache/vulnix_ is used instead.
+
 * HOME:
-  Determines the default cache directory.
+  Determines the default cache directory when `XDG_CACHE_HOME` is unset,
+  empty, or relative.
 
 * PATH:
   Used to invoke up low-level Nix utilities like `nix-store`.
@@ -135,7 +142,8 @@ The following environment variables affect `vulnix`:
 
 ## FILES ##
 
-`vulnix` maintains a cache dir located at _~/.cache/vulnix_ by default.
+`vulnix` maintains a cache dir located at _$XDG_CACHE_HOME/vulnix_ (or _~/.cache/vulnix_
+if `XDG_CACHE_HOME` is not valid) by default.
 
 The Nix store is assumed to be under _/nix/store_. This pathname is hardcoded.
 

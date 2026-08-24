@@ -16,10 +16,10 @@ import ZODB.FileStorage
 from BTrees import OOBTree
 from persistent import Persistent
 
+from .utils import default_cache_dir
 from .vulnerability import Vulnerability
 
 DEFAULT_MIRROR = "https://nvd.nist.gov/feeds/json/cve/2.0/"
-DEFAULT_CACHE_DIR = "~/.cache/vulnix"
 
 _log = logging.getLogger(__name__)
 
@@ -30,12 +30,14 @@ class NVD:
     https://nvd.nist.gov/
     """
 
-    def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
+    def __init__(self, mirror=DEFAULT_MIRROR, cache_dir=None):
         self._lock = None
         self._db = None
         self._connection = None
         self._root = None
         self.mirror = mirror.rstrip("/") + "/"
+        if cache_dir is None:
+            cache_dir = default_cache_dir()
         self.cache_dir = p.expanduser(cache_dir)
         current = date.today().year
         self.available_archives = list(range(current - 5, current + 1))

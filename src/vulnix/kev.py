@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 
 import requests
 
-from .nvd import DEFAULT_CACHE_DIR
+from .utils import default_cache_dir
 
 DEFAULT_KEV_MIRROR = (
     "https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv"
@@ -42,8 +42,10 @@ class KEV(KEVInterface):
     https://www.cisa.gov/known-exploited-vulnerabilities-catalog
     """
 
-    def __init__(self, mirror=DEFAULT_KEV_MIRROR, cache_dir=DEFAULT_CACHE_DIR):
+    def __init__(self, mirror=DEFAULT_KEV_MIRROR, cache_dir=None):
         self.mirror = mirror
+        if cache_dir is None:
+            cache_dir = default_cache_dir()
         self.cache_dir = p.expanduser(cache_dir)
         self.cache_filename = p.join(self.cache_dir, KEV_FILENAME)
 
