@@ -26,10 +26,10 @@ import click
 
 from .kev import DEFAULT_KEV_MIRROR, KEV, FakeKEV
 from .nix import Store
-from .nvd import DEFAULT_CACHE_DIR, DEFAULT_MIRROR, NVD
+from .nvd import DEFAULT_MIRROR, NVD
 from .output import output
 from .resource import open_resources
-from .utils import Timer
+from .utils import Timer, default_cache_dir
 from .whitelist import Whitelist
 
 CURRENT_SYSTEM = "/nix/var/nix/gcroots/current-system"
@@ -119,8 +119,9 @@ def run(nvd, store):
     "-c",
     "--cache-dir",
     type=click.Path(file_okay=False),
-    default=DEFAULT_CACHE_DIR,
-    help=f"Cache directory to store parsed archive data. Default: {DEFAULT_CACHE_DIR}",
+    default=default_cache_dir,
+    help="Cache directory to store parsed archive data. "
+    "Default: $XDG_CACHE_HOME/vulnix if set to an absolute path, else ~/.cache/vulnix.",
 )
 @click.option(
     "-r/-R",
