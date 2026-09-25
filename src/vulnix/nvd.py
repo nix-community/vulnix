@@ -1,10 +1,12 @@
 import fcntl
 import glob
 import gzip
+import io
 import json
 import logging
 import os
 import os.path as p
+import zipfile
 from datetime import date, datetime, timedelta
 
 import requests
@@ -183,6 +185,7 @@ class Archive:
         """
         self.name = name
         self.download_uri = f"nvdcve-2.0-{name}.json.gz"
+        self.zip_uri = f"nvdcve-2.0-{name}.json.zip"
         self.advisories = {}
 
     def download(self, mirror, meta):
@@ -196,10 +199,19 @@ class Archive:
         url = mirror + self.download_uri
         _log.info("Loading %s", url)
         r = requests.get(url, headers=meta.headers_for(url), timeout=10)
+        decompress = gzip.decompress
+        if r.status_code == 404:
+            # For some minutes after NVD rewrites a feed, the .json.gz file
+            # can give 404 while the .json.zip copy of the same feed is
+            # already there.
+            _log.warning("%s: 404, trying %s", url, self.zip_uri)
+            url = mirror + self.zip_uri
+            r = requests.get(url, headers=meta.headers_for(url), timeout=10)
+            decompress = _unzip
         r.raise_for_status()
         if r.status_code == 200:
             _log.debug('Loading JSON feed "%s"', self.name)
-            self.parse(gzip.decompress(r.content).decode("utf-8"))
+            self.parse(decompress(r.content).decode("utf-8"))
             meta.update_headers_for(url, r.headers)
             return True
         _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
@@ -219,6 +231,15 @@ class Archive:
 
     def items(self):
         return self.advisories.items()
+
+
+def _unzip(content):
+    """Returns the one file in a zip archive."""
+    with zipfile.ZipFile(io.BytesIO(content)) as z:
+        names = z.namelist()
+        if len(names) != 1:
+            raise ValueError(f"expected one file in the NVD zip feed, got {names}")
+        return z.read(names[0])
 
 
 class Meta(Persistent):
