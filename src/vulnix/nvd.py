@@ -1,10 +1,12 @@
 import fcntl
 import glob
 import gzip
+import io
 import json
 import logging
 import os
 import os.path as p
+import zipfile
 from datetime import date, datetime, timedelta
 
 import requests
@@ -183,7 +185,9 @@ class Archive:
         """
         self.name = name
         self.download_uri = f"nvdcve-2.0-{name}.json.gz"
+        self.zip_uri = f"nvdcve-2.0-{name}.json.zip"
         self.advisories = {}
+        self.timestamp = None
 
     def download(self, mirror, meta):
         """Fetches compressed JSON data from NIST.
@@ -194,13 +198,41 @@ class Archive:
         Returns True if anything has been loaded successfully.
         """
         url = mirror + self.download_uri
+        other_url = mirror + self.zip_uri
         _log.info("Loading %s", url)
         r = requests.get(url, headers=meta.headers_for(url), timeout=10)
+        decompress = gzip.decompress
+        if r.status_code == 404:
+            # For some minutes after NVD rewrites a feed, the .json.gz file
+            # can give 404 while the .json.zip copy of the same feed is
+            # already there.
+            _log.warning("%s: 404, trying %s", url, self.zip_uri)
+            url, other_url = other_url, url
+            r = requests.get(url, headers=meta.headers_for(url), timeout=10)
+            decompress = _unzip
         r.raise_for_status()
         if r.status_code == 200:
             _log.debug('Loading JSON feed "%s"', self.name)
-            self.parse(gzip.decompress(r.content).decode("utf-8"))
+            self.parse(decompress(r.content).decode("utf-8"))
+            # A feed from one URL can be older than the feed that was loaded
+            # before from the other URL. Loading it would put back older
+            # advisory records, and a 304 for the newer URL would keep them.
+            if meta.is_older(self.name, self.timestamp):
+                _log.warning(
+                    'Skipping JSON feed "%s" from %s: timestamp %s is older '
+                    "than the loaded feed",
+                    self.name,
+                    url,
+                    self.timestamp,
+                )
+                self.advisories = {}
+                return False
             meta.update_headers_for(url, r.headers)
+            # The saved ETag of the other URL can belong to a feed that is
+            # newer than this one. A 304 for it would keep this feed, so the
+            # other URL must give a full response for the age check.
+            meta.forget_headers_for(other_url)
+            meta.update_timestamp_for(self.name, self.timestamp)
             return True
         _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
         return False
@@ -208,6 +240,7 @@ class Archive:
     def parse(self, nvd_json):
         added = 0
         raw = json.loads(nvd_json)
+        self.timestamp = raw.get("timestamp")
         for item in raw["vulnerabilities"]:
             try:
                 vuln = Vulnerability.parse(item["cve"])
@@ -221,12 +254,22 @@ class Archive:
         return self.advisories.items()
 
 
+def _unzip(content):
+    """Returns the one file in a zip archive."""
+    with zipfile.ZipFile(io.BytesIO(content)) as z:
+        names = z.namelist()
+        if len(names) != 1:
+            raise ValueError(f"expected one file in the NVD zip feed, got {names}")
+        return z.read(names[0])
+
+
 class Meta(Persistent):
     """Metadate for database maintenance control"""
 
     pack_counter = 0
     last_update = datetime(1970, 1, 1)
     etag = None
+    feed_timestamp = None
 
     def should_pack(self):
         self.pack_counter += 1
@@ -247,3 +290,36 @@ class Meta(Persistent):
             if self.etag is None:
                 self.etag = OOBTree.OOBTree()
             self.etag[url] = resp_headers["ETag"]
+
+    def forget_headers_for(self, url):
+        """Removes the saved ETag of `url`."""
+        if self.etag and url in self.etag:
+            del self.etag[url]
+
+    def is_older(self, name, timestamp):
+        """True if a newer version of feed `name` was loaded before."""
+        if timestamp is None or self.feed_timestamp is None:
+            return False
+        loaded = self.feed_timestamp.get(str(name))
+        if loaded is None:
+            return False
+        try:
+            return datetime.fromisoformat(timestamp) < datetime.fromisoformat(loaded)
+        except (TypeError, ValueError) as e:
+            _log.warning(
+                'Cannot compare timestamps %r and %r of feed "%s", loading it '
+                "without the age check: %s",
+                timestamp,
+                loaded,
+                name,
+                e,
+            )
+            return False
+
+    def update_timestamp_for(self, name, timestamp):
+        """Saves the timestamp of the loaded feed `name`."""
+        if timestamp is None:
+            return
+        if self.feed_timestamp is None:
+            self.feed_timestamp = OOBTree.OOBTree()
+        self.feed_timestamp[str(name)] = timestamp

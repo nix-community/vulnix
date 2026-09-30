@@ -21,6 +21,7 @@ for rst in ["README.rst", "HACKING.rst", "CHANGES.rst"]:
 setup(
     name="vulnix",
     version=version,
+    python_requires=">=3.11",
     install_requires=[
         "click>=6.7",
         "pyyaml>=5",
@@ -54,10 +55,9 @@ License :: OSI Approved :: BSD License
 Operating System :: POSIX
 Programming Language :: Python
 Programming Language :: Python :: 3 :: Only
-Programming Language :: Python :: 3.5
-Programming Language :: Python :: 3.6
-Programming Language :: Python :: 3.7
-Programming Language :: Python :: 3.8
+Programming Language :: Python :: 3.11
+Programming Language :: Python :: 3.12
+Programming Language :: Python :: 3.13
 Topic :: System :: Systems Administration
 """[:-1].split("\n"),
     description=__doc__.strip(),
