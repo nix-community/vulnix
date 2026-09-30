@@ -207,3 +207,53 @@ def test_cache_without_feed_timestamps(tmpdir, mirror):
     with nvd:
         assert nvd.meta.feed_timestamp["modified"] == "2026-09-24T14:00:03.1234567"
         assert not _load(nvd)
+
+
+def test_cache_without_feed_timestamps_switches_format(tmpdir, mirror):
+    # A cache from an older vulnix: the newer .gz feed is loaded and its
+    # ETag saved, but no feed timestamp.
+    newer = gzip.compress(_feed("2026-09-24T16:00:04.1977477"))
+    mirror.files[GZ_URL] = newer
+    nvd = NVD(mirror="http://mirror/", cache_dir=str(tmpdir))
+    with nvd:
+        assert _load(nvd)
+        newer_nodes = nvd.by_id("CVE-2010-0748").nodes
+        assert newer_nodes
+        nvd.meta.feed_timestamp = None
+        transaction.commit()
+
+    # The .gz feed gives 404, and the older .zip feed cannot be checked.
+    del mirror.files[GZ_URL]
+    mirror.files[ZIP_URL] = _zip(
+        _feed("2026-09-24T14:00:03.1234567", without_configurations={"CVE-2010-0748"})
+    )
+    nvd = NVD(mirror="http://mirror/", cache_dir=str(tmpdir))
+    with nvd:
+        assert _load(nvd)
+        assert nvd.by_id("CVE-2010-0748").nodes == []
+        # The ETag of the .gz URL is forgotten.
+        assert not nvd.meta.headers_for(GZ_URL)
+        transaction.commit()
+
+    # The .gz feed returns unchanged. It gives a full response instead of a
+    # 304, passes the age check, and replaces the older records.
+    mirror.files[GZ_URL] = newer
+    nvd = NVD(mirror="http://mirror/", cache_dir=str(tmpdir))
+    with nvd:
+        assert _load(nvd)
+        assert mirror.requests[-1] == (GZ_URL, {})
+        assert nvd.by_id("CVE-2010-0748").nodes == newer_nodes
+        assert not nvd.meta.headers_for(ZIP_URL)
+        assert nvd.meta.feed_timestamp["modified"] == "2026-09-24T16:00:04.1977477"
+
+
+def test_unparseable_timestamp_is_loaded(fake_nvd, mirror, caplog):
+    mirror.files[GZ_URL] = gzip.compress(_feed("2026-09-24T16:00:04.1977477"))
+    assert _load(fake_nvd)
+
+    mirror.files[GZ_URL] = gzip.compress(
+        _feed("24 Sep 2026 14:00", without_configurations={"CVE-2010-0748"})
+    )
+    assert _load(fake_nvd)
+    assert fake_nvd.by_id("CVE-2010-0748").nodes == []
+    assert "Cannot compare timestamps" in caplog.text

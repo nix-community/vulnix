@@ -198,6 +198,7 @@ class Archive:
         Returns True if anything has been loaded successfully.
         """
         url = mirror + self.download_uri
+        other_url = mirror + self.zip_uri
         _log.info("Loading %s", url)
         r = requests.get(url, headers=meta.headers_for(url), timeout=10)
         decompress = gzip.decompress
@@ -206,7 +207,7 @@ class Archive:
             # can give 404 while the .json.zip copy of the same feed is
             # already there.
             _log.warning("%s: 404, trying %s", url, self.zip_uri)
-            url = mirror + self.zip_uri
+            url, other_url = other_url, url
             r = requests.get(url, headers=meta.headers_for(url), timeout=10)
             decompress = _unzip
         r.raise_for_status()
@@ -227,6 +228,10 @@ class Archive:
                 self.advisories = {}
                 return False
             meta.update_headers_for(url, r.headers)
+            # The saved ETag of the other URL can belong to a feed that is
+            # newer than this one. A 304 for it would keep this feed, so the
+            # other URL must give a full response for the age check.
+            meta.forget_headers_for(other_url)
             meta.update_timestamp_for(self.name, self.timestamp)
             return True
         _log.debug('Skipping JSON feed "%s" (%s)', self.name, r.reason)
@@ -286,6 +291,11 @@ class Meta(Persistent):
                 self.etag = OOBTree.OOBTree()
             self.etag[url] = resp_headers["ETag"]
 
+    def forget_headers_for(self, url):
+        """Removes the saved ETag of `url`."""
+        if self.etag and url in self.etag:
+            del self.etag[url]
+
     def is_older(self, name, timestamp):
         """True if a newer version of feed `name` was loaded before."""
         if timestamp is None or self.feed_timestamp is None:
@@ -293,7 +303,18 @@ class Meta(Persistent):
         loaded = self.feed_timestamp.get(str(name))
         if loaded is None:
             return False
-        return datetime.fromisoformat(timestamp) < datetime.fromisoformat(loaded)
+        try:
+            return datetime.fromisoformat(timestamp) < datetime.fromisoformat(loaded)
+        except (TypeError, ValueError) as e:
+            _log.warning(
+                'Cannot compare timestamps %r and %r of feed "%s", loading it '
+                "without the age check: %s",
+                timestamp,
+                loaded,
+                name,
+                e,
+            )
+            return False
 
     def update_timestamp_for(self, name, timestamp):
         """Saves the timestamp of the loaded feed `name`."""
