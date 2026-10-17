@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 from pathlib import Path
@@ -133,6 +134,39 @@ def test_ordering():
 def test_structured_attrs():
     d = drv("structured-attrs-1")
     assert d.name == "structured-attrs-1"
+
+
+def test_structured_attrs_patches():
+    d = Derive(
+        envVars={
+            "__json": json.dumps(
+                {
+                    "name": "gzip-1.14",
+                    "patches": [
+                        "/nix/store/xvb1kzbc6wmjqkhb19ab4fpf9ypfz2v2-CVE-2026-41991.patch",
+                        "/nix/store/m6xdsc3l2fzl9y8ijhf4hq2x2yv3fh9a-fix-build.patch",
+                    ],
+                }
+            )
+        }
+    )
+    assert {"CVE-2026-41991"} == d.applied_patches()
+
+
+@pytest.mark.parametrize(
+    "patches, expected",
+    [
+        (None, set()),
+        ([None], set()),
+        ([1, True, {}], set()),
+        ([["/nix/store/abc-CVE-2026-41991.patch"], None], {"CVE-2026-41991"}),
+    ],
+)
+def test_structured_attrs_patches_not_strings(patches, expected):
+    d = Derive(
+        envVars={"__json": json.dumps({"name": "gzip-1.14", "patches": patches})}
+    )
+    assert expected == d.applied_patches()
 
 
 def test_product_candidates():

@@ -51,6 +51,19 @@ def destructure(env):
     return json.loads(env["__json"])
 
 
+def flatten_strings(value):
+    """Yields the strings in a value that can be a nested list.
+
+    Without __structuredAttrs, Nix flattens nested lists into the
+    environment variable and makes `null` an empty string.
+    """
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, list):
+        for v in value:
+            yield from flatten_strings(v)
+
+
 IGNORE_EXT = {
     ".tar.gz",
     ".tar.bz2",
@@ -107,6 +120,10 @@ class Derive:
         if not self.version:
             raise SkipDrv()
         self.patches = patches or envVars.get("patches", "")
+        if not self.patches and "__json" in envVars:
+            # With __structuredAttrs, `patches` is a list in __json.
+            p = destructure(envVars).get("patches")
+            self.patches = " ".join(flatten_strings(p))
 
     def __repr__(self):
         return f"<Derive({repr(self.name)})>"
