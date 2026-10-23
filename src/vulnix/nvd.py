@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import os.path as p
+import time
 import zipfile
 from datetime import date, datetime, timedelta
 
@@ -24,6 +25,33 @@ from .vulnerability import Vulnerability
 DEFAULT_MIRROR = "https://nvd.nist.gov/feeds/json/cve/2.0/"
 
 _log = logging.getLogger(__name__)
+
+# NVD sometimes stops sending in the middle of a feed. `requests` reads the body
+# after urllib3 returns, so urllib3's own retries do not cover a read timeout
+# there. Retry the whole download instead.
+DOWNLOAD_ATTEMPTS = 5
+DOWNLOAD_BACKOFF = 10
+
+
+def _get(url, headers):
+    """Gets `url`. Retries a connection error, a timeout, a 429 and a 5xx, with
+    a delay that doubles after each failure. Returns any other response."""
+    delay = DOWNLOAD_BACKOFF
+    for _ in range(DOWNLOAD_ATTEMPTS - 1):
+        try:
+            return _get_once(url, headers)
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            _log.warning("Loading %s failed (%s), retrying in %ss", url, e, delay)
+            time.sleep(delay)
+            delay *= 2
+    return _get_once(url, headers)
+
+
+def _get_once(url, headers):
+    r = requests.get(url, headers=headers, timeout=(10, 60))
+    if r.status_code == 429 or r.status_code >= 500:
+        r.raise_for_status()
+    return r
 
 
 class NVD:
@@ -200,7 +228,7 @@ class Archive:
         url = mirror + self.download_uri
         other_url = mirror + self.zip_uri
         _log.info("Loading %s", url)
-        r = requests.get(url, headers=meta.headers_for(url), timeout=10)
+        r = _get(url, meta.headers_for(url))
         decompress = gzip.decompress
         if r.status_code == 404:
             # For some minutes after NVD rewrites a feed, the .json.gz file
@@ -208,7 +236,7 @@ class Archive:
             # already there.
             _log.warning("%s: 404, trying %s", url, self.zip_uri)
             url, other_url = other_url, url
-            r = requests.get(url, headers=meta.headers_for(url), timeout=10)
+            r = _get(url, meta.headers_for(url))
             decompress = _unzip
         r.raise_for_status()
         if r.status_code == 200:

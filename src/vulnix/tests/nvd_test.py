@@ -3,6 +3,7 @@ import gzip
 import hashlib
 import io
 import json
+import time
 import zipfile
 
 import pytest
@@ -74,21 +75,33 @@ def _response(status, content=b"", headers=None):
     r.status_code = status
     r._content = content  # pylint: disable=protected-access
     r.headers.update(headers or {})
-    r.reason = {200: "OK", 304: "Not Modified", 404: "Not Found"}[status]
+    r.reason = {
+        200: "OK",
+        304: "Not Modified",
+        404: "Not Found",
+        503: "Service Unavailable",
+    }[status]
     return r
 
 
 class FakeMirror:  # pylint: disable=too-few-public-methods
     """Serves `files` by URL, with a content hash as ETag. Records each
-    request."""
+    request. Before that, it gives each item of `failures` in turn: an
+    exception is raised, a number is the status of the response."""
 
     def __init__(self):
         self.files = {}
         self.requests = []
+        self.failures = []
 
     def get(self, url, headers=None, timeout=None):  # pylint: disable=unused-argument
         headers = dict(headers or {})
         self.requests.append((url, headers))
+        if self.failures:
+            failure = self.failures.pop(0)
+            if isinstance(failure, Exception):
+                raise failure
+            return _response(failure)
         if url not in self.files:
             return _response(404)
         content = self.files[url]
@@ -134,6 +147,31 @@ def test_update_falls_back_to_zip(fake_nvd, mirror):
     assert not _load(fake_nvd)
     assert mirror.requests[-1][0] == ZIP_URL
     assert "If-None-Match" in mirror.requests[-1][1]
+
+
+@pytest.fixture(name="sleeps")
+def fixture_sleeps(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(time, "sleep", sleeps.append)
+    return sleeps
+
+
+def test_download_retries_timeout_and_server_error(fake_nvd, mirror, sleeps):
+    mirror.files[GZ_URL] = gzip.compress(_feed(FEED["timestamp"]))
+    mirror.failures = [requests.ReadTimeout(), 503]
+    assert _load(fake_nvd)
+    assert [url for url, _ in mirror.requests] == [GZ_URL] * 3
+    assert sleeps == [10, 20]
+    assert fake_nvd.by_id("CVE-2010-0748")
+
+
+def test_download_raises_after_last_attempt(fake_nvd, mirror, sleeps):
+    mirror.files[GZ_URL] = gzip.compress(_feed(FEED["timestamp"]))
+    mirror.failures = [requests.ReadTimeout()] * 5
+    with pytest.raises(requests.ReadTimeout):
+        _load(fake_nvd)
+    assert len(mirror.requests) == 5
+    assert sleeps == [10, 20, 40, 80]
 
 
 def test_download_raises_when_zip_is_missing_too(fake_nvd):
