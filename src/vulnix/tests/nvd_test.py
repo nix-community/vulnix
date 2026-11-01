@@ -156,12 +156,18 @@ def fixture_sleeps(monkeypatch):
     return sleeps
 
 
-def test_download_retries_timeout_and_server_error(fake_nvd, mirror, sleeps):
+def test_download_retries_timeout_broken_transfer_and_server_error(
+    fake_nvd, mirror, sleeps
+):
     mirror.files[GZ_URL] = gzip.compress(_feed(FEED["timestamp"]))
-    mirror.failures = [requests.ReadTimeout(), 503]
+    mirror.failures = [
+        requests.ReadTimeout(),
+        requests.exceptions.ChunkedEncodingError(),
+        503,
+    ]
     assert _load(fake_nvd)
-    assert [url for url, _ in mirror.requests] == [GZ_URL] * 3
-    assert sleeps == [10, 20]
+    assert [url for url, _ in mirror.requests] == [GZ_URL] * 4
+    assert sleeps == [10, 20, 40]
     assert fake_nvd.by_id("CVE-2010-0748")
 
 

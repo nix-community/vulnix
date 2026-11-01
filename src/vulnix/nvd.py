@@ -27,20 +27,26 @@ DEFAULT_MIRROR = "https://nvd.nist.gov/feeds/json/cve/2.0/"
 _log = logging.getLogger(__name__)
 
 # NVD sometimes stops sending in the middle of a feed. `requests` reads the body
-# after urllib3 returns, so urllib3's own retries do not cover a read timeout
-# there. Retry the whole download instead.
+# after urllib3 returns, so urllib3's own retries do not cover a read timeout or
+# a broken chunked transfer there. Retry the whole download instead.
 DOWNLOAD_ATTEMPTS = 5
 DOWNLOAD_BACKOFF = 10
 
 
 def _get(url, headers):
-    """Gets `url`. Retries a connection error, a timeout, a 429 and a 5xx, with
-    a delay that doubles after each failure. Returns any other response."""
+    """Gets `url`. Retries a connection error, a broken chunked transfer, a
+    timeout, a 429 and a 5xx, with a delay that doubles after each failure.
+    Returns any other response."""
     delay = DOWNLOAD_BACKOFF
     for _ in range(DOWNLOAD_ATTEMPTS - 1):
         try:
             return _get_once(url, headers)
-        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+        except (
+            requests.ConnectionError,
+            requests.exceptions.ChunkedEncodingError,
+            requests.Timeout,
+            requests.HTTPError,
+        ) as e:
             _log.warning("Loading %s failed (%s), retrying in %ss", url, e, delay)
             time.sleep(delay)
             delay *= 2
